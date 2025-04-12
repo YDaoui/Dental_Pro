@@ -13,8 +13,6 @@ from Utils_Dental import *
 from Supports import *
 
 
-
-
 def get_db_connection():
     server = 'DESKTOP-2D5TJUA'
     database = 'Total_Stat'
@@ -28,29 +26,6 @@ def get_db_connection():
         st.error(f"Erreur de connexion : {e}")
         return None
     
-
-def authenticate(username, password):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        
-        try:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "SELECT u.Hyp, e.Type, e.Date_In FROM Users u "
-                    "JOIN Effectifs e ON u.Hyp = e.Hyp "
-                    "WHERE u.UserName = ? AND u.PassWord = ?", 
-                    (username, password))
-                result = cursor.fetchone()
-                return result if result else None
-        except Exception as e:
-            st.error(f"Erreur d'authentification : {e}")
-            return None
-        finally:
-            conn.close()
-
-
-
 
 def load_data():
     """Chargement des données depuis SQL Server."""
@@ -92,8 +67,8 @@ def preprocess_data(df):
     if 'Date_In' in df.columns:
         df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
     return df
-@st.cache_data
 
+@st.cache_data
 def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
     """Appliquer les filtres aux données en utilisant Hyp comme clé."""
     filtered_df = df.copy()
@@ -114,7 +89,7 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
         staff_filtered = staff_df.copy()
         
         if current_hyp is None:
-            staff_filtered = staff_filtered#[staff_filtered['Type'] != 'Agent']
+            staff_filtered = staff_filtered
         
         if team_filter != 'Toutes':
             staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
@@ -124,8 +99,6 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
         filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
 
     return filtered_df
-@st.cache_data
-
 
 def geocode_data(df):
     if 'Latitude' in df.columns and 'Longitude' in df.columns:
@@ -155,7 +128,6 @@ def geocode_data(df):
         df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
     return df
 
-
 def manager_dashboard():
     sales_df, staff_df = load_data()
     sales_df = preprocess_data(sales_df)
@@ -164,10 +136,10 @@ def manager_dashboard():
     with st.sidebar:
         st.image('Dental_Implant.png', width=350)
         
-        if st.session_state["user_type"] == "Hyperviseur":
+        if st.session_state.get("user_type") == "Hyperviseur":
             menu_options = ["Tableau de bord", "Sales", "Recolt", "Planning", "Setting"]
             icons = ["bar-chart", "currency-dollar", "list-ul", "calendar", "gear"]
-        elif st.session_state["user_type"] == "Support":
+        elif st.session_state.get("user_type") == "Support":
             menu_options = ["Tableau de bord", "Coaching"]
             icons = ["bar-chart", "currency-dollar", "list-ul", "calendar"]
         else:
@@ -199,4 +171,24 @@ def manager_dashboard():
                 start_date = st.date_input("Date début", min_date, min_value=min_date, max_value=max_date)
             with col2:
                 end_date = st.date_input("Date fin", max_date, min_value=min_date, max_value=max_date)
+    
+    # Gestion des différentes pages en fonction de la sélection
+    if selected == "Tableau de bord":
+        display_dashboard(sales_df, staff_df, start_date, end_date)
+    elif selected == "Sales":
+        display_sales(sales_df, staff_df, start_date, end_date)
+    elif selected == "Planning":
+        display_planning(sales_df, staff_df)
+    # ... autres options de menu
 
+def display_dashboard(sales_df, staff_df, start_date, end_date):
+    # Implémentation de l'affichage du tableau de bord
+    pass
+
+def display_sales(sales_df, staff_df, start_date, end_date):
+    # Implémentation de l'affichage des ventes
+    pass
+
+def display_planning(sales_df, staff_df):
+    # Implémentation de l'affichage du planning
+    pass

@@ -174,9 +174,9 @@ def authenticate(username, password):
 
 
 
-if selected == "Setting":
-    setting_page()
-elif selected == "Sales":
+    if selected == "Setting":
+        setting_page()
+    elif selected == "Sales":
     
         col1, col2 = st.columns([1, 5])
         with col1:
@@ -223,7 +223,7 @@ elif selected == "Sales":
         # Affichage du dataframe filtré
         st.dataframe(filtered_sales)
 
-elif selected == "Tableau de bord":
+    elif selected == "Tableau de bord":
         col1, col2 = st.columns([1, 5])
         with col1:
             st.image('Dental_Implant2.png', width=150)
@@ -347,7 +347,7 @@ elif selected == "Tableau de bord":
         else:
             st.warning("Aucune donnée à afficher pour les critères sélectionnés")
             
-elif selected == "Planning":
+    elif selected == "Planning":
     
         col1, col2 = st.columns([1, 5])
         with col1:

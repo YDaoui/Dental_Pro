@@ -36,6 +36,7 @@ def agent_dashboard():
             options=menu_options,
             icons=["house", "bar-chart"],
             default_index=0,
+            
             styles={
                 "container": {"background-color": "#002a48"},
                 "icon": {"color": "#00afe1", "font-size": "18px"},  
