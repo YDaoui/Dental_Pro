@@ -1,19 +1,67 @@
 import streamlit as st
 import pandas as pd
 import pyodbc
-import plotly.express as px
+from contextlib import closing
 from datetime import datetime
-from streamlit_option_menu import option_menu
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
-from contextlib import closing
-from PIL import Image
 
-from Supports import *
-from Managers import *
+def get_db_connection():
+    server = 'DESKTOP-2D5TJUA'
+    database = 'Total_Stat'
+    conn_str = (
+        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
+        f"SERVER={server};DATABASE={database};Trusted_Connection=yes;"
+    )
+    try:
+        return pyodbc.connect(conn_str)
+    except Exception as e:
+        st.error(f"Erreur de connexion : {e}")
+        return None
+
+def authenticate(username, password):
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    try:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute(
+                "SELECT u.Hyp, e.Type, e.Date_In FROM Users u "
+                "JOIN Effectifs e ON u.Hyp = e.Hyp "
+                "WHERE u.UserName = ? AND u.PassWord = ?", 
+                (username, password))
+            result = cursor.fetchone()
+            return result if result else None
+    except Exception as e:
+        st.error(f"Erreur d'authentification : {e}")
+        return None
+    finally:
+        conn.close()
+def get_user_details(hyp):
+    conn = get_db_connection()
+    if not conn:
+        return None
+    
+    try:
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("""
+                SELECT e.Nom, e.Prenom, e.Date_In, e.Team, e.Type, e.Activité, u.UserName, u.Cnx
+                FROM Effectifs e
+                JOIN Users u ON e.Hyp = u.Hyp
+                WHERE u.Hyp = ?""", (hyp,))
+            result = cursor.fetchone()
+            return result if result else None
+    except Exception as e:
+        st.error(f"Erreur lors de la récupération des données utilisateur: {e}")
+        return None
+    finally:
+        conn.close()
+
+# Fonction pour réinitialiser le mot de passe
 
 def login_page():
-    col1, col2,col3, col4  = st.columns([1,1,2,1])
+    col1, col2, col3, col4 = st.columns([1,1,2,1])
     with col2:
         st.image('Dental_Implant1.png', width=340)
     with col3:
@@ -23,7 +71,6 @@ def login_page():
 
         col1, col2 = st.columns([1,5])
         with col1:
-        
             if st.button("**Se connecter**", key="login_button"):
                 user_data = authenticate(username, password)
                 if user_data:
@@ -39,9 +86,128 @@ def login_page():
                 else:
                     st.error("Identifiants incorrects")
         with col2:
-            st.button("   **  Annuler  **    ", key="Annuler_button")
+            st.button("**Annuler**", key="Annuler_button")
 
-@st.cache_data
+def load_data():
+    """Chargement des données depuis SQL Server."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return pd.DataFrame(), pd.DataFrame()
+
+        with closing(conn.cursor()) as cursor:
+            cursor.execute("""
+                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_sale, Rating, Id_Sale 
+                FROM Sales""")
+            sales_df = pd.DataFrame.from_records(cursor.fetchall(), 
+                                             columns=[column[0] for column in cursor.description])
+
+            cursor.execute("""
+                SELECT Hyp, Team, Activité, Date_In, Type 
+                FROM Effectifs
+                where Type = 'Agent'
+                """)
+            staff_df = pd.DataFrame.from_records(cursor.fetchall(),
+                                             columns=[column[0] for column in cursor.description])
+
+        return sales_df, staff_df
+    except Exception as e:
+        st.error(f"Erreur de chargement des données: {str(e)}")
+        return pd.DataFrame(), pd.DataFrame()
+    finally:
+        if conn:
+            conn.close()
+
+def preprocess_data(df):
+    """Prétraitement des données."""
+    if 'ORDER_DATE' in df.columns:
+        df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
+    if 'Total_sale' in df.columns:
+        df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
+    if 'Date_In' in df.columns:
+        df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
+    return df
+
+def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
+    """Appliquer les filtres aux données."""
+    filtered_df = df.copy()
+    
+    if current_hyp:
+        return filtered_df[filtered_df['Hyp'] == current_hyp]
+    
+    if 'ORDER_DATE' in filtered_df.columns:
+        filtered_df = filtered_df[
+            (filtered_df['ORDER_DATE'] >= pd.to_datetime(start_date)) & 
+            (filtered_df['ORDER_DATE'] <= pd.to_datetime(end_date))
+        ]
+    
+    if country_filter != 'Tous' and 'Country' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['Country'] == country_filter]
+    
+    if 'Hyp' in filtered_df.columns and not staff_df.empty:
+        staff_filtered = staff_df.copy()
+        if team_filter != 'Toutes':
+            staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
+        if activity_filter != 'Toutes':
+            staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
+        
+        filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
+
+    return filtered_df
+
+def geocode_data(df):
+    if 'Latitude' in df.columns and 'Longitude' in df.columns:
+        return df
+    
+    geolocator = Nominatim(user_agent="sales_dashboard")
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    
+    locations = []
+    for _, row in df[['City', 'Country']].drop_duplicates().iterrows():
+        try:
+            location = geocode(f"{row['City']}, {row['Country']}")
+            if location:
+                locations.append({
+                    'City': row['City'], 
+                    'Country': row['Country'],
+                    'Latitude': location.latitude,
+                    'Longitude': location.longitude
+                })
+        except:
+            continue
+    
+    if locations:
+        return pd.merge(df, pd.DataFrame(locations), on=['City', 'Country'], how='left')
+    return df
+
+
+def geocode_data(df):
+    if 'Latitude' in df.columns and 'Longitude' in df.columns:
+        return df
+    
+    geolocator = Nominatim(user_agent="sales_dashboard")
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    
+    cities = df[['City', 'Country']].drop_duplicates()
+    locations = []
+    
+    for _, row in cities.iterrows():
+        try:
+            location = geocode(f"{row['City']}, {row['Country']}")
+            if location:
+                locations.append({
+                    'City': row['City'], 
+                    'Country': row['Country'],
+                    'Latitude': location.latitude,
+                    'Longitude': location.longitude
+                })
+        except:
+            continue
+    
+    if locations:
+        locations_df = pd.DataFrame(locations)
+        df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
+    return df
 
 
 def setting_page():
@@ -115,62 +281,3 @@ def reset_password(hyp):
         return False
     finally:
         conn.close()
-
-
-
-
-
-def get_db_connection():
-    server = 'DESKTOP-2D5TJUA'
-    database = 'Total_Stat'
-    conn_str = (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-        f"SERVER={server};DATABASE={database};Trusted_Connection=yes;"
-    )
-    try:
-        return pyodbc.connect(conn_str)
-    except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
-        return None
-    
-
-
-
-
-
-
-
-def get_db_connection():
-    server = 'DESKTOP-2D5TJUA'
-    database = 'Total_Stat'
-    conn_str = (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-        f"SERVER={server};DATABASE={database};Trusted_Connection=yes;"
-    )
-    try:
-        return pyodbc.connect(conn_str)
-    except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
-        return None
-
-
-
-def authenticate(username, password):
-        conn = get_db_connection()
-        if not conn:
-            return None
-        
-        try:
-            with closing(conn.cursor()) as cursor:
-                cursor.execute(
-                    "SELECT u.Hyp, e.Type, e.Date_In FROM Users u "
-                    "JOIN Effectifs e ON u.Hyp = e.Hyp "
-                    "WHERE u.UserName = ? AND u.PassWord = ?", 
-                    (username, password))
-                result = cursor.fetchone()
-                return result if result else None
-        except Exception as e:
-            st.error(f"Erreur d'authentification : {e}")
-            return None
-        finally:
-            conn.close()

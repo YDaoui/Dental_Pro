@@ -11,6 +11,7 @@ from PIL import Image
 from Utils_Dental import *
 from Supports import *
 from Managers import *
+from Utils_Dental import *
 
 
 

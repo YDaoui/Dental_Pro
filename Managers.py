@@ -1,132 +1,9 @@
-
 import streamlit as st
 import pandas as pd
-import pyodbc
 import plotly.express as px
 from datetime import datetime
 from streamlit_option_menu import option_menu
-from geopy.geocoders import Nominatim
-from geopy.extra.rate_limiter import RateLimiter
-from contextlib import closing
-from PIL import Image
 from Utils_Dental import *
-from Supports import *
-
-
-def get_db_connection():
-    server = 'DESKTOP-2D5TJUA'
-    database = 'Total_Stat'
-    conn_str = (
-        f"DRIVER={{ODBC Driver 17 for SQL Server}};"
-        f"SERVER={server};DATABASE={database};Trusted_Connection=yes;"
-    )
-    try:
-        return pyodbc.connect(conn_str)
-    except Exception as e:
-        st.error(f"Erreur de connexion : {e}")
-        return None
-    
-
-def load_data():
-    """Chargement des données depuis SQL Server."""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return pd.DataFrame(), pd.DataFrame()
-
-        with closing(conn.cursor()) as cursor:
-            cursor.execute("""
-                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_sale, Rating, Id_Sale 
-                FROM Sales""")
-            sales_df = pd.DataFrame.from_records(cursor.fetchall(), 
-                                               columns=[column[0] for column in cursor.description])
-
-            cursor.execute("""
-                SELECT Hyp, Team, Activité, Date_In, Type 
-                FROM Effectifs
-                where Type = 'Agent'
-                """)
-            staff_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                               columns=[column[0] for column in cursor.description])
-
-        return sales_df, staff_df
-    except Exception as e:
-        st.error(f"Erreur de chargement des données: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame()
-    finally:
-        if conn:
-            conn.close()
-
-def preprocess_data(df):
-    """Prétraitement des données."""
-    if 'ORDER_DATE' in df.columns:
-        df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
-    if 'Total_sale' in df.columns:
-        df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
-    
-    if 'Date_In' in df.columns:
-        df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
-    return df
-
-@st.cache_data
-def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
-    """Appliquer les filtres aux données en utilisant Hyp comme clé."""
-    filtered_df = df.copy()
-    
-    if current_hyp:
-        return filtered_df[filtered_df['Hyp'] == current_hyp]
-    
-    if 'ORDER_DATE' in filtered_df.columns:
-        filtered_df = filtered_df[
-            (filtered_df['ORDER_DATE'] >= pd.to_datetime(start_date)) & 
-            (filtered_df['ORDER_DATE'] <= pd.to_datetime(end_date))
-        ]
-    
-    if country_filter != 'Tous' and 'Country' in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df['Country'] == country_filter]
-    
-    if 'Hyp' in filtered_df.columns and not staff_df.empty:
-        staff_filtered = staff_df.copy()
-        
-        if current_hyp is None:
-            staff_filtered = staff_filtered
-        
-        if team_filter != 'Toutes':
-            staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
-        if activity_filter != 'Toutes':
-            staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
-        
-        filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
-
-    return filtered_df
-
-def geocode_data(df):
-    if 'Latitude' in df.columns and 'Longitude' in df.columns:
-        return df
-    
-    geolocator = Nominatim(user_agent="sales_dashboard")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
-    
-    cities = df[['City', 'Country']].drop_duplicates()
-    locations = []
-    
-    for _, row in cities.iterrows():
-        try:
-            location = geocode(f"{row['City']}, {row['Country']}")
-            if location:
-                locations.append({
-                    'City': row['City'], 
-                    'Country': row['Country'],
-                    'Latitude': location.latitude,
-                    'Longitude': location.longitude
-                })
-        except:
-            continue
-    
-    if locations:
-        locations_df = pd.DataFrame(locations)
-        df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
-    return df
 
 def manager_dashboard():
     sales_df, staff_df = load_data()
@@ -171,24 +48,131 @@ def manager_dashboard():
                 start_date = st.date_input("Date début", min_date, min_value=min_date, max_value=max_date)
             with col2:
                 end_date = st.date_input("Date fin", max_date, min_value=min_date, max_value=max_date)
-    
-    # Gestion des différentes pages en fonction de la sélection
+
+    # Gestion des pages
     if selected == "Tableau de bord":
         display_dashboard(sales_df, staff_df, start_date, end_date)
     elif selected == "Sales":
         display_sales(sales_df, staff_df, start_date, end_date)
     elif selected == "Planning":
         display_planning(sales_df, staff_df)
-    # ... autres options de menu
+    elif selected == "Setting":
+        setting_page()
 
 def display_dashboard(sales_df, staff_df, start_date, end_date):
-    # Implémentation de l'affichage du tableau de bord
-    pass
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant2.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Global</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtres
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()))
+    with col2:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()))
+    with col3:
+        activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()))
+    
+    # Appliquer les filtres
+    filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    
+    if not filtered_sales.empty:
+        # Métriques
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Ventes Totales", f"${filtered_sales['Total_sale'].sum():,.2f}")
+        col2.metric("Vente Moyenne", f"${filtered_sales['Total_sale'].mean():,.2f}")
+        col3.metric("Nombre de Transactions", len(filtered_sales))
+        
+        st.markdown("---")
+        
+        # Graphiques
+        col1, col2 = st.columns(2)
+        with col1:
+            # Ventes par ville
+            ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+            fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            # Évolution temporelle
+            ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
+            fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes")
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Aucune donnée à afficher pour les critères sélectionnés")
 
 def display_sales(sales_df, staff_df, start_date, end_date):
-    # Implémentation de l'affichage des ventes
-    pass
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant2.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtres
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        country_filter = st.selectbox("Filtrer par Pays (Sales)", ['Tous'] + sorted(sales_df['Country'].dropna().unique()))
+    with col2:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()))
+    with col3:
+        activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()))
+    
+    # Appliquer les filtres
+    filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    
+    # Métriques
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Sales", f"€{filtered_sales['Total_sale'].sum():,.0f}".replace(",", " "))
+    col2.metric("Average Sale", f"€{filtered_sales['Total_sale'].mean():,.2f}".replace(",", " "))
+    
+    avg_rating = filtered_sales['Rating'].mean()
+    col3.metric("Average Rating", f"{'★' * int(avg_rating)}{'☆' * (5 - int(avg_rating))}")
+    
+    col4.metric("Transactions", len(filtered_sales))
+    
+    st.markdown("---")
+    
+    # Affichage des données
+    st.dataframe(filtered_sales)
 
 def display_planning(sales_df, staff_df):
-    # Implémentation de l'affichage du planning
-    pass
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant1.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Planning</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtre par pays
+    selected_country = st.selectbox("Select Country", sorted(sales_df['Country'].unique()), key='country_filter')
+    filtered_sales = sales_df[sales_df['Country'] == selected_country]
+    
+    # Métriques
+    col1, col2 = st.columns(2)
+    col1.metric("Ventes Totales", f"${filtered_sales['Total_sale'].sum():,.0f}")
+    col2.metric("Nombre de Transactions", len(filtered_sales))
+    
+    # Graphiques
+    col1, col2 = st.columns(2)
+    with col1:
+        # Ventes par ville
+        ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+        fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        # Effectifs par équipe
+        if not staff_df.empty:
+            effectifs = staff_df[staff_df['Country'] == selected_country] if 'Country' in staff_df.columns else staff_df
+            fig = px.pie(effectifs, names='Team', title="Répartition des Effectifs")
+            st.plotly_chart(fig, use_container_width=True)
