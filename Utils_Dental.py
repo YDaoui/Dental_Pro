@@ -6,6 +6,17 @@ from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 
+
+
+
+
+
+
+
+
+
+    
+
 def get_db_connection():
     server = 'DESKTOP-2D5TJUA'
     database = 'Total_Stat'
