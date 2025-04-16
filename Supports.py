@@ -21,7 +21,7 @@ def support_dashboard():
         st.image('Dental_Implant2.png', width=150)
     with col2:
         st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Support</h1>", unsafe_allow_html=True)
-        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Settings All Agents</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Coaching Agent</h2>", unsafe_allow_html=True)
         st.markdown("---")
 
     with st.sidebar:
@@ -100,8 +100,8 @@ def display_offer_details(selected_row, conn):
             st.error(f"Erreur de conversion: {str(e)}")
             return
 
-    # Création d'un layout en deux colonnes
-    col1, col2 , col3 = st.columns(3)
+    # Création d'un layout en trois colonnes pour les informations principales
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         st.markdown(f"**Offre:** {selected_row.get('Offre', 'N/A')}")
@@ -111,65 +111,106 @@ def display_offer_details(selected_row, conn):
     with col2:
         st.markdown(f"**Canal:** {selected_row.get('Canal', 'N/A')}")
         st.markdown(f"**Statut BP:** {selected_row.get('Statut Bp', 'N/A')}")
-        st.markdown(f"**Sous motif :** {selected_row.get('Sous motif', 'N/A')}")
+        st.markdown(f"**Sous motif:** {selected_row.get('Sous motif', 'N/A')}")
 
-    # Extraction du Num_Bp avec plusieurs fallbacks
-    num_bp = selected_row.get('Num_Bp') #or selected_row.get('Num_Bp') or selected_row.get('BP')
+    # Extraction du Num_Bp et Hyp
+    num_bp = selected_row.get('Num_Bp')
+    hyp_agent = selected_row.get('Hyp', 'N/A')
     
-   
-    
+    with col3:
+        st.markdown(f"**Numéro BP:** {num_bp if num_bp else 'N/A'}")
+        st.markdown(f"**Agent (Hyp):** {hyp_agent}")
+
+    # Bouton en dessous des colonnes, aligné à gauche
     if num_bp:
-            st.markdown(f"**Numéro BP :** {num_bp}")
-            if st.button("🔎 Rechercher des informations complémentaires"):
-                search_additional_info(selected_row, conn)
+        col_btn, _ = st.columns([1, 1.5])  # 1/4 de largeur pour le bouton
+        with col_btn:
+            if st.button("🔎 Rechercher des informations complémentaires", 
+                        key=f"btn_{num_bp}"):
+                # Affichage des informations complémentaires sous le bouton
+                with st.container():
+                    search_additional_info(conn, num_bp, hyp_agent)
     else:
-            st.warning("Identifiant client non disponible pour cette offre")
+        st.warning("Identifiant client non disponible")
 
-def search_in_table(conn, num_bp, table_name):
-    """Version qui tente de deviner la colonne ID"""
+def search_in_table(conn, hyp_agent, table_name):
+    """Recherche dans une table spécifique et retourne les colonnes demandées"""
     try:
-        # D'abord essayer avec les noms de colonnes courants
-        for col in 'Num_Bp':
-            try:
-                query = f"SELECT  * FROM {table_name} WHERE ORDER_REFERENCE = ?"
-                df = pd.read_sql(query, conn, params=[num_bp])
-                if not df.empty:
-                    st.success(f"Trouvé dans {table_name}.{col}")
-                    st.dataframe(df)
-                    return True
-            except:
-                continue
-                
-        st.info(f"Aucun résultat dans {table_name} (colonnes testées: Num_Bp, BP, ID_Client, etc.)")
-        return False
+        if table_name == "Sales":
+            query = f"""
+            SELECT ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Sale AS Montant 
+            FROM {table_name} 
+            WHERE CAST(Hyp AS VARCHAR) = ?
+            ORDER BY ORDER_DATE DESC
+            """
+        elif table_name == "Recolts":
+            query = f"""
+            SELECT ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt AS Montant 
+            FROM {table_name} 
+            WHERE CAST(Hyp AS VARCHAR) = ?
+            ORDER BY ORDER_DATE DESC
+            """
+        else:
+            return None
+            
+        df = pd.read_sql(query, conn, params=[str(hyp_agent)])  # Convertir en string pour être sûr
+        return df
         
     except Exception as e:
-        st.error(f"Erreur grave avec {table_name}: {str(e)}")
-        return False
+        st.error(f"Erreur avec {table_name}: {str(e)}")
+        return None
 
-def search_additional_info(selected_row, conn):
+def search_additional_info(conn, num_bp, hyp_agent):
     """Recherche des informations complémentaires"""
-    # Essayer différentes méthodes pour obtenir le Num_Bp
-    num_bp = selected_row.get('Num_Bp')
-    
-    if num_bp is None and len(selected_row) >= 4:
-        num_bp = list(selected_row.values())[3]  # 4ème colonne
-        
-    if not num_bp:
-        st.error("Impossible de trouver le Numéro BP")
-        return
-
     st.markdown("---")
-    st.subheader(f"Résultats de la recherche pour le BP: {num_bp}")
-
-    found_result = False
-
-    found_result |= search_in_table(conn, num_bp, "Sales")
-    found_result |= search_in_table(conn, num_bp, "Recolts")
-
-    if not found_result:
+    st.subheader(f"Coaching - BP: {num_bp} (Agent: {hyp_agent})")
+    
+    # Recherche dans les tables Sales et Recolts
+    found_data = None
+    
+    for table in ["Sales", "Recolts"]:
+        df = search_in_table(conn, num_bp, table)
+        if df is not None and not df.empty:
+            found_data = df
+            st.success(f"Données trouvées dans la table {table}:")
+            
+            # Afficher les informations dans un tableau formaté
+            data = {
+                "Date commande": [df.iloc[0]['ORDER_DATE']],
+                "Pays": [df.iloc[0]['Country']],
+                "Ville": [df.iloc[0]['City']],
+                "Montant": [df.iloc[0]['Montant']],
+                "Message": [df.iloc[0]['SHORT_MESSAGE']]
+            }
+            st.table(pd.DataFrame(data))
+            break
+    
+    if found_data is None:
         st.info("Aucun résultat trouvé dans les tables Sales ou Recolts.")
-
+    
+    # Recherche dans la table Logs
+    st.markdown("---")
+    st.subheader("Détails du coaching")
+    
+    try:
+        query_logs = """
+        SELECT Offre, [Sous Motif] 
+        FROM Logs 
+        WHERE Hyp = ? AND Num_Bp = ?
+        """
+        df_logs = pd.read_sql(query_logs, conn, params=[hyp_agent, num_bp])
+        
+        if not df_logs.empty:
+            log_data = {
+                "Offre": [df_logs.iloc[0]['Offre']],
+                "Sous motif": [df_logs.iloc[0]['Sous Motif']]
+            }
+            st.table(pd.DataFrame(log_data))
+        else:
+            st.info("Aucune information supplémentaire trouvée dans les Logs")
+            
+    except Exception as e:
+        st.error(f"Erreur lors de la recherche dans les Logs: {str(e)}")
 
 def afficher_coaching():
     """Affiche le module de coaching"""
@@ -181,50 +222,90 @@ def afficher_coaching():
         return
 
     try:
+        # Chargement des données
         df_effectifs = pd.read_sql("SELECT * FROM Effectifs where Type = 'Agent'", conn)
+
         if df_effectifs.empty:
             st.warning("Aucun effectif trouvé dans la base de données")
             return
 
-        if "NOM" in df_effectifs.columns and "PRENOM" in df_effectifs.columns:
-            df_effectifs["NomComplet"] = df_effectifs["NOM"] + " " + df_effectifs["PRENOM"]
-        else:
+        # Vérification des colonnes nécessaires
+        if "NOM" not in df_effectifs.columns or "PRENOM" not in df_effectifs.columns:
             st.error("Les colonnes 'NOM' ou 'PRENOM' sont absentes dans la table Effectifs.")
             return
 
-        selection = st.selectbox("Sélectionner un agent", df_effectifs["NomComplet"].unique())
+        # Création du nom complet
+        df_effectifs["NomComplet"] = df_effectifs["NOM"] + " " + df_effectifs["PRENOM"]
 
-        if selection:
-            nom, prenom = selection.split(" ", 1)
-            agent = df_effectifs[(df_effectifs["NOM"] == nom) & (df_effectifs["PRENOM"] == prenom)]
+        # Layout en 2 colonnes (gauche pour infos agent et bouton, droite pour autres infos)
+        col_left, col_right = st.columns([4, 6])
 
-            if agent.empty:
-                st.error("Agent non trouvé")
-                return
+        # Colonne gauche: Sélection de l'agent et informations
+        with col_left:
+            selection = st.selectbox("Sélectionner un agent", 
+                                   df_effectifs["NomComplet"].unique(),
+                                   key="coaching_agent_select")
 
-            agent = agent.iloc[0]
-            st.markdown("---")
-            col1, col2, col3  = st.columns(3)
+            if selection:
+                # Récupération des informations de l'agent
+                nom, prenom = selection.split(" ", 1)
+                agent = df_effectifs[(df_effectifs["NOM"] == nom) & 
+                                  (df_effectifs["PRENOM"] == prenom)]
 
-            with col1:
+                if agent.empty:
+                    st.error("Agent non trouvé")
+                    return
+
+                agent = agent.iloc[0]
+                st.markdown("---")
+
+                # Affichage des informations de base de l'agent
                 st.markdown(f"**Nom :** {agent['NOM']}")
                 st.markdown(f"**Prénom :** {agent['PRENOM']}")
                 st.markdown(f"**Team :** {agent['Team']}")
-            with col2:
-                
                 st.markdown(f"**Activité :** {agent['Activité']}")
                 st.markdown(f"**Departement :** {agent['Departement']}")
-                st.markdown(f"**Date entrée  :** {agent['Date_In']}")
-            with col3:
+                st.markdown(f"**Date entrée :** {agent['Date_In']}")
                 st.markdown(f"**Hyp :** {agent['Hyp']}")
 
-            hyp_agent = agent["Hyp"]
-            df_logs = pd.read_sql("SELECT * FROM Logs WHERE Hyp = ?", conn, params=[hyp_agent])
+                # Bouton de recherche
+                if st.button("🔎 Rechercher les transactions"):
+                    hyp_agent = agent["Hyp"]
+                    
+                    # Recherche dans les tables Sales et Recolts
+                    with st.expander("Historique des transactions"):
+                        # Création d'onglets pour Sales et Recolts
+                        tab1, tab2 = st.tabs(["Ventes (Sales)", "Recoltes (Recolts)"])
+                        
+                        with tab1:
+                            df_sales = search_in_table(conn, hyp_agent, "Sales")
+                            if df_sales is not None and not df_sales.empty:
+                                st.dataframe(df_sales)
+                            else:
+                                st.info("Aucune donnée de vente trouvée")
+                        
+                        with tab2:
+                            df_recolts = search_in_table(conn, hyp_agent, "Recolts")
+                            if df_recolts is not None and not df_recolts.empty:
+                                st.dataframe(df_recolts)
+                            else:
+                                st.info("Aucune donnée de recolte trouvée")
 
-            if df_logs.empty:
-                st.info("Aucun historique trouvé pour cet agent")
-                return
+        # Colonne droite: Affichage des logs
+        with col_right:
+            if selection:
+                hyp_agent = agent["Hyp"]
+                df_logs = pd.read_sql("SELECT * FROM Logs WHERE Hyp = ?", 
+                                      conn, 
+                                      params=[hyp_agent])
 
-            display_logs_with_interaction(df_logs, conn)
+                if df_logs.empty:
+                    st.info("Aucun historique trouvé pour cet agent")
+                else:
+                    display_logs_with_interaction(df_logs, conn)
+
+    except Exception as e:
+        st.error(f"Une erreur est survenue : {str(e)}")
     finally:
-        conn.close()
+        if conn:
+            conn.close()

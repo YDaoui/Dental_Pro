@@ -5,6 +5,7 @@ from contextlib import closing
 from datetime import datetime
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
+import plotly.express as px
 
 
 
@@ -104,27 +105,37 @@ def load_data():
     try:
         conn = get_db_connection()
         if not conn:
-            return pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         with closing(conn.cursor()) as cursor:
+            # Chargement des ventes
             cursor.execute("""
                 SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_sale, Rating, Id_Sale 
-                FROM Sales""")
+                FROM Sales
+                WHERE SHORT_MESSAGE <> 'ERROR'""")
             sales_df = pd.DataFrame.from_records(cursor.fetchall(), 
                                              columns=[column[0] for column in cursor.description])
+            
+            # Chargement des récoltes
+            cursor.execute("""
+                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Banques, Id_Recolt 
+                FROM Recolts
+                WHERE SHORT_MESSAGE <> 'ERROR'""")
+            recolts_df = pd.DataFrame.from_records(cursor.fetchall(), 
+                                             columns=[column[0] for column in cursor.description])
 
+            # Chargement du staff
             cursor.execute("""
                 SELECT Hyp, Team, Activité, Date_In, Type 
                 FROM Effectifs
-                where Type = 'Agent'
-                """)
+                WHERE Type = 'Agent'""")
             staff_df = pd.DataFrame.from_records(cursor.fetchall(),
                                              columns=[column[0] for column in cursor.description])
 
-        return sales_df, staff_df
+        return sales_df, recolts_df, staff_df
     except Exception as e:
         st.error(f"Erreur de chargement des données: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     finally:
         if conn:
             conn.close()
@@ -135,10 +146,106 @@ def preprocess_data(df):
         df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
     if 'Total_sale' in df.columns:
         df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
+    if 'Total_Recolt' in df.columns:
+        df['Total_Recolt'] = pd.to_numeric(df['Total_Recolt'], errors='coerce').fillna(0)
     if 'Date_In' in df.columns:
         df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
     return df
 
+# Fonctions des différentes pages
+def dashboard_page(sales_df, staff_df, start_date, end_date):
+    """Page Tableau de bord principal."""
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant.png', width=200)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Global</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales - Recolts - Logs </h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtres
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()))
+    with col2:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()))
+    with col3:
+        activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()))
+    
+    # Appliquer les filtres
+    filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    
+    if not filtered_sales.empty:
+        # Métriques
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Ventes Totales", f"€{filtered_sales['Total_sale'].sum():,.2f}".replace(",", " "))
+        col2.metric("Vente Moyenne", f"€{filtered_sales['Total_sale'].mean():,.2f}".replace(",", " "))
+        col3.metric("Nombre de Transactions", len(filtered_sales))
+        
+        st.markdown("---")
+        
+        # Graphiques
+        col1, col2 = st.columns(2)
+        with col1:
+            ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+            fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
+            st.plotly_chart(fig, use_container_width=True)
+        
+        with col2:
+            ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
+            fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes")
+            st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.warning("Aucune donnée à afficher pour les critères sélectionnés")
+
+def sales_page(sales_df, staff_df, start_date, end_date):
+    """Page dédiée aux ventes."""
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant2.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Filtres
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        country_filter = st.selectbox("Filtrer par Pays (Sales)", ['Tous'] + sorted(sales_df['Country'].dropna().unique()))
+    with col2:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()))
+    with col3:
+        activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()))
+    
+    # Appliquer les filtres
+    filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    
+    # Métriques
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Sales", f"€{filtered_sales['Total_sale'].sum():,.0f}".replace(",", " "))
+    col2.metric("Average Sale", f"€{filtered_sales['Total_sale'].mean():,.2f}".replace(",", " "))
+    
+    avg_rating = filtered_sales['Rating'].mean()
+    col3.metric("Average Rating", f"{'★' * int(avg_rating)}{'☆' * (5 - int(avg_rating))}")
+    
+    col4.metric("Transactions", len(filtered_sales))
+    
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+            ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+            fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
+            st.plotly_chart(fig, use_container_width=True)
+        
+    with col2:
+            ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
+            fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes")
+            st.plotly_chart(fig, use_container_width=True)
+    
+    # Affichage des données
+    st.dataframe(filtered_sales)
 def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
     """Appliquer les filtres aux données."""
     filtered_df = df.copy()
@@ -166,59 +273,81 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
 
     return filtered_df
 
-def geocode_data(df):
-    if 'Latitude' in df.columns and 'Longitude' in df.columns:
-        return df
+def recolts_page(recolts_df, staff_df, start_date, end_date):
+    """Page dédiée aux récoltes."""
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant2.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Recolts Dashboard</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
     
-    geolocator = Nominatim(user_agent="sales_dashboard")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    st.markdown("---")
     
-    locations = []
-    for _, row in df[['City', 'Country']].drop_duplicates().iterrows():
-        try:
-            location = geocode(f"{row['City']}, {row['Country']}")
-            if location:
-                locations.append({
-                    'City': row['City'], 
-                    'Country': row['Country'],
-                    'Latitude': location.latitude,
-                    'Longitude': location.longitude
-                })
-        except:
-            continue
+    # Filtres
+    col1, col2, col3 = st.columns([2, 2, 2])
+    with col1:
+        country_filter = st.selectbox("Filtrer par Pays (Recolts)", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()))
+    with col2:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolt_team')
+    with col3:
+        activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolt_activity')
     
-    if locations:
-        return pd.merge(df, pd.DataFrame(locations), on=['City', 'Country'], how='left')
-    return df
+    # Appliquer les filtres
+    filtered_recolts = filter_data(recolts_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    
+    # Métriques
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Recolts", f"€{filtered_recolts['Total_Recolt'].sum():,.0f}".replace(",", " "))
+    col2.metric("Average Recolt", f"€{filtered_recolts['Total_Recolt'].mean():,.2f}".replace(",", " "))
+    col3.metric("Transactions", len(filtered_recolts))
+    
+    st.markdown("---")
+    
+    # Graphique par banque
+    if 'Banques' in filtered_recolts.columns:
+        st.subheader("Récoltes par Banque")
+        recolts_by_bank = filtered_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
+        fig = px.bar(recolts_by_bank, x='Banques', y='Total_Recolt', 
+                    title="Montant récolté par Banque",
+                    color='Banques')
+        st.plotly_chart(fig, use_container_width=True)
+    
+    # Affichage des données
+    st.dataframe(filtered_recolts)
 
-
-def geocode_data(df):
-    if 'Latitude' in df.columns and 'Longitude' in df.columns:
-        return df
+def planning_page(sales_df, staff_df):
+    """Page de planning."""
+    col1, col2 = st.columns([1, 5])
+    with col1:
+        st.image('Dental_Implant1.png', width=150)
+    with col2:
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Planning</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
     
-    geolocator = Nominatim(user_agent="sales_dashboard")
-    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+    st.markdown("---")
     
-    cities = df[['City', 'Country']].drop_duplicates()
-    locations = []
+    # Filtre par pays
+    selected_country = st.selectbox("Select Country", sorted(sales_df['Country'].unique()), key='country_filter')
+    filtered_sales = sales_df[sales_df['Country'] == selected_country]
     
-    for _, row in cities.iterrows():
-        try:
-            location = geocode(f"{row['City']}, {row['Country']}")
-            if location:
-                locations.append({
-                    'City': row['City'], 
-                    'Country': row['Country'],
-                    'Latitude': location.latitude,
-                    'Longitude': location.longitude
-                })
-        except:
-            continue
+    # Métriques
+    col1, col2 = st.columns(2)
+    col1.metric("Ventes Totales", f"€{filtered_sales['Total_sale'].sum():,.0f}".replace(",", " "))
+    col2.metric("Nombre de Transactions", len(filtered_sales))
     
-    if locations:
-        locations_df = pd.DataFrame(locations)
-        df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
-    return df
+    # Graphiques
+    col1, col2 = st.columns(2)
+    with col1:
+        ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+        fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
+        st.plotly_chart(fig, use_container_width=True)
+    
+    with col2:
+        if not staff_df.empty:
+            effectifs = staff_df[staff_df['Country'] == selected_country] if 'Country' in staff_df.columns else staff_df
+            fig = px.pie(effectifs, names='Team', title="Répartition des Effectifs")
+            st.plotly_chart(fig, use_container_width=True)
 
 
 def setting_page():

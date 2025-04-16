@@ -46,7 +46,7 @@ st.markdown("""
     <style>
     /* BASE STYLES */
     * {
-        font-weight: bold !important; /* Tout en gras */
+        font-weight: bold !important;
     }
     
     /* COULEURS */
@@ -66,16 +66,25 @@ st.markdown("""
     [data-testid="stVerticalBlock"] > div:has(> .stButton) {
         background: linear-gradient(145deg, var(--bleu-fonce), var(--bleu-ciel));
         padding: 1rem;
-        border-radius: 10px;
+        border-radius: 15px;
         margin: 0.5rem 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     }
     
-    /* BOUTONS (style inchangé) */
+    /* BOUTONS HARMONISÉS */
     .stButton>button {
-        background: linear-gradient(to right, var(--orange), var(--jaune)) !important;
-        color: var(--bleu-fonce) !important;
+        background: linear-gradient(145deg, var(--bleu-fonce), var(--bleu-ciel)) !important;
+        color: white !important;
         border: none !important;
-        border-radius: 8px !important;
+        border-radius: 12px !important;
+        padding: 0.5rem 1rem !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    /* Effet au survol */
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
     }
     
     /* TITRES (dégradé bleu) */
@@ -85,9 +94,11 @@ st.markdown("""
         -webkit-text-fill-color: transparent !important;
     }
     
-    /* INPUTS (style inchangé) */
+    /* INPUTS */
     .stTextInput>div>div>input {
         border: 1px solid var(--bleu-ciel) !important;
+        border-radius: 12px !important;
+        padding: 0.5rem 1rem !important;
     }
     </style>
 """, unsafe_allow_html=True)
