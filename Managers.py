@@ -22,6 +22,7 @@ def main_dashboard(sales_df, recolts_df, staff_df, start_date, end_date):
 
 # Fonction principale
 def manager_dashboard():
+    add_custom_css()
     """Tableau de bord principal."""
     # Chargement des données
     sales_df, recolts_df, staff_df = load_data()
@@ -72,7 +73,7 @@ def manager_dashboard():
 
     # Gestion des pages
     if selected == "Tableau de bord":
-        dashboard_page(sales_df, staff_df, start_date, end_date)
+        dashboard_page(sales_df, recolts_df, staff_df, start_date, end_date)
     elif selected == "Sales":
         sales_page(sales_df, staff_df, start_date, end_date)
     elif selected == "Recolt":

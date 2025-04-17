@@ -14,7 +14,9 @@ from Supports import *
 from Managers import *
 from Utils_Dental import *
 
+
 def agent_dashboard():
+    add_custom_css()
     hyp_agent = st.session_state["hyp"]
     conn = get_db_connection()
     
@@ -69,12 +71,13 @@ def agent_dashboard():
 
     # Menu dans la sidebar
     with st.sidebar:
+        
         st.image('Dental_Implant.png', width=350)
-        menu_options = ["Accueil", "Mes Performances"]
+        menu_options = ["Accueil", "Mes Performances","Planning"]
         selected = option_menu(
             menu_title=None,
             options=menu_options,
-            icons=["house", "bar-chart"],
+            icons=["house", "bar-chart","calendar"],
             default_index=0,
             styles={
                 "container": {"background-color": "#002a48"},

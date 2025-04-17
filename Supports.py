@@ -335,6 +335,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         st.success("Évaluation enregistrée avec succès!")
 
 def afficher_coaching():
+    add_custom_css()
     """Affiche le module de coaching"""
     st.subheader("Coaching - Liste des Effectifs")
 
@@ -401,13 +402,23 @@ def afficher_coaching():
                     df_recolts = search_in_table(conn, hyp_agent, "Recolts")
                     display_formatted_data(df_recolts, "recolte")
 
-            # Affichage des logs
+            # Affichage des logs - NOUVELLE REQUÊTE AVEC LES DEUX CRITÈRES
             st.markdown("---")
             st.subheader("Liste des Offres")
             
-            df_logs = pd.read_sql("SELECT * FROM Logs WHERE Offre <> '' and Hyp = ?", 
-                                  conn, 
-                                  params=[agent["Hyp"]])
+            # Nouvelle requête qui joint Logs avec Sales ou Recolts
+            query_logs = """
+            SELECT DISTINCT l.* 
+            FROM Logs l
+            LEFT JOIN Sales s ON l.Num_Bp = s.ORDER_REFERENCE
+            LEFT JOIN Recolts r ON l.Num_Bp = r.ORDER_REFERENCE
+            WHERE l.Hyp = ? 
+            AND (s.ORDER_REFERENCE IS NOT NULL OR r.ORDER_REFERENCE IS NOT NULL)
+            AND l.Offre <> ''
+            ORDER BY l.[Date de création] DESC
+            """
+            
+            df_logs = pd.read_sql(query_logs, conn, params=[agent["Hyp"]])
 
             if df_logs.empty:
                 st.info("Aucun historique trouvé pour cet agent")

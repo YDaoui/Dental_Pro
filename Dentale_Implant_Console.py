@@ -12,9 +12,10 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 def login_page():
+    add_custom_css()
     col1, col2, col3, col4 = st.columns([1,1,2,1])
     with col2:
-        st.image('Dental_Implant1.png', width=340)
+        st.image('Dental_Implant.png', width=440)
     with col3:
         st.markdown("<h2 style='color:#007bad;'>Connexion</h2>", unsafe_allow_html=True)
         username = st.text_input("Nom d'utilisateur")
