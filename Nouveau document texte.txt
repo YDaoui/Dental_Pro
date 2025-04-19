@@ -1,4 +1,36 @@
-import streamlit as st
+
+# Géocodage sécurisé
+def geocode_data(df):
+    """Géocode les villes pour obtenir les coordonnées GPS."""
+    if 'Latitude' in df.columns and 'Longitude' in df.columns:
+        return df
+
+    geolocator = Nominatim(user_agent="sales_dashboard", timeout=10)
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+
+    locations = []
+    unique_locations = df[['City', 'Country']].dropna().drop_duplicates()
+
+    for _, row in unique_locations.iterrows():
+        try:
+            location = geocode(f"{row['City']}, {row['Country']}")
+            if location:
+                locations.append({
+                    'City': row['City'],
+                    'Country': row['Country'],
+                    'Latitude': location.latitude,
+                    'Longitude': location.longitude
+                })
+        except Exception as e:
+            st.warning(f"Erreur de géocodage pour {row['City']}, {row['Country']}: {str(e)}")
+            continue
+
+    if locations:
+        locations_df = pd.DataFrame(locations)
+        df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
+    return df
+))))))))))))))))))))))))))))))))))))))))))))))))
+corrige tt le code stp == import streamlit as st
 import pandas as pd
 import pyodbc
 from contextlib import closing
@@ -155,70 +187,105 @@ def login_page():
             if st.button("**Annuler**", key="Annuler_button"):
                 st.experimental_rerun()
 
-# Chargement des données
+@st.cache_data(ttl=3600)
 def load_data():
-    """Chargement des données depuis SQL Server."""
+    """Chargement optimisé des données depuis SQL Server."""
     try:
         conn = get_db_connection()
         if not conn:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         with closing(conn.cursor()) as cursor:
-            # Chargement des ventes
-            cursor.execute("""
-                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_sale, Rating, Id_Sale 
-                FROM Sales
-                WHERE SHORT_MESSAGE <> 'ERROR'
-            """)
-            sales_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
+            queries = {
+                'sales': """SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, 
+                                   Country, City, Total_sale, Rating, Id_Sale 
+                            FROM Sales WHERE SHORT_MESSAGE <> 'ERROR'""",
+                
+                'recolts': """SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE,
+                                     Country, City, Total_Recolt, Banques, Id_Recolt 
+                              FROM Recolts WHERE SHORT_MESSAGE <> 'ERROR'""",
+                
+                'logs': """SELECT [Goupe Origine], Hyp, Num_Activity, Num_Bp,
+                                  [Sous motif], Canal, Direction, [Date de création],
+                                  Qualification, [Heure création], Offre,
+                                  [Date ancienneté client], Segment, [Statut BP],
+                                  [mode de facturation], [ancienneté client], Heure, Id_Log 
+                           FROM Logs WHERE Offre <> 'AB'""",
+                
+                'staff': """SELECT Hyp, Team, Activité, Date_In, Type 
+                            FROM Effectifs WHERE Type = 'Agent'"""
+            }
 
-            # Chargement des récoltes
-            cursor.execute("""
-                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Banques, Id_Recolt 
-                FROM Recolts
-                WHERE SHORT_MESSAGE <> 'ERROR'
-            """)
-            recolts_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                   columns=[column[0] for column in cursor.description])
-            # Chargement de Logs 
+            dfs = {}
+            for key, query in queries.items():
+                cursor.execute(query)
+                dfs[key] = pd.DataFrame.from_records(
+                    cursor.fetchall(),
+                    columns=[column[0] for column in cursor.description]
+                )
 
-            
+        return dfs['sales'], dfs['recolts'], dfs['staff'], dfs['logs']
 
-            # Chargement du staff
-            cursor.execute("""
-                SELECT Hyp, Team, Activité, Date_In, Type 
-                FROM Effectifs
-                WHERE Type = 'Agent'
-            """)
-            staff_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
-
-        return sales_df, recolts_df, staff_df
     except Exception as e:
-        st.error(f"Erreur de chargement des données: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        st.error(f"Erreur de chargement: {str(e)}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     finally:
         if conn:
             conn.close()
 
+def preprocess_data(df, df_type='standard'):
+    """Prétraite les données selon le type (standard ou logs)."""
+    if df.empty:
+        return df
 
-# Prétraitement des données
-def preprocess_data(df):
-    """Prétraite les données."""
-    if 'ORDER_DATE' in df.columns:
-        df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
-    if 'Total_sale' in df.columns:
-        df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
-    if 'Total_Recolt' in df.columns:
-        df['Total_Recolt'] = pd.to_numeric(df['Total_Recolt'], errors='coerce').fillna(0)
-   
-    if 'Date_In' in df.columns:
-        df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
+    date_cols = {
+        'standard': ['ORDER_DATE', 'Date_In'],
+        'logs': ['Date de création', 'Date ancienneté client', 'Heure création']
+    }
+    num_cols = {
+        'standard': ['Total_sale', 'Total_Recolt'],
+        'logs': ['Heure', 'Num_Activity', 'Num_Bp']
+    }
+
+    for col in date_cols.get(df_type, []):
+        if col in df.columns:
+            df[col] = pd.to_datetime(df[col], errors='coerce')
+
+    for col in num_cols.get(df_type, []):
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    if df_type == 'logs' and 'ancienneté client' in df.columns:
+        df['ancienneté client'] = df['ancienneté client'].astype(str)
+
     return df
 
+def filter_data(df, filters, staff_df=None):
+    """Filtrage générique des données avec options dynamiques."""
+    filtered_df = df.copy()
 
-# Géocodage sécurisé
+    # Dates
+    if 'ORDER_DATE' in filtered_df.columns and 'start_date' in filters:
+        filtered_df = filtered_df[
+            (filtered_df['ORDER_DATE'] >= pd.to_datetime(filters['start_date'])) &
+            (filtered_df['ORDER_DATE'] <= pd.to_datetime(filters['end_date']))
+        ]
+
+    # Filtres simples
+    for field in ['Country', 'Offre', 'Qualification', 'Segment', 'Statut BP']:
+        if field in filters and filters[field] not in ['Tous', 'Toutes']:
+            filtered_df = filtered_df[filtered_df[field] == filters[field]]
+
+    # Filtrage staff
+    if staff_df is not None and 'Hyp' in filtered_df.columns:
+        staff_filtered = staff_df.copy()
+        for field in ['Team', 'Activité']:
+            if field in filters and filters[field] not in ['Toutes']:
+                staff_filtered = staff_filtered[staff_filtered[field] == filters[field]]
+        filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
+
+    return filtered_df
+
 def geocode_data(df):
     """Géocode les villes pour obtenir les coordonnées GPS."""
     if 'Latitude' in df.columns and 'Longitude' in df.columns:
@@ -249,44 +316,10 @@ def geocode_data(df):
         df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
     return df
 
-
-# Filtrage des données
-def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
-    """Filtre les données selon les critères."""
-    filtered_df = df.copy()
-
-    if current_hyp:
-        return filtered_df[filtered_df['Hyp'] == current_hyp]
-
-    if 'ORDER_DATE' in filtered_df.columns:
-        filtered_df = filtered_df[
-            (filtered_df['ORDER_DATE'] >= pd.to_datetime(start_date)) &
-            (filtered_df['ORDER_DATE'] <= pd.to_datetime(end_date))
-        ]
-
-    if country_filter != 'Tous' and 'Country' in filtered_df.columns:
-        filtered_df = filtered_df[filtered_df['Country'] == country_filter]
-
-    if 'Hyp' in filtered_df.columns and not staff_df.empty:
-        staff_filtered = staff_df.copy()
-        if team_filter != 'Toutes':
-            staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
-        if activity_filter != 'Toutes':
-            staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
-
-        if 'Hyp' in staff_filtered.columns:
-            filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
-
-    return filtered_df
-
-
-# Affichage de la page Ventes
 def sales_page(sales_df, staff_df, start_date, end_date):
     """Affiche la page des ventes."""
-    #st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
-    #st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
-    #st.markdown("---")
-
+    st.markdown("<h1 style='color: #002a48;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
+    
     # Filtres
     col1, col2, col3 = st.columns([2, 2, 2])
     with col1:
@@ -297,7 +330,14 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='sales_activity')
 
     # Filtrage
-    filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df)
+    filters = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'Country': country_filter,
+        'Team': team_filter,
+        'Activité': activity_filter
+    }
+    filtered_sales = filter_data(sales_df, filters, staff_df)
 
     if not filtered_sales.empty:
         # Métriques
@@ -317,116 +357,100 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         st.markdown("---")
 
         # Graphiques
-    col1, col2, col3 = st.columns([2, 2, 2])
-    with col1:
-        ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
-        fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville",
-                 color='Total_sale', color_continuous_scale=['#00afe1', '#007bad'])
-        st.plotly_chart(fig, use_container_width=True)
+        col1, col2, col3 = st.columns([2, 2, 2])
+        with col1:
+            ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+            fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville",
+                     color='Total_sale', color_continuous_scale=['#00afe1', '#007bad'])
+            st.plotly_chart(fig, use_container_width=True)
 
-    with col2:
-
-
-        status_sales = filtered_sales.groupby('SHORT_MESSAGE')['Total_sale'].sum().reset_index()
-        
-        # Création du graphique semi-circulaire
-        fig = px.pie(status_sales, 
-                    values='Total_sale', 
-                    names='SHORT_MESSAGE',
-                    title="Statut des Transactions :",
-                    color='SHORT_MESSAGE',
-                    color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'},  # Bleu et rouge vif
-                    hole=0.5)
-        
-        # Personnalisation avancée
-        fig.update_traces(
-            textinfo='value+percent',  # Affiche valeur et pourcentage
-            textposition='outside',    # Infobulles externes
-            textfont_size=12,
-            textfont_color=['#007bad', '#ff0000'],  # Couleur texte adaptée
-            marker=dict(line=dict(color='white', width=2)),  # Contour blanc
-            pull=[0.05, 0],           # Légère séparation
-            rotation=-90,             # Commence à 12h
-            direction='clockwise'
-        )
-        
-        # Mise en page finale
-        fig.update_layout(
-            showlegend=False,
-            margin=dict(t=100, b=50, l=50, r=50),
-            annotations=[
-                dict(
-                    text=f"Total: {status_sales['Total_sale'].sum():,.0f}€",
-                    x=0.5, y=0.5,
-                    font_size=14,
-                    showarrow=False,
-                    font=dict(color='#333333')
-                )
-            ],
-            uniformtext_minsize=10,
-            uniformtext_mode='hide'
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        with col2:
+            status_sales = filtered_sales.groupby('SHORT_MESSAGE')['Total_sale'].sum().reset_index()
             
-
-    with col3:
-    
-        ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
-        fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes",
-                  line_shape='spline', color_discrete_sequence=['#007bad'])
-        st.plotly_chart(fig, use_container_width=True)
-        
-       
-
-
+            fig = px.pie(status_sales, 
+                        values='Total_sale', 
+                        names='SHORT_MESSAGE',
+                        title="Statut des Transactions :",
+                        color='SHORT_MESSAGE',
+                        color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'},
+                        hole=0.5)
+            
+            fig.update_traces(
+                textinfo='value+percent',
+                textposition='outside',
+                textfont_color=['#007bad', '#ff0000'],
+                marker=dict(line=dict(color='white', width=2)),
+                pull=[0.05, 0],
+                rotation=-90,
+                direction='clockwise'
+            )
+            
+            fig.update_layout(
+                showlegend=False,
+                margin=dict(t=100, b=50, l=50, r=50),
+                annotations=[
+                    dict(
+                        text=f"Total: {status_sales['Total_sale'].sum():,.0f}€",
+                        x=0.5, y=0.5,
+                        font_size=14,
+                        showarrow=False,
+                        font=dict(color='#333333')
+                    )
+                ],
+                uniformtext_minsize=10,
+                uniformtext_mode='hide'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True)
+                
+        with col3:
+            ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
+            fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes",
+                      line_shape='spline', color_discrete_sequence=['#007bad'])
+            st.plotly_chart(fig, use_container_width=True)
 
         # Carte géographique
-    st.markdown("---")
-    st.subheader("Répartition Géographique")
+        st.markdown("---")
+        st.subheader("Répartition Géographique")
 
-    geocoded_sales = geocode_data(filtered_sales)
+        geocoded_sales = geocode_data(filtered_sales)
 
-    if not geocoded_sales.empty and 'Latitude' in geocoded_sales.columns and 'Longitude' in geocoded_sales.columns:
-        # Filtrer les lignes avec coordonnées valides
-        valid_geocodes = geocoded_sales.dropna(subset=['Latitude', 'Longitude'])
+        if not geocoded_sales.empty and 'Latitude' in geocoded_sales.columns and 'Longitude' in geocoded_sales.columns:
+            valid_geocodes = geocoded_sales.dropna(subset=['Latitude', 'Longitude'])
 
-        if not valid_geocodes.empty:
-            # Création de la carte avec position moyenne ou centre par défaut (Europe)
-            avg_lat = valid_geocodes['Latitude'].mean()
-            avg_lon = valid_geocodes['Longitude'].mean()
-            m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
+            if not valid_geocodes.empty:
+                avg_lat = valid_geocodes['Latitude'].mean()
+                avg_lon = valid_geocodes['Longitude'].mean()
+                m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
 
-            # Ajout des marqueurs
-            for _, row in valid_geocodes.iterrows():
-                popup_text = (
-                    f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
-                    f"Ventes : €{row['Total_sale']:,.2f}"
-                )
-                folium.CircleMarker(
-                    location=[row['Latitude'], row['Longitude']],
-                    radius=max(row['Total_sale'] / 1000, 5),  # Minimum 5 pour être visible
-                    popup=popup_text,
-                    color='#007bad',
-                    fill=True,
-                    fill_opacity=0.7,
-                    fill_color='#00afe1'
-                ).add_to(m)
+                for _, row in valid_geocodes.iterrows():
+                    popup_text = (
+                        f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
+                        f"Ventes : €{row['Total_sale']:,.2f}"
+                    )
+                    folium.CircleMarker(
+                        location=[row['Latitude'], row['Longitude']],
+                        radius=max(row['Total_sale'] / 1000, 5),
+                        popup=popup_text,
+                        color='#007bad',
+                        fill=True,
+                        fill_opacity=0.7,
+                        fill_color='#00afe1'
+                    ).add_to(m)
 
-            # Mise en page : carte + tableau à côté
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                st_folium(m, width=1000, height=600)
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    st_folium(m, width=1000, height=600)
 
-            with col2:
-                display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]
-                st.dataframe(display_df.sort_values(by='Total_sale', ascending=False), height=500)
-               
+                with col2:
+                    display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]
+                    st.dataframe(display_df.sort_values(by='Total_sale', ascending=False), height=500)
+            else:
+                st.warning("Aucune coordonnée géographique valide trouvée.")
         else:
-            st.warning("Aucune coordonnée géographique valide trouvée.")
+            st.warning("Données insuffisantes pour générer la carte.")
     else:
-        st.warning("Données insuffisantes pour générer la carte.")
-
+        st.warning("Aucune donnée disponible pour les filtres sélectionnés.")
 
 def recolts_page(recolts_df, staff_df, start_date, end_date):
     """Affiche la page des récoltes avec les nouvelles modifications."""
@@ -447,22 +471,17 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
         bank_filter = st.selectbox("Filtrer par Banque", ['Toutes'] + sorted(recolts_df['Banques'].dropna().unique()), key='recolts_bank')
     
     # Filtrage des données
+    filters = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'Country': country_filter,
+        'Team': team_filter,
+        'Activité': activity_filter,
+        'Banques': bank_filter
+    }
+    
     with st.spinner("Application des filtres..."):
-        filtered_recolts = recolts_df.copy()
-        
-        if country_filter != 'Tous':
-            filtered_recolts = filtered_recolts[filtered_recolts['Country'] == country_filter]
-        
-        if bank_filter != 'Toutes':
-            filtered_recolts = filtered_recolts[filtered_recolts['Banques'] == bank_filter]
-        
-        if 'Hyp' in filtered_recolts.columns and not staff_df.empty:
-            staff_filtered = staff_df.copy()
-            if team_filter != 'Toutes':
-                staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
-            if activity_filter != 'Toutes':
-                staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
-            filtered_recolts = filtered_recolts[filtered_recolts['Hyp'].isin(staff_filtered['Hyp'])]
+        filtered_recolts = filter_data(recolts_df, filters, staff_df)
     
     if not filtered_recolts.empty:
         # Métriques
@@ -476,40 +495,33 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
         # Nouvelle disposition des graphiques
         col1, col2, col3 = st.columns([4, 3, 5])
         with col1:
-        
-        # Graphique 1: Total recolts par banque avec pourcentage
-
             recolts_by_bank = filtered_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
             total = recolts_by_bank['Total_Recolt'].sum()
             recolts_by_bank['Percentage'] = (recolts_by_bank['Total_Recolt'] / total * 100).round(1)
 
-            # Création du graphique avec couleur bleue unifiée
             fig = px.bar(recolts_by_bank, 
                         x='Banques', 
                         y='Total_Recolt',
                         text='Percentage',
                         title="Total Recolts par Banque (%)",
-                        color_discrete_sequence=['#007bad'])  # Couleur bleue unifiée
+                        color_discrete_sequence=['#007bad'])
 
-            # Personnalisation avancée
             fig.update_traces(
                 texttemplate='%{text}%', 
                 textposition='outside',
                 marker=dict(
-                    color='#007bad',  # Couleur bleue pour toutes les barres
-                    line=dict(color='#005b8c', width=2)  # Contour plus foncé
-                ),
-                opacity=0.8  # Légère transparence
+                    color='#007bad',
+                    line=dict(color='#005b8c', width=2)),
+                opacity=0.8
             )
 
-            # Amélioration de la mise en page
             fig.update_layout(
                 uniformtext_minsize=10,
                 uniformtext_mode='hide',
-                plot_bgcolor='rgba(0,0,0,0)',  # Fond transparent
+                plot_bgcolor='rgba(0,0,0,0)',
                 xaxis=dict(
                     title='Banques',
-                    tickangle=-45  # Inclinaison des labels
+                    tickangle=-45
                 ),
                 yaxis=dict(
                     title='Montant (€)',
@@ -521,11 +533,9 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                 )
             )
 
-            # Affichage avec largeur ajustée
             st.plotly_chart(fig, use_container_width=True)
+            
         with col2:           
-        # Graphique 2: Demi-cercle Accepted/Refused
-
             if 'SHORT_MESSAGE' in filtered_recolts.columns:
                 status_recolts = filtered_recolts.groupby('SHORT_MESSAGE')['Total_Recolt'].sum().reset_index()
                 
@@ -552,7 +562,6 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                 
                 st.plotly_chart(fig, use_container_width=True)
         
-        # Graphique 3: Evolution temporelle
         with col3:
             recolts_by_date = filtered_recolts.groupby(filtered_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].sum().reset_index()
             
@@ -579,70 +588,128 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
             hide_index=True,
             use_container_width=True
         )
+        
+        # Carte géographique
+        st.markdown("---")
+        st.subheader("Répartition Géographique")
+
+        geocoded_recolt = geocode_data(filtered_recolts)
+
+        if not geocoded_recolt.empty and 'Latitude' in geocoded_recolt.columns and 'Longitude' in geocoded_recolt.columns:
+            valid_geocodes = geocoded_recolt.dropna(subset=['Latitude', 'Longitude'])
+
+            if not valid_geocodes.empty:
+                avg_lat = valid_geocodes['Latitude'].mean()
+                avg_lon = valid_geocodes['Longitude'].mean()
+                m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
+
+                for _, row in valid_geocodes.iterrows():
+                    popup_text = (
+                        f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
+                        f"Ventes : €{row['Total_Recolt']:,.2f}"
+                    )
+                    folium.CircleMarker(
+                        location=[row['Latitude'], row['Longitude']],
+                        radius=max(row['Total_Recolt'] / 1000, 5),
+                        popup=popup_text,
+                        color='#007bad',
+                        fill=True,
+                        fill_opacity=0.7,
+                        fill_color='#00afe1'
+                    ).add_to(m)
+
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    st_folium(m, width=1000, height=600)
+
+                with col2:
+                    display_df = valid_geocodes[['Country', 'City', 'Total_Recolt', 'Latitude', 'Longitude']]
+                    st.dataframe(display_df.sort_values(by='Total_Recolt', ascending=False), height=500)
+            else:
+                st.warning("Aucune coordonnée géographique valide trouvée.")
+        else:
+            st.warning("Données insuffisantes pour générer la carte.")
     else:
         st.warning("Aucune donnée de récolte à afficher pour les critères sélectionnés")
 
-        # Carte géographique
-        st.markdown("---")
-    st.subheader("Répartition Géographique")
+def logs_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date):
+    """Page d'analyse des logs avec croisement des données Sales/Recolts"""
+    st.markdown("<h1 style='color: #002a48;'>Logs Analytics</h1>", unsafe_allow_html=True)
 
-    geocoded_recolt = geocode_data(filtered_recolts)
-
-    if not geocoded_recolt.empty and 'Latitude' in geocoded_recolt.columns and 'Longitude' in geocoded_recolt.columns:
-        # Filtrer les lignes avec coordonnées valides
-        valid_geocodes = geocoded_recolt.dropna(subset=['Latitude', 'Longitude'])
-
-        if not valid_geocodes.empty:
-            # Création de la carte avec position moyenne ou centre par défaut (Europe)
-            avg_lat = valid_geocodes['Latitude'].mean()
-            avg_lon = valid_geocodes['Longitude'].mean()
-            m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
-
-            # Ajout des marqueurs
-            for _, row in valid_geocodes.iterrows():
-                popup_text = (
-                    f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
-                    f"Ventes : €{row['Total_Recolt']:,.2f}"
-                )
-                folium.CircleMarker(
-                    location=[row['Latitude'], row['Longitude']],
-                    radius=max(row['Total_Recolt'] / 1000, 5),  # Minimum 5 pour être visible
-                    popup=popup_text,
-                    color='#007bad',
-                    fill=True,
-                    fill_opacity=0.7,
-                    fill_color='#00afe1'
-                ).add_to(m)
-
-            # Mise en page : carte + tableau à côté
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                st_folium(m, width=1000, height=600)
-
-            with col2:
-                display_df = valid_geocodes[['Country', 'City', 'Total_Recolt', 'Latitude', 'Longitude']]
-                st.dataframe(display_df.sort_values(by='Total_Recolt', ascending=False), height=500)
-               
-        else:
-            st.warning("Aucune coordonnée géographique valide trouvée.")
-    else:
-        st.warning("Données insuffisantes pour générer la carte.")
-
-def dashboard_page(sales_df, recolts_df, staff_df, start_date, end_date):
-    """Affiche le tableau de bord principal."""
-    st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Global</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales - Recolts</h2>", unsafe_allow_html=True)
-    
+    # Filtres
     st.markdown("---")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        offre_filter = st.selectbox("Offre", ['Toutes'] + sorted(logs_df['Offre'].dropna().unique()))
+    with col2:
+        qualification_filter = st.selectbox("Qualification", ['Toutes'] + sorted(logs_df['Qualification'].dropna().unique()))
+    with col3:
+        segment_filter = st.selectbox("Segment", ['Tous'] + sorted(logs_df['Segment'].dropna().unique()))
+    with col4:
+        statut_filter = st.selectbox("Statut BP", ['Tous'] + sorted(logs_df['Statut BP'].dropna().unique()))
     
-    # Onglets
-    tab1, tab2 = st.tabs(["📈 Sales Analytics", "💰 Recolts Analytics"])
-    
-    with tab1:
-        sales_page(sales_df, staff_df, start_date, end_date)
-    
-    with tab2:
-        recolts_page(recolts_df, staff_df, start_date, end_date)
+    col5, col6 = st.columns(2)
+    with col5:
+        team_filter = st.selectbox("Équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()))
+    with col6:
+        activity_filter = st.selectbox("Activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()))
+
+    filters = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'Offre': offre_filter,
+        'Qualification': qualification_filter,
+        'Segment': segment_filter,
+        'Statut BP': statut_filter,
+        'Team': team_filter,
+        'Activité': activity_filter
+    }
+
+    # Filtrage
+    filtered_logs = filter_data(logs_df, filters, staff_df)
+
+    # Visualisation
+    st.markdown("## Analyse temporelle")
+    if not filtered_logs.empty:
+        time_data = filtered_logs.set_index('Date de création').resample('D').size()
+        fig = px.line(time_data, title="Volume de logs par jour")
+        st.plotly_chart(fig, use_container_width=True)
+        st.metric("Total Logs", len(filtered_logs))
+        
+        # Analyse croisée
+        with st.expander("Analyse Sales/Recolts", expanded=True):
+            merged_data = filtered_logs.merge(
+                sales_df, left_on='Num_Bp', right_on='ORDER_REFERENCE', how='left'
+            ).merge(
+                recolts_df, left_on='Num_Bp', right_on='ORDER_REFERENCE', how='left',
+                suffixes=('_sales', '_recolts')
+            )
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if not merged_data['Total_sale'].isna().all():
+                    fig = px.histogram(merged_data, x='Total_sale', nbins=20, 
+                                      title="Distribution des Sales")
+                    st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                if not merged_data['Total_Recolt'].isna().all():
+                    fig = px.histogram(merged_data, x='Total_Recolt', nbins=20,
+                                      title="Distribution des Recolts")
+                    st.plotly_chart(fig, use_container_width=True)
+        
+        # Données détaillées
+        st.dataframe(
+            filtered_logs,
+            column_config={
+                "Date de création": st.column_config.DatetimeColumn("Date"),
+                "Heure création": st.column_config.TimeColumn("Heure")
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+    else:
+        st.warning("Aucune donnée disponible pour les filtres sélectionnés.")
 
 def planning_page(sales_df, staff_df):
     """Affiche la page de planning."""
@@ -720,22 +787,43 @@ def setting_page():
         else:
             st.warning("Aucun utilisateur trouvé avec cet ID (Hyp)")
 
+def dashboard_page(sales_df, recolts_df, staff_df, start_date, end_date, logs_df):
+    """Affiche le tableau de bord principal."""
+    st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Global</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales - Recolts</h2>", unsafe_allow_html=True)
+    
+    st.markdown("---")
+    
+    # Onglets
+    tab1, tab2, tab3 = st.tabs(["📈 Sales Analytics", "💰 Recolts Analytics", "💰 Logs Analytics"])
+    
+    with tab1:
+        sales_page(sales_df, staff_df, start_date, end_date)
+    
+    with tab2:
+        recolts_page(recolts_df, staff_df, start_date, end_date)
+        
+    with tab3:
+        logs_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date)
+
+
+
 def main():
     """Fonction principale de l'application."""
     add_custom_css()
+    with st.spinner('Chargement des données...'):
+        sales_df, recolts_df, staff_df, logs_df = load_data()
+        sales_df = preprocess_data(sales_df)
+        recolts_df = preprocess_data(recolts_df)
+        staff_df = preprocess_data(staff_df)
+        logs_df = preprocess_data(logs_df, 'logs')
     
     # Vérification de l'authentification
     if "authenticated" not in st.session_state or not st.session_state.authenticated:
         login_page()
         return
     
-    # Chargement des données
-    with st.spinner('Chargement des données...'):
-        sales_df, recolts_df, staff_df = load_data()
-        sales_df = preprocess_data(sales_df)
-        recolts_df = preprocess_data(recolts_df)
-        staff_df = preprocess_data(staff_df)
-    
+   
     # Dates par défaut
     start_date = pd.to_datetime("2023-01-01").date()
     end_date = pd.to_datetime("2023-12-31").date()
