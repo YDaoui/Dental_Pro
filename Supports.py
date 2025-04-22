@@ -9,10 +9,14 @@ from geopy.extra.rate_limiter import RateLimiter
 from contextlib import closing
 from PIL import Image
 from st_aggrid import AgGrid, GridOptionsBuilder
-
-# Modules internes
 from Utils_Dental import *
-from Managers import *
+from Supports import *
+from Logs import *
+from Recolts import *
+from Sales import *
+from Supports import *
+from Agents import *
+
 
 def format_dataframe(df, table_type):
     """Formate le dataframe selon les spécifications"""
@@ -289,11 +293,11 @@ def search_additional_info(conn, num_bp, hyp_agent):
     st.subheader("Évaluation du Coaching")
     
     # Récupération des informations utilisateur
-    input_user = get_user_details().username  # À adapter selon votre implémentation
+    #input_user = get_user_details().username  # À adapter selon votre implémentation
     date_coaching = datetime.now().strftime("%d/%m/%Y %H:%M")
     
     # Affichage des informations fixes
-    st.markdown(f"**Coach:** {input_user}")
+    #st.markdown(f"**Coach:** {input_user}")
     st.markdown(f"**Date de Coaching:** {date_coaching}")
     st.markdown(f"**ID Hyp:** {hyp_agent}")
     
@@ -335,7 +339,8 @@ def search_additional_info(conn, num_bp, hyp_agent):
         st.success("Évaluation enregistrée avec succès!")
 
 def afficher_coaching():
-    add_custom_css()
+    
+    #add_custom_css()
     """Affiche le module de coaching"""
     st.subheader("Coaching - Liste des Effectifs")
 

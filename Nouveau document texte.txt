@@ -1,4 +1,43 @@
 
+def load_data():
+    """Chargement des données depuis SQL Server."""
+    try:
+        conn = get_db_connection()
+        if not conn:
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+
+        with closing(conn.cursor()) as cursor:
+            # Chargement des ventes
+            cursor.execute("""
+                SELECT 
+                    Hyp,
+                    Num_Activity,
+                    Num_Bp,
+                    [Sous motif] as Sous_motif,
+                    Canal,
+                    Direction,
+                    [Date de création] as Date_creation,
+                    Qualification,
+                    [Heure création] as Heure_creation,
+                    Offre,
+                    [Date ancienneté client] as Date_anciennete_client,
+                    Segment,
+                    [Statut BP] as Statut_BP,
+                    [mode de facturation] as Mode_facturation,
+                    [ancienneté client] as Anciennete_client,
+                    Heure,
+                    Id_Log 
+                FROM Logs
+                WHERE Offre <> 'AB'
+            """)
+            logs_df = pd.DataFrame.from_records(cursor.fetchall(),
+                                             columns=[column[0] for column in cursor.description])
+            
+
+
+
+
+
 # Géocodage sécurisé
 def geocode_data(df):
     """Géocode les villes pour obtenir les coordonnées GPS."""

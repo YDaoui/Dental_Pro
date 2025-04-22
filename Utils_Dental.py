@@ -182,7 +182,7 @@ def load_data():
             recolts_df = pd.DataFrame.from_records(cursor.fetchall(),
                                                    columns=[column[0] for column in cursor.description])
             # Chargement de Logs 
-
+            
             
 
             # Chargement du staff

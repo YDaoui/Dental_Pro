@@ -8,6 +8,39 @@ from geopy.extra.rate_limiter import RateLimiter
 import plotly.express as px
 import folium
 from streamlit_folium import st_folium
+from Utils_Dental import *
+from Sales import *
+from Logs import *
+
+def geocode_data(df):
+    """Géocode les villes pour obtenir les coordonnées GPS."""
+    if 'Latitude' in df.columns and 'Longitude' in df.columns:
+        return df
+
+    geolocator = Nominatim(user_agent="sales_dashboard", timeout=10)
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
+
+    locations = []
+    unique_locations = df[['City', 'Country']].dropna().drop_duplicates()
+
+    for _, row in unique_locations.iterrows():
+        try:
+            location = geocode(f"{row['City']}, {row['Country']}")
+            if location:
+                locations.append({
+                    'City': row['City'],
+                    'Country': row['Country'],
+                    'Latitude': location.latitude,
+                    'Longitude': location.longitude
+                })
+        except Exception as e:
+            st.warning(f"Erreur de géocodage pour {row['City']}, {row['Country']}: {str(e)}")
+            continue
+
+    if locations:
+        locations_df = pd.DataFrame(locations)
+        df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
+    return df
 
 
 def recolts_page(recolts_df, staff_df, start_date, end_date):

@@ -8,70 +8,16 @@ from geopy.extra.rate_limiter import RateLimiter
 import plotly.express as px
 import folium
 from streamlit_folium import st_folium
+from Utils_Dental import *
+from Managers import *
+from Logs import *
+from Recolts import *
 
 
 
 
-def load_data():
-    """Chargement des données depuis SQL Server."""
-    try:
-        conn = get_db_connection()
-        if not conn:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-
-        with closing(conn.cursor()) as cursor:
-            # Chargement des ventes
-            cursor.execute("""
-                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_sale, Rating, Id_Sale 
-                FROM Sales
-                WHERE SHORT_MESSAGE <> 'ERROR'
-            """)
-            sales_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
-
-            # Chargement des récoltes
-            cursor.execute("""
-                SELECT Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Banques, Id_Recolt 
-                FROM Recolts
-                WHERE SHORT_MESSAGE <> 'ERROR'
-            """)
-            recolts_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                   columns=[column[0] for column in cursor.description])
-            # Chargement de Logs 
-
-            
-
-            # Chargement du staff
-            cursor.execute("""
-                SELECT Hyp, Team, Activité, Date_In, Type 
-                FROM Effectifs
-                WHERE Type = 'Agent'
-            """)
-            staff_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
-
-        return sales_df, recolts_df, staff_df
-    except Exception as e:
-        st.error(f"Erreur de chargement des données: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
-    finally:
-        if conn:
-            conn.close()
 
 
-# Prétraitement des données
-def preprocess_data(df):
-    """Prétraite les données."""
-    if 'ORDER_DATE' in df.columns:
-        df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
-    if 'Total_sale' in df.columns:
-        df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
-    if 'Total_Recolt' in df.columns:
-        df['Total_Recolt'] = pd.to_numeric(df['Total_Recolt'], errors='coerce').fillna(0)
-   
-    if 'Date_In' in df.columns:
-        df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
-    return df
 
 
 # Géocodage sécurisé
@@ -138,6 +84,8 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
 
 # Affichage de la page Ventes
 def sales_page(sales_df, staff_df, start_date, end_date):
+
+    
     """Affiche la page des ventes."""
     #st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
     #st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
