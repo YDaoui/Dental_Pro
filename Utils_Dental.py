@@ -161,7 +161,7 @@ def load_data():
     try:
         conn = get_db_connection()
         if not conn:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         with closing(conn.cursor()) as cursor:
             # Chargement des ventes
@@ -171,7 +171,7 @@ def load_data():
                 WHERE SHORT_MESSAGE <> 'ERROR'
             """)
             sales_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
+                                               columns=[column[0] for column in cursor.description])
 
             # Chargement des récoltes
             cursor.execute("""
@@ -180,10 +180,33 @@ def load_data():
                 WHERE SHORT_MESSAGE <> 'ERROR'
             """)
             recolts_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                   columns=[column[0] for column in cursor.description])
-            # Chargement de Logs 
+                                                 columns=[column[0] for column in cursor.description])
             
-            
+            # Chargement des logs
+            cursor.execute("""
+                SELECT 
+                    Hyp,
+                    Num_Activity,
+                    Num_Bp,
+                    [Sous motif] as Sous_motif,
+                    Canal,
+                    Direction,
+                    [Date de création] as Date_creation,
+                    Qualification,
+                    [Heure création] as Heure_creation,
+                    Offre,
+                    [Date ancienneté client] as Date_anciennete_client,
+                    Segment,
+                    [Statut BP] as Statut_BP,
+                    [mode de facturation] as Mode_facturation,
+                    [ancienneté client] as Anciennete_client,
+                    Heure,
+                    Id_Log 
+                FROM Logs
+                WHERE Offre <> 'AB'
+            """)
+            logs_df = pd.DataFrame.from_records(cursor.fetchall(),
+                                              columns=[column[0] for column in cursor.description])
 
             # Chargement du staff
             cursor.execute("""
@@ -192,15 +215,16 @@ def load_data():
                 WHERE Type = 'Agent'
             """)
             staff_df = pd.DataFrame.from_records(cursor.fetchall(),
-                                                 columns=[column[0] for column in cursor.description])
+                                               columns=[column[0] for column in cursor.description])
 
-        return sales_df, recolts_df, staff_df
+        return sales_df, recolts_df, staff_df, logs_df
     except Exception as e:
         st.error(f"Erreur de chargement des données: {str(e)}")
-        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     finally:
         if conn:
             conn.close()
+
 
 
 # Prétraitement des données
@@ -212,7 +236,8 @@ def preprocess_data(df):
         df['Total_sale'] = pd.to_numeric(df['Total_sale'], errors='coerce').fillna(0)
     if 'Total_Recolt' in df.columns:
         df['Total_Recolt'] = pd.to_numeric(df['Total_Recolt'], errors='coerce').fillna(0)
-   
+    if 'Date_creation' in df.columns:
+        df['Date_creation'] = pd.to_datetime(df['Date_creation'], errors='coerce')
     if 'Date_In' in df.columns:
         df['Date_In'] = pd.to_datetime(df['Date_In'], errors='coerce')
     return df
@@ -278,7 +303,159 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
             filtered_df = filtered_df[filtered_df['Hyp'].isin(staff_filtered['Hyp'])]
 
     return filtered_df
+def logs_page(logs_df, start_date, end_date):
+    """Affiche la page des logs avec les filtres spécifiés."""
+    st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Logs Dashboard</h1>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Analyse des Logs</h2>", unsafe_allow_html=True)
+    st.markdown("---")
 
+    # Filtrage temporel initial
+    mask = (logs_df['Date_creation'] >= pd.to_datetime(start_date)) & \
+           (logs_df['Date_creation'] <= pd.to_datetime(end_date))
+    filtered_logs = logs_df.loc[mask].copy()
+
+    # Vérification de l'existence de la colonne 'Groupe_Origine'
+
+
+    # Filtres dans des colonnes
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        segment_filter = st.selectbox(
+            "Segment",
+            ['Tous'] + sorted(filtered_logs['Segment'].dropna().unique()),
+            key='segment_filter'
+        )
+        statut_bp_filter = st.selectbox(
+            "Statut BP",
+            ['Tous'] + sorted(filtered_logs['Statut_BP'].dropna().unique()),
+            key='statut_bp_filter'
+        )
+        
+        
+
+    # Application des filtres
+    if segment_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
+    
+        
+    if statut_bp_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Statut_BP'] == statut_bp_filter]
+
+
+
+    
+    with col2:
+        canal_filter = st.selectbox(
+            "Canal",
+            ['Tous'] + sorted(filtered_logs['Canal'].dropna().unique()),
+            key='canal_filter'
+        )
+        
+        direction_filter = st.selectbox(
+            "Direction",
+            ['Tous'] + sorted(filtered_logs['Direction'].dropna().unique()),
+            key='direction_filter'
+        )
+    
+    with col3:
+        qualification_filter = st.selectbox(
+            "Qualification",
+            ['Tous'] + sorted(filtered_logs['Qualification'].dropna().unique()),
+            key='qualification_filter'
+        )
+        
+        offre_filter = st.selectbox(
+            "Offre",
+            ['Tous'] + sorted(filtered_logs['Offre'].dropna().unique()),
+            key='offre_filter'
+        )
+        
+       
+
+    # Application des filtres
+    if segment_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
+    
+
+    if canal_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Canal'] == canal_filter]
+    
+    if direction_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Direction'] == direction_filter]
+    
+    if qualification_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Qualification'] == qualification_filter]
+    
+    if offre_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Offre'] == offre_filter]
+
+    # Affichage des métriques
+    st.markdown("---")
+    st.subheader("Indicateurs Clés")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Logs", len(filtered_logs))
+    
+    min_date = filtered_logs['Date_creation'].min()
+    max_date = filtered_logs['Date_creation'].max()
+    
+    col2.metric("Premier Log", min_date.strftime('%d/%m/%Y') if not pd.isna(min_date) else "N/A")
+    col3.metric("Dernier Log", max_date.strftime('%d/%m/%Y') if not pd.isna(max_date) else "N/A")
+    
+    if not pd.isna(min_date) and not pd.isna(max_date):
+        days = (max_date - min_date).days
+        col4.metric("Période Couverte", f"{days} jours")
+    else:
+        col4.metric("Période Couverte", "N/A")
+
+    # Visualisations
+    st.markdown("---")
+    st.subheader("Répartition des Logs")
+
+    if not filtered_logs.empty:
+        # Graphique 1: Répartition par canal
+        fig1 = px.pie(
+            filtered_logs,
+            names='Canal',
+            title="Répartition par Canal",
+            color='Canal',
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        #st.plotly_chart(fig1, use_container_width=True)
+
+        # Graphique 2: Evolution temporelle
+        daily_logs = filtered_logs.groupby(filtered_logs['Date_creation'].dt.date).size().reset_index(name='Count')
+        fig2 = px.line(
+            daily_logs,
+            x='Date_creation',
+            y='Count',
+            title="Volume de Logs par Jour",
+            line_shape='spline'
+        )
+        fig3 = px.pie(
+            filtered_logs,
+            names='Offre',
+            title="Répartition par Offre",
+            color='Offre',
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        col1, col2 , col3 = st.columns(3)
+    
+        with col1:
+            st.plotly_chart(fig1, use_container_width=True)
+        with col2:
+            st.plotly_chart(fig2, use_container_width=True)
+        with col3:
+            st.plotly_chart(fig3, use_container_width=True)
+
+
+        # Tableau de données
+        st.markdown("---")
+        st.subheader("Données Détailées")
+        st.dataframe(filtered_logs.sort_values('Date_creation', ascending=False))
+    else:
+        st.warning("Aucune donnée disponible avec les filtres sélectionnés.")
 
 # Affichage de la page Ventes
 def sales_page(sales_df, staff_df, start_date, end_date):
@@ -416,8 +593,8 @@ def sales_page(sales_df, staff_df, start_date, end_date):
             # Mise en page : carte + tableau à côté
             col1, col2 = st.columns([1, 1])
             with col1:
-                st_folium(m, width=1000, height=600)
-
+                #st_folium(m, width=1000, height=600)
+                st.subheader("Remplacement de Geolocalisation ")
             with col2:
                 display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]
                 st.dataframe(display_df.sort_values(by='Total_sale', ascending=False), height=500)
@@ -617,8 +794,8 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
             # Mise en page : carte + tableau à côté
             col1, col2 = st.columns([1, 1])
             with col1:
-                st_folium(m, width=1000, height=600)
-
+                #st_folium(m, width=1000, height=600)
+                 st.subheader("Remplacement de Geolocalisation ")
             with col2:
                 display_df = valid_geocodes[['Country', 'City', 'Total_Recolt', 'Latitude', 'Longitude']]
                 st.dataframe(display_df.sort_values(by='Total_Recolt', ascending=False), height=500)
@@ -628,21 +805,24 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
     else:
         st.warning("Données insuffisantes pour générer la carte.")
 
-def dashboard_page(sales_df, recolts_df, staff_df, start_date, end_date):
+def dashboard_page(logs_df,sales_df, recolts_df, staff_df, start_date, end_date):
+
     """Affiche le tableau de bord principal."""
     st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Global</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales - Recolts</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #00afe1;'>Analyse Commerciale - Sales - Recolts - Logs </h2>", unsafe_allow_html=True)
     
     st.markdown("---")
     
     # Onglets
-    tab1, tab2 = st.tabs(["📈 Sales Analytics", "💰 Recolts Analytics"])
+    tab1, tab2,tab3 = st.tabs(["📈 Sales Analytics", "💰 Recolts Analytics", "🧾 Logs Analytics"])
     
     with tab1:
         sales_page(sales_df, staff_df, start_date, end_date)
     
     with tab2:
         recolts_page(recolts_df, staff_df, start_date, end_date)
+    with tab3:
+        logs_page(logs_df, start_date, end_date)
 
 def planning_page(sales_df, staff_df):
     """Affiche la page de planning."""
@@ -665,13 +845,15 @@ def planning_page(sales_df, staff_df):
     with col1:
         ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
         fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville")
-        st.plotly_chart(fig, use_container_width=True)
+        st.subheader("Remplacement de Geolocalisation ")
+        #st.plotly_chart(fig, use_container_width=True)
     
     with col2:
         if not staff_df.empty:
             effectifs = staff_df[staff_df['Country'] == selected_country] if 'Country' in staff_df.columns else staff_df
             fig = px.pie(effectifs, names='Team', title="Répartition des Effectifs")
-            st.plotly_chart(fig, use_container_width=True)
+            st.subheader("Remplacement de Geolocalisation ")
+            #st.plotly_chart(fig, use_container_width=True)
 
 def setting_page():
     """Affiche la page des paramètres."""
@@ -731,7 +913,8 @@ def main():
     
     # Chargement des données
     with st.spinner('Chargement des données...'):
-        sales_df, recolts_df, staff_df = load_data()
+        sales_df, recolts_df, staff_df , logs_df = load_data()
+        logs_df = preprocess_data(logs_df)
         sales_df = preprocess_data(sales_df)
         recolts_df = preprocess_data(recolts_df)
         staff_df = preprocess_data(staff_df)
@@ -754,7 +937,8 @@ def main():
         sales_page(sales_df, staff_df, start_date, end_date)
     elif page == "Recolts":
         recolts_page(recolts_df, staff_df, start_date, end_date)
-        
+    elif page == "Logs":
+         logs_page(logs_df, start_date, end_date)      
     elif page == "Plannings":
         planning_page(sales_df, staff_df)
     elif page == "Settings":

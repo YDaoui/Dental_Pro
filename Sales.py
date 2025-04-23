@@ -220,7 +220,8 @@ def sales_page(sales_df, staff_df, start_date, end_date):
             # Mise en page : carte + tableau à côté
             col1, col2 = st.columns([1, 1])
             with col1:
-                st_folium(m, width=1000, height=600)
+                #st_folium(m, width=1000, height=600)
+                st.subheader("Remplacement de Geolocalisation ")
 
             with col2:
                 display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]

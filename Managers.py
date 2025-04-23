@@ -6,26 +6,30 @@ from datetime import datetime
 from streamlit_option_menu import option_menu
 from Utils_Dental import *
 from Supports import *
+from Sales import *
+from Recolts import *
 
 # Fonctions de chargement et prétraitement des données
 
-def main_dashboard(sales_df, recolts_df, staff_df, start_date, end_date):
+def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date):
     """Dashboard principal avec onglets Sales et Recolts."""
     
-    tab1, tab2 = st.tabs(["📊 Ventes", "🧾 Récoltes"])
+    tab1, tab2,tab3 = st.tabs(["📊 Ventes", "💰 Récoltes","🧾 Logs "])
 
     with tab1:
         sales_page(sales_df, staff_df, start_date, end_date)
 
     with tab2:
         recolts_page(recolts_df, staff_df, start_date, end_date)
-
+    with tab3:
+        logs_page(logs_df, start_date, end_date)
 # Fonction principale
 def manager_dashboard():
     add_custom_css()
     """Tableau de bord principal."""
     # Chargement des données
-    sales_df, recolts_df, staff_df = load_data()
+    sales_df, recolts_df, staff_df, logs_df = load_data()
+    logs_df = preprocess_data(logs_df)
     sales_df = preprocess_data(sales_df)
     recolts_df = preprocess_data(recolts_df)
     staff_df = preprocess_data(staff_df)
@@ -73,11 +77,13 @@ def manager_dashboard():
 
     # Gestion des pages
     if selected == "Tableau de bord":
-        dashboard_page(sales_df, recolts_df, staff_df, start_date, end_date)
+        dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date)  # Now passing all required arguments
     elif selected == "Sales":
         sales_page(sales_df, staff_df, start_date, end_date)
     elif selected == "Recolt":
         recolts_page(recolts_df, staff_df, start_date, end_date)
+    elif selected == "Logs":
+        logs_page(logs_df, start_date, end_date)
     elif selected == "Coaching":
         afficher_coaching()
     elif selected == "Planning":
@@ -87,4 +93,4 @@ def manager_dashboard():
 
 # Point d'entrée de l'application
 if __name__ == "__main__":
-    manager_dashboard()
+    manager_dashboard()  
