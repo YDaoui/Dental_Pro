@@ -13,15 +13,15 @@ Dental_Implant2.png
 
 # Fichiers Python à ignorer si non nécessaires pour l'exécution du projet
 # (Si ces fichiers sont des scripts d'exécution, ils doivent être versionnés et non ajoutés ici)
-# Agents.py
-# Dentale_Implant_Console.py
-# Logs.py
-# managers.py
-# New_Sale_Recolt_Log.py
-# sales.py
-# Recolts.py
-# Utils_Dental.py
-# Dentale_Options.xlsm
+ Agents.py
+ Dentale_Implant_Console.py
+ Logs.py
+ managers.py
+ New_Sale_Recolt_Log.py
+ sales.py
+ Recolts.py
+ Utils_Dental.py
+ Dentale_Options.xlsm
 
 # Fichiers de sauvegarde ou scripts SQL
 Total_Stat.bacpac
