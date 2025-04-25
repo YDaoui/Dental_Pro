@@ -1,3 +1,4 @@
+
 import streamlit as st
 import pandas as pd
 import pyodbc
@@ -12,13 +13,6 @@ from Utils_Dental import *
 from Managers import *
 from Logs import *
 from Recolts import *
-
-
-
-
-
-
-
 
 # Géocodage sécurisé
 def geocode_data(df):
@@ -51,7 +45,6 @@ def geocode_data(df):
         df = pd.merge(df, locations_df, on=['City', 'Country'], how='left')
     return df
 
-
 # Filtrage des données
 def filter_data(df, country_filter, team_filter, activity_filter, start_date, end_date, staff_df, current_hyp=None):
     """Filtre les données selon les critères."""
@@ -81,16 +74,9 @@ def filter_data(df, country_filter, team_filter, activity_filter, start_date, en
 
     return filtered_df
 
-
 # Affichage de la page Ventes
 def sales_page(sales_df, staff_df, start_date, end_date):
-
-    
     """Affiche la page des ventes."""
-    #st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Global Sales Dashboard</h1>", unsafe_allow_html=True)
-    #st.markdown("<h2 style='color: #007bad; margin-top: 0;'>All Teams</h2>", unsafe_allow_html=True)
-    #st.markdown("---")
-
     # Filtres
     col1, col2, col3 = st.columns([2, 2, 2])
     with col1:
@@ -121,113 +107,98 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         st.markdown("---")
 
         # Graphiques
-    col1, col2, col3 = st.columns([2, 2, 2])
-    with col1:
-        ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
-        fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville",
-                 color='Total_sale', color_continuous_scale=['#00afe1', '#007bad'])
-        st.plotly_chart(fig, use_container_width=True)
+        col1, col2, col3 = st.columns([2, 2, 2])
+        with col1:
+            ventes_ville = filtered_sales.groupby('City')['Total_sale'].sum().reset_index()
+            fig = px.bar(ventes_ville, x='City', y='Total_sale', title="Ventes par Ville",
+                     color='Total_sale', color_continuous_scale=['#00afe1', '#007bad'])
+            st.plotly_chart(fig, use_container_width=True, key="ventes_par_ville")
 
-    with col2:
-
-
-        status_sales = filtered_sales.groupby('SHORT_MESSAGE')['Total_sale'].sum().reset_index()
-        
-        # Création du graphique semi-circulaire
-        fig = px.pie(status_sales, 
-                    values='Total_sale', 
-                    names='SHORT_MESSAGE',
-                    title="Statut des Transactions :",
-                    color='SHORT_MESSAGE',
-                    color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'},  # Bleu et rouge vif
-                    hole=0.5)
-        
-        # Personnalisation avancée
-        fig.update_traces(
-            textinfo='value+percent',  # Affiche valeur et pourcentage
-            textposition='outside',    # Infobulles externes
-            textfont_size=12,
-            textfont_color=['#007bad', '#ff0000'],  # Couleur texte adaptée
-            marker=dict(line=dict(color='white', width=2)),  # Contour blanc
-            pull=[0.05, 0],           # Légère séparation
-            rotation=-90,             # Commence à 12h
-            direction='clockwise'
-        )
-        
-        # Mise en page finale
-        fig.update_layout(
-            showlegend=False,
-            margin=dict(t=100, b=50, l=50, r=50),
-            annotations=[
-                dict(
-                    text=f"Total: {status_sales['Total_sale'].sum():,.0f}€",
-                    x=0.5, y=0.5,
-                    font_size=14,
-                    showarrow=False,
-                    font=dict(color='#333333')
-                )
-            ],
-            uniformtext_minsize=10,
-            uniformtext_mode='hide'
-        )
-        
-        st.plotly_chart(fig, use_container_width=True)
+        with col2:
+            status_sales = filtered_sales.groupby('SHORT_MESSAGE')['Total_sale'].sum().reset_index()
             
+            fig = px.pie(status_sales, 
+                        values='Total_sale', 
+                        names='SHORT_MESSAGE',
+                        title="Statut des Transactions :",
+                        color='SHORT_MESSAGE',
+                        color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'},
+                        hole=0.5)
+            
+            fig.update_traces(
+                textinfo='value+percent',
+                textposition='outside',
+                textfont_size=12,
+                textfont_color=['#007bad', '#ff0000'],
+                marker=dict(line=dict(color='white', width=2)),
+                pull=[0.05, 0],
+                rotation=-90,
+                direction='clockwise'
+            )
+            
+            fig.update_layout(
+                showlegend=False,
+                margin=dict(t=100, b=50, l=50, r=50),
+                annotations=[
+                    dict(
+                        text=f"Total: {status_sales['Total_sale'].sum():,.0f}€",
+                        x=0.5, y=0.5,
+                        font_size=14,
+                        showarrow=False,
+                        font=dict(color='#333333')
+                    )
+                ],
+                uniformtext_minsize=10,
+                uniformtext_mode='hide'
+            )
+            
+            st.plotly_chart(fig, use_container_width=True, key="statut_transactions")
 
-    with col3:
-    
-        ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
-        fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes",
-                  line_shape='spline', color_discrete_sequence=['#007bad'])
-        st.plotly_chart(fig, use_container_width=True)
-        
-       
-
-
+        with col3:
+            ventes_date = filtered_sales.groupby(filtered_sales['ORDER_DATE'].dt.date)['Total_sale'].sum().reset_index()
+            fig = px.line(ventes_date, x='ORDER_DATE', y='Total_sale', title="Évolution des Ventes",
+                      line_shape='spline', color_discrete_sequence=['#007bad'])
+            st.plotly_chart(fig, use_container_width=True, key="evolution_ventes")
 
         # Carte géographique
-    st.markdown("---")
-    st.subheader("Répartition Géographique")
+        st.markdown("---")
+        st.subheader("Répartition Géographique")
 
-    geocoded_sales = geocode_data(filtered_sales)
+        geocoded_sales = geocode_data(filtered_sales)
 
-    if not geocoded_sales.empty and 'Latitude' in geocoded_sales.columns and 'Longitude' in geocoded_sales.columns:
-        # Filtrer les lignes avec coordonnées valides
-        valid_geocodes = geocoded_sales.dropna(subset=['Latitude', 'Longitude'])
+        if not geocoded_sales.empty and 'Latitude' in geocoded_sales.columns and 'Longitude' in geocoded_sales.columns:
+            valid_geocodes = geocoded_sales.dropna(subset=['Latitude', 'Longitude'])
 
-        if not valid_geocodes.empty:
-            # Création de la carte avec position moyenne ou centre par défaut (Europe)
-            avg_lat = valid_geocodes['Latitude'].mean()
-            avg_lon = valid_geocodes['Longitude'].mean()
-            m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
+            if not valid_geocodes.empty:
+                avg_lat = valid_geocodes['Latitude'].mean()
+                avg_lon = valid_geocodes['Longitude'].mean()
+                m = folium.Map(location=[avg_lat, avg_lon], zoom_start=5)
 
-            # Ajout des marqueurs
-            for _, row in valid_geocodes.iterrows():
-                popup_text = (
-                    f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
-                    f"Ventes : €{row['Total_sale']:,.2f}"
-                )
-                folium.CircleMarker(
-                    location=[row['Latitude'], row['Longitude']],
-                    radius=max(row['Total_sale'] / 1000, 5),  # Minimum 5 pour être visible
-                    popup=popup_text,
-                    color='#007bad',
-                    fill=True,
-                    fill_opacity=0.7,
-                    fill_color='#00afe1'
-                ).add_to(m)
+                for _, row in valid_geocodes.iterrows():
+                    popup_text = (
+                        f"<strong>{row.get('City', '')}, {row.get('Country', '')}</strong><br>"
+                        f"Ventes : €{row['Total_sale']:,.2f}"
+                    )
+                    folium.CircleMarker(
+                        location=[row['Latitude'], row['Longitude']],
+                        radius=max(row['Total_sale'] / 1000, 5),
+                        popup=popup_text,
+                        color='#007bad',
+                        fill=True,
+                        fill_opacity=0.7,
+                        fill_color='#00afe1'
+                    ).add_to(m)
 
-            # Mise en page : carte + tableau à côté
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                #st_folium(m, width=1000, height=600)
-                st.subheader("Remplacement de Geolocalisation ")
-
-            with col2:
-                display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]
-                st.dataframe(display_df.sort_values(by='Total_sale', ascending=False), height=500)
-               
+                col1, col2 = st.columns([1, 1])
+                with col1:
+                    st_folium(m, width=1000, height=600, key="carte_geographique")
+             
+                with col2:
+                    display_df = valid_geocodes[['Country', 'City', 'Total_sale', 'Latitude', 'Longitude']]
+                    st.dataframe(display_df.sort_values(by='Total_sale', ascending=False), 
+                                height=500,
+                                key="tableau_geographique")
+            else:
+                st.warning("Aucune coordonnée géographique valide trouvée.")
         else:
-            st.warning("Aucune coordonnée géographique valide trouvée.")
-    else:
-        st.warning("Données insuffisantes pour générer la carte.")
+            st.warning("Données insuffisantes pour générer la carte.")

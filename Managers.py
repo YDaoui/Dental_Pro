@@ -8,6 +8,7 @@ from Utils_Dental import *
 from Supports import *
 from Sales import *
 from Recolts import *
+from Logs import *
 
 # Fonctions de chargement et prétraitement des données
 

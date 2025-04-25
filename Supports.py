@@ -381,57 +381,58 @@ def afficher_coaching():
                 return
 
             agent = agent.iloc[0]
-            
+            col1, col2 = st.columns([1, 1])
+            with col1:
             # Affichage des informations de base de l'agent
-            st.markdown("---")
-            st.markdown(f"**Nom :** {agent['NOM']}")
-            st.markdown(f"**Prénom :** {agent['PRENOM']}")
-            st.markdown(f"**Team :** {agent['Team']}")
-            st.markdown(f"**Activité :** {agent['Activité']}")
-            st.markdown(f"**Departement :** {agent['Departement']}")
-            st.markdown(f"**Date entrée :** {agent['Date_In']}")
-            st.markdown(f"**Hyp :** {agent['Hyp']}")
-
+                st.markdown("---")
+                st.markdown(f"**Nom :** {agent['NOM']}")
+                st.markdown(f"**Prénom :** {agent['PRENOM']}")
+                st.markdown(f"**Team :** {agent['Team']}")
+                st.markdown(f"**Activité :** {agent['Activité']}")
+                st.markdown(f"**Departement :** {agent['Departement']}")
+                st.markdown(f"**Date entrée :** {agent['Date_In']}")
+                st.markdown(f"**Hyp :** {agent['Hyp']}")
+            with col2:
             # Bouton de recherche
-            if st.button("🔎 Rechercher les transactions"):
-                hyp_agent = agent["Hyp"]
-                
-                # Création d'onglets pour Sales et Recolts
-                tab1, tab2 = st.tabs(["Ventes (Sales)", "Recoltes (Recolts)"])
-                
-                with tab1:
-                    df_sales = search_in_table(conn, hyp_agent, "Sales")
-                    display_formatted_data(df_sales, "vente")
-                
-                with tab2:
-                    df_recolts = search_in_table(conn, hyp_agent, "Recolts")
-                    display_formatted_data(df_recolts, "recolte")
+                if st.button("🔎 Rechercher les transactions"):
+                    hyp_agent = agent["Hyp"]
+                    
+                    # Création d'onglets pour Sales et Recolts
+                    tab1, tab2 = st.tabs(["Ventes (Sales)", "Recoltes (Recolts)"])
+                    
+                    with tab1:
+                        df_sales = search_in_table(conn, hyp_agent, "Sales")
+                        display_formatted_data(df_sales, "vente")
+                    
+                    with tab2:
+                        df_recolts = search_in_table(conn, hyp_agent, "Recolts")
+                        display_formatted_data(df_recolts, "recolte")
 
-            # Affichage des logs - NOUVELLE REQUÊTE AVEC LES DEUX CRITÈRES
-            st.markdown("---")
+                # Affichage des logs - NOUVELLE REQUÊTE AVEC LES DEUX CRITÈRES
+                st.markdown("---")
             st.subheader("Liste des Offres")
-            
-            # Nouvelle requête qui joint Logs avec Sales ou Recolts
+                
+                # Nouvelle requête qui joint Logs avec Sales ou Recolts
             query_logs = """
-            SELECT DISTINCT l.* 
-            FROM Logs l
-            LEFT JOIN Sales s ON l.Num_Bp = s.ORDER_REFERENCE
-            LEFT JOIN Recolts r ON l.Num_Bp = r.ORDER_REFERENCE
-            WHERE l.Hyp = ? 
-            AND (s.ORDER_REFERENCE IS NOT NULL OR r.ORDER_REFERENCE IS NOT NULL)
-            AND l.Offre <> ''
-            ORDER BY l.[Date de création] DESC
-            """
-            
+                SELECT DISTINCT l.* 
+                FROM Logs l
+                LEFT JOIN Sales s ON l.Num_Bp = s.ORDER_REFERENCE
+                LEFT JOIN Recolts r ON l.Num_Bp = r.ORDER_REFERENCE
+                WHERE l.Hyp = ? 
+                AND (s.ORDER_REFERENCE IS NOT NULL OR r.ORDER_REFERENCE IS NOT NULL)
+                AND l.Offre <> ''
+                ORDER BY l.[Date de création] DESC
+                """
+                
             df_logs = pd.read_sql(query_logs, conn, params=[agent["Hyp"]])
 
             if df_logs.empty:
-                st.info("Aucun historique trouvé pour cet agent")
+                    st.info("Aucun historique trouvé pour cet agent")
             else:
-                display_logs_with_interaction(df_logs, conn)
+                    display_logs_with_interaction(df_logs, conn)
 
     except Exception as e:
-        st.error(f"Une erreur est survenue : {str(e)}")
+            st.error(f"Une erreur est survenue : {str(e)}")
     finally:
-        if conn:
-            conn.close()
+            if conn:
+                conn.close()

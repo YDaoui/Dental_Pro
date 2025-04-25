@@ -26,12 +26,6 @@ def get_db_connection():
         st.error(f"Erreur de connexion : {e}")
         return None
 
-
-def preprocess_data(df):
-    """Prétraite les données."""
-    if 'Date_creation' in df.columns:
-        df['Date_creation'] = pd.to_datetime(df['Date_creation'], errors='coerce')
-    return df
 def logs_page(logs_df, start_date, end_date):
     """Affiche la page des logs avec les filtres spécifiés."""
     st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Logs Dashboard</h1>", unsafe_allow_html=True)
@@ -42,9 +36,6 @@ def logs_page(logs_df, start_date, end_date):
     mask = (logs_df['Date_creation'] >= pd.to_datetime(start_date)) & \
            (logs_df['Date_creation'] <= pd.to_datetime(end_date))
     filtered_logs = logs_df.loc[mask].copy()
-
-    # Vérification de l'existence de la colonne 'Groupe_Origine'
-
 
     # Filtres dans des colonnes
     col1, col2, col3 = st.columns(3)
@@ -61,19 +52,6 @@ def logs_page(logs_df, start_date, end_date):
             key='statut_bp_filter'
         )
         
-        
-
-    # Application des filtres
-    if segment_filter != 'Tous':
-        filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
-    
-        
-    if statut_bp_filter != 'Tous':
-        filtered_logs = filtered_logs[filtered_logs['Statut_BP'] == statut_bp_filter]
-
-
-
-    
     with col2:
         canal_filter = st.selectbox(
             "Canal",
@@ -99,13 +77,13 @@ def logs_page(logs_df, start_date, end_date):
             ['Tous'] + sorted(filtered_logs['Offre'].dropna().unique()),
             key='offre_filter'
         )
-        
-       
 
     # Application des filtres
     if segment_filter != 'Tous':
         filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
     
+    if statut_bp_filter != 'Tous':
+        filtered_logs = filtered_logs[filtered_logs['Statut_BP'] == statut_bp_filter]
 
     if canal_filter != 'Tous':
         filtered_logs = filtered_logs[filtered_logs['Canal'] == canal_filter]
@@ -151,8 +129,7 @@ def logs_page(logs_df, start_date, end_date):
             color='Canal',
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        #st.plotly_chart(fig1, use_container_width=True)
-
+        
         # Graphique 2: Evolution temporelle
         daily_logs = filtered_logs.groupby(filtered_logs['Date_creation'].dt.date).size().reset_index(name='Count')
         fig2 = px.line(
@@ -162,6 +139,8 @@ def logs_page(logs_df, start_date, end_date):
             title="Volume de Logs par Jour",
             line_shape='spline'
         )
+        
+        # Graphique 3: Répartition par offre
         fig3 = px.pie(
             filtered_logs,
             names='Offre',
@@ -169,15 +148,15 @@ def logs_page(logs_df, start_date, end_date):
             color='Offre',
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
-        col1, col2 , col3 = st.columns(3)
+        
+        col1, col2, col3 = st.columns(3)
     
         with col1:
-            st.plotly_chart(fig1, use_container_width=True)
+            st.plotly_chart(fig1, use_container_width=True, key="canal_chart")
         with col2:
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, use_container_width=True, key="daily_logs_chart")
         with col3:
-            st.plotly_chart(fig3, use_container_width=True)
-
+            st.plotly_chart(fig3, use_container_width=True, key="offre_chart")
 
         # Tableau de données
         st.markdown("---")
@@ -185,26 +164,6 @@ def logs_page(logs_df, start_date, end_date):
         st.dataframe(filtered_logs.sort_values('Date_creation', ascending=False))
     else:
         st.warning("Aucune donnée disponible avec les filtres sélectionnés.")
-
-def main():
-    # Configuration de la page
-    st.set_page_config(page_title="Dashboard Logs", layout="wide")
-  
-    
-    # Prétraitement
-    logs_df = preprocess_data(logs_df)
-    
-    # Sidebar avec filtres dates
-    st.sidebar.header("Filtres Temporels")
-    
-    min_date = logs_df['Date_creation'].min().date() if not logs_df.empty else datetime.now().date()
-    max_date = logs_df['Date_creation'].max().date() if not logs_df.empty else datetime.now().date()
-    
-    start_date = st.sidebar.date_input("Date début", value=min_date, min_value=min_date, max_value=max_date)
-    end_date = st.sidebar.date_input("Date fin", value=max_date, min_value=min_date, max_value=max_date)
-    
-    # Affichage de la page
-    logs_page(logs_df, start_date, end_date)
 
 if __name__ == "__main__":
     main()

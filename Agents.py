@@ -13,6 +13,7 @@ from Utils_Dental import *
 from Supports import *
 from Managers import *
 from Utils_Dental import *
+from New_Sale_Recolt_Log import *
 
 
 def agent_dashboard():
@@ -73,11 +74,11 @@ def agent_dashboard():
     with st.sidebar:
         
         st.image('Dental_Implant.png', width=350)
-        menu_options = ["Accueil", "Mes Performances","Planning"]
+        menu_options = ["Accueil", "Mes Performances","Planning","New Sale", "New Récolt", "Logs"]
         selected = option_menu(
             menu_title=None,
             options=menu_options,
-            icons=["house", "bar-chart","calendar"],
+            icons=["house", "bar-chart","calendar","calendar","calendar","calendar"],
             default_index=0,
             styles={
                 "container": {"background-color": "#002a48"},
@@ -90,6 +91,10 @@ def agent_dashboard():
     # Affichage du contenu selon l'option choisie
     if selected == "Mes Performances":
         afficher_performances_agent()
+    if selected == "New Sale":
+        New_Sale_Agent()
+    if selected == "New Récolt":
+        New_Recolt_Agent()
     else:
         st.markdown(
             f"<p style='font-size: 18px;'>Bienvenue sur votre espace personnel, <strong>{st.session_state.get('username', 'Agent')}</strong> !</p>",
