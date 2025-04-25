@@ -1,0 +1,44 @@
+# Fichiers sensibles (non versionnés pour la sécurité)
+.env
+
+# Cache Python (les fichiers générés automatiquement par Python)
+__pycache__/
+*.pyc
+
+# Images spécifiques (ajoutées à .gitignore, mais vérifie si elles sont essentielles)
+images
+Dental_Implant.png
+Dental_Implant1.png
+Dental_Implant2.png
+
+# Fichiers Python à ignorer si non nécessaires pour l'exécution du projet
+# (Si ces fichiers sont des scripts d'exécution, ils doivent être versionnés et non ajoutés ici)
+# Agents.py
+# Dentale_Implant_Console.py
+# Logs.py
+# managers.py
+# New_Sale_Recolt_Log.py
+# sales.py
+# Recolts.py
+# Utils_Dental.py
+# Dentale_Options.xlsm
+
+# Fichiers de sauvegarde ou scripts SQL
+Total_Stat.bacpac
+Script_SQL.sql
+
+# Dossiers virtuels (environnements de développement)
+env/
+venv/
+
+# Fichiers temporaires (ajouter d'autres fichiers spécifiques à l'IDE ou au système si nécessaire)
+.DS_Store  # macOS
+Thumbs.db  # Windows
+
+
+
+
+
+
+
+
