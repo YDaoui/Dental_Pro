@@ -97,28 +97,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
         staff_df['NOM PRENOM'] = staff_df['NOM'] + ' ' + staff_df['PRENOM']
     else:
         st.warning("Columns 'NOM' and/or 'PRENOM' not found in staff data. Agent filter will use 'Hyp'.")
-    st.markdown("""
-    <div style='background: linear-gradient(to right, #002a48, #00afe1);
-                padding: 20px;
-                border-radius: 10px;
-                margin-bottom: 30px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;'>
-        <h1 style='color: #00afe1; 
-                   font-size: 3em;
-                   margin: 0;
-                   text-align: left;'>
-            Logs Dashboard
-        </h1>
-        <h1 style='color: #002a48; 
-                   font-size: 3em;
-                   margin: 0;
-                   text-align: right;'>
-            Analyse des Logs
-        </h1>
-    </div>
-""", unsafe_allow_html=True)
+    
 
 
 

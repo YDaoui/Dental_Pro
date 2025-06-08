@@ -28,7 +28,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             unsafe_allow_html=True
         )
 
-    st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
+    #st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
     col1_f, col2_f, col3_f, col4_f = st.columns(4) # Using _f suffix to avoid variable name conflict
 
     with col1_f:
@@ -177,7 +177,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             incomming_percent = (incomming_count / total_logs) * 100
             outcomming_percent = (outcomming_count / total_logs) * 100
 
-        combined_quality_direction_value = f"<span style='color:red;'>In: {incomming_percent:.2f}%</span> / " \
+        combined_quality_direction_value = f"<span style='color:blue;'>In: {incomming_percent:.2f}%</span> / " \
                                          f"<span style='color:blue;'>Out: {outcomming_percent:.2f}%</span>"
 
         # Nouveau style pour les cartes KPI avec icônes (Restyled)

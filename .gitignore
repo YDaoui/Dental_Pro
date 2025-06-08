@@ -24,7 +24,7 @@ Dental_Implant2.png
  Dentale_Options.xlsm
 
 # Fichiers de sauvegarde ou scripts SQL
-Total_Stat.bacpac
+Dentale_BD_Sqlite.db
 Script_SQL.sql
 
 # Dossiers virtuels (environnements de développement)
