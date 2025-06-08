@@ -310,37 +310,21 @@ def add_custom_css():
         </style>
     """, unsafe_allow_html=True)
 
-import os
-import sqlite3
-import streamlit as st
-from cryptography.fernet import Fernet
 
 def get_db_connection():
-    """Connexion sécurisée à la DB avec fallback local"""
+    db_path = os.getenv('DB_PATH')
+    password = os.getenv('YDaoui230')
+    
     try:
-        # Mode production (Streamlit Cloud)
-        if st.secrets:
-            db_path = st.secrets["database"]["path"]
-            password = st.secrets["database"].get("password")
-        # Mode développement (local)
-        else:
-            db_path = os.path.join(os.path.dirname(__file__), "Dentale_BD_Sqlite.db")
-            password = "YDaoui230"  # Mot de passe par défaut local
-        
-        # Établir la connexion
         conn = sqlite3.connect(db_path)
-        
-        # Configurer le chiffrement si mot de passe existe
         if password:
-            conn.execute(f"PRAGMA key='{password}'")
-            conn.execute("PRAGMA cipher_compatibility = 3")
-        
+            conn.execute(f"PRAGMA key='{password}'")  # Chiffrement simple
+        # Configuration supplémentaire...
         return conn
-
     except Exception as e:
-        st.error(f"""Erreur de connexion à la base de données:
-                {str(e)}""")
+        st.error(f"Erreur de connexion sécurisée : {e}")
         return None
+
 def authenticate(username, password):
     """Authentifie l'utilisateur."""
     conn = get_db_connection()
