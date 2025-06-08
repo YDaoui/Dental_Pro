@@ -19,7 +19,12 @@ def New_Sale_Agent():
 
     conn = get_db_connection()
     st.markdown("---")
-    st.subheader("Nouvelle  Vente")
+    
+    st.markdown(
+                f"<h2 style='color: #007bad;text-align: left;'>Nouvelle  Vente au nom de : {st.session_state.get('username', 'Agent')}</h2>",
+                unsafe_allow_html=True
+            )
+   
     try:
         # En-tête avec logo et titre
         col1, col2, col3 = st.columns([1, 2, 2])

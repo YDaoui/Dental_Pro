@@ -9,6 +9,7 @@ from Supports import *
 from Sales import *
 from Recolts import *
 from Logs import *
+from Model_Planif import simulation_planning
 
 # Fonctions de chargement et prétraitement des données
 
@@ -41,13 +42,14 @@ def manager_dashboard():
         
         # Menu en fonction du type d'utilisateur
         if st.session_state.get("user_type") == "Hyperviseur":
-            menu_options = ["Tableau de bord", "Sales", "Recolt", "Logs", "Coaching", "Planning", "Setting"]
-            icons = ["bar-chart", "currency-dollar", "list-ul", "calendar", "calendar", "calendar", "gear"]
+            menu_options = ["Tableau de bord", "Sales", "Recolts", "Logs", "Coachings",  "Settings"]
+            icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text", "person-lines-fill", "calendar3", "gear"]
+
         elif st.session_state.get("user_type") == "Support":
-            menu_options = ["Tableau de bord", "Coaching"]
+            menu_options = ["Tableau de bord", "Coachings"]
             icons = ["bar-chart", "currency-dollar"]
         else:
-            menu_options = ["Tableau de bord", "Sales", "Recolt", "Planning"]
+            menu_options = ["Tableau de bord", "Sales", "Recolts"]
             icons = ["bar-chart", "currency-dollar", "list-ul", "calendar"]
             
         selected = option_menu(
@@ -56,7 +58,7 @@ def manager_dashboard():
             icons=icons,
             default_index=0,
             styles={
-                "container": {"background-color": "#002a48"},
+                "container": {"background-color": "#05135c"},
                 "icon": {"color": "#00afe1", "font-size": "18px"},
                 "nav-link": {"color": "#ffffff", "font-size": "16px"},
                 "nav-link-selected": {"background-color": "#007bad"}
@@ -64,7 +66,7 @@ def manager_dashboard():
         )
         
         st.markdown("---")
-        st.markdown("<h2 style='font-size: 16px; color: #00afe1;'>Filtres de Dates</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='font-size: 16px; color: #0E2148;'>Filtres de Dates</h2>", unsafe_allow_html=True)
         
         with st.expander("Période", expanded=True):
             min_date = sales_df['ORDER_DATE'].min() if not sales_df.empty else datetime.now()
@@ -80,16 +82,14 @@ def manager_dashboard():
     if selected == "Tableau de bord":
         dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date)  # Now passing all required arguments
     elif selected == "Sales":
-        sales_page(sales_df, staff_df, start_date, end_date)
-    elif selected == "Recolt":
-        recolts_page(recolts_df, staff_df, start_date, end_date)
+        sales_page1(sales_df, staff_df, start_date, end_date)
+    elif selected == "Recolts":
+        recolts_page1(recolts_df, staff_df, start_date, end_date)
     elif selected == "Logs":
-        logs_page(logs_df, start_date, end_date)
-    elif selected == "Coaching":
+        logs_page1(logs_df, staff_df, start_date, end_date)
+    elif selected == "Coachings":
         afficher_coaching()
-    elif selected == "Planning":
-        planning_page(sales_df, staff_df)
-    elif selected == "Setting":
+    elif selected == "Settings":
         setting_page()
 
 # Point d'entrée de l'application

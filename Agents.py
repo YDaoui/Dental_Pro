@@ -46,17 +46,8 @@ def agent_dashboard():
                 agent = df_agent.iloc[0]
                 date_in = pd.to_datetime(agent["Date_In"])
                 anciennete = (pd.Timestamp.now() - date_in).days // 30  # Ancienneté en mois
-                st.markdown(
-                f"<h2 style='color: #007bad; margin-top: 0;'>Ancienneté par Mois : {anciennete}</h2>",
-                unsafe_allow_html=True
-            )
-                st.markdown(f"""
-                    **Nom :** {agent["NOM"]}  
-                    **Prénom :** {agent["PRENOM"]}  
-                    **Team :** {agent["Team"]}  
-                    **Activité :** {agent["Activité"]}  
                 
-                """)
+                
             else:
                 st.warning("Aucune donnée trouvée pour cet agent.")
     except Exception as e:
@@ -74,11 +65,11 @@ def agent_dashboard():
     with st.sidebar:
         
         st.image('Dental_Implant.png', width=350)
-        menu_options = ["Accueil", "Mes Performances","Planning","New Sale", "New Récolt", "Logs"]
+        menu_options = ["Accueil", "Mes Performances","New Sale", "New Récolt", "Logs"]
         selected = option_menu(
             menu_title=None,
             options=menu_options,
-            icons=["house", "bar-chart","calendar","calendar","calendar","calendar"],
+            icons=["house", "bar-chart","calendar","calendar","calendar"],
             default_index=0,
             styles={
                 "container": {"background-color": "#002a48"},
@@ -95,13 +86,47 @@ def agent_dashboard():
         New_Sale_Agent()
     if selected == "New Récolt":
         New_Recolt_Agent()
+    if selected== "Logs":
+        login_Logs()
     else:
+        return
+def login_Logs():
+    """Affiche la page des logs avec les champs d'entrée."""
+    col1, col2, col3 = st.columns([1, 1, 1])
+
+    with col1:
+        # "Logs" title: Blue, larger, and bold
         st.markdown(
-            f"<p style='font-size: 18px;'>Bienvenue sur votre espace personnel, <strong>{st.session_state.get('username', 'Agent')}</strong> !</p>",
+            """
+            <h3 style='color: #002a48; font-size: 40px; font-weight: bold;'>Logs</h3>
+            """,
+            unsafe_allow_html=True
+        )
+        # Date and time: Light blue, larger, and bold
+        st.markdown(
+            f"""
+            <p style='color: #007bad; font-size: 30px; font-weight: bold;'>Date et heure: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+            """,
             unsafe_allow_html=True
         )
 
+    with col2:
+        username = st.text_input("ID Logs ")
+        password = st.text_input("Mot de passe", type="password")
 
+    with col3:
+        st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
+        if st.button("**Se connecter**", key="login_button", use_container_width=True):
+            st.info("Bouton 'Se connecter' cliqué (aucune logique de connexion active).")
+
+        st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
+
+        if st.button("**Annuler**", key="Annuler_button", use_container_width=True):
+            st.rerun()
+
+if __name__ == "__main__":
+    st.set_page_config(layout="wide")
+    login_Logs()
 
 
 def afficher_performances_agent():
@@ -140,7 +165,7 @@ def afficher_performances_agent():
 
 def afficher_donnees_sales(conn, hyp_agent):
     df_sales = pd.read_sql(f"""
-        SELECT ORDER_DATE, Total_sale, Rating, Country, City, SHORT_MESSAGE 
+        SELECT ORDER_DATE,  Total_Sale , Rating, Country, City, SHORT_MESSAGE 
         FROM Sales 
         WHERE Hyp = '{hyp_agent}'
         ORDER BY ORDER_DATE DESC
@@ -148,12 +173,12 @@ def afficher_donnees_sales(conn, hyp_agent):
 
     if not df_sales.empty:
         # Nettoyage
-        df_sales = df_sales.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_sale', 'Rating'])
+        df_sales = df_sales.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Sale', 'Rating'])
         df_sales = df_sales[df_sales['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
 
         # 📊 Calcul KPI
-        total_ventes = df_sales["Total_sale"].sum()
-        moyenne_vente = df_sales["Total_sale"].mean()
+        total_ventes = df_sales["Total_Sale"].sum()
+        moyenne_vente = df_sales["Total_Sale"].mean()
         moyenne_rating = df_sales["Rating"].mean()
 
         # 🧾 Affichage KPI
@@ -171,7 +196,7 @@ def afficher_donnees_sales(conn, hyp_agent):
         with col_g1:
             # Ventes par ville selon le statut
             df_grouped = (
-                df_sales.groupby(['City', 'SHORT_MESSAGE'])['Total_sale']
+                df_sales.groupby(['City', 'SHORT_MESSAGE'])['Total_Sale']
                 .sum()
                 .unstack(fill_value=0)
                 .reset_index()
@@ -211,13 +236,13 @@ def afficher_donnees_sales(conn, hyp_agent):
         with col_g2:
             # Ventes par heure
             df_sales['Heure'] = pd.to_datetime(df_sales['ORDER_DATE']).dt.hour
-            ventes_par_heure = df_sales.groupby('Heure')['Total_sale'].sum().reset_index()
+            ventes_par_heure = df_sales.groupby('Heure')['Total_Sale'].sum().reset_index()
 
             fig2 = px.line(
                 ventes_par_heure,
                 x='Heure',
-                y='Total_sale',
-                labels={'Heure': 'Heure de la journée', 'Total_sale': 'Montant (€)'},
+                y='Total_Sale',
+                labels={'Heure': 'Heure de la journée', 'Total_Sale': 'Montant (€)'},
                 color_discrete_sequence=['#007BAD'],
                 height=400
             )
@@ -237,7 +262,7 @@ def afficher_donnees_sales(conn, hyp_agent):
 def afficher_donnees_recolts(conn, hyp_agent):
     df_recolts = pd.read_sql(f"""
         SELECT ORDER_DATE, Total_Recolt, Country, City, SHORT_MESSAGE, Banques
-        FROM Recolts 
+        FROM Recolt
         WHERE Hyp = '{hyp_agent}'
         ORDER BY ORDER_DATE DESC
     """, conn)
