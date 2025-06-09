@@ -9,3 +9,4 @@ folium
 streamlit-folium
 streamlit-option-menu
 st-aggrid
+plotly.graph_objects
