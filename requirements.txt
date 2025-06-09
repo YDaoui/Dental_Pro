@@ -1,7 +1,5 @@
-streamlit==1.32.2
-pandas==2.0.3
-python-dotenv==1.0.0
+streamlit<==1.32.2
+pandas<==2.0.3
+python-dotenv<==1.0.0
 cryptography>=42.0.0
-
-
-openpyxl>=3.1.0  # Si vous utilisez Excel
+openpyxl<=3.1.0

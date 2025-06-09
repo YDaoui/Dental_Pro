@@ -16,7 +16,7 @@ from Model_Planif import simulation_planning
 def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date):
     """Dashboard principal avec onglets Sales et Recolts."""
     
-    tab1, tab2,tab3 = st.tabs(["📊 Ventes", "💰 Récoltes","🧾 Logs "])
+    tab1, tab2,tab3 = st.tabs(["📊 Ventes", "💰 Récompences","🧾 Logs "])
 
     with tab1:
         sales_page(sales_df, staff_df, start_date, end_date)
@@ -24,7 +24,7 @@ def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date
     with tab2:
         recolts_page(recolts_df, staff_df, start_date, end_date)
     with tab3:
-        logs_page(logs_df, start_date, end_date)
+        logs_page(logs_df, staff_df, start_date, end_date)
 # Fonction principale
 def manager_dashboard():
     add_custom_css()
@@ -42,15 +42,24 @@ def manager_dashboard():
         
         # Menu en fonction du type d'utilisateur
         if st.session_state.get("user_type") == "Hyperviseur":
-            menu_options = ["Tableau de bord", "Sales", "Recolts", "Logs", "Coachings",  "Settings"]
-            icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text", "person-lines-fill", "calendar3", "gear"]
+            menu_options = ["Dashbord Global", "Ventes", "Récompences", "Logs", "Coachings", "Settings"]
+            icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text", "person-lines-fill", "gear"]
 
         elif st.session_state.get("user_type") == "Support":
-            menu_options = ["Tableau de bord", "Coachings"]
-            icons = ["bar-chart", "currency-dollar"]
-        else:
-            menu_options = ["Tableau de bord", "Sales", "Recolts"]
-            icons = ["bar-chart", "currency-dollar", "list-ul", "calendar"]
+            menu_options = ["Dashbord Global", "Coachings"]
+            icons = ["bar-chart", "person-lines-fill"] # Changed to a more appropriate icon for Coachings
+
+        elif st.session_state.get("user_type") == "Manager": # Specific condition for Manager
+            menu_options = ["Dashbord Global", "Ventes", "Récompences", "Coachings", "Settings"] # Example menu for Manager
+            icons = ["bar-chart", "credit-card", "box-seam", "person-lines-fill", "gear"]
+
+        elif st.session_state.get("user_type") == "Agent": # Specific condition for Agent
+            menu_options = ["Dashbord Global", "Ventes", "Récompences"] # Example menu for Agent
+            icons = ["bar-chart", "credit-card", "box-seam"]
+            
+        else: # Fallback for any other user type or if user_type is not set
+            menu_options = ["Dashbord Global"]
+            icons = ["bar-chart"]
             
         selected = option_menu(
             menu_title=None,
@@ -79,11 +88,11 @@ def manager_dashboard():
                 end_date = st.date_input("Date fin", max_date, min_value=min_date, max_value=max_date)
 
     # Gestion des pages
-    if selected == "Tableau de bord":
+    if selected == "Dashbord Global":
         dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date)  # Now passing all required arguments
-    elif selected == "Sales":
+    elif selected == "Ventes":
         sales_page1(sales_df, staff_df, start_date, end_date)
-    elif selected == "Recolts":
+    elif selected == "Récompences":
         recolts_page1(recolts_df, staff_df, start_date, end_date)
     elif selected == "Logs":
         logs_page1(logs_df, staff_df, start_date, end_date)
@@ -94,4 +103,4 @@ def manager_dashboard():
 
 # Point d'entrée de l'application
 if __name__ == "__main__":
-    manager_dashboard()  
+    manager_dashboard()

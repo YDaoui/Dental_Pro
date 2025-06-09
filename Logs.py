@@ -217,7 +217,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         f"{avg_logs_per_client:.2f} <span style='font-size: 20px;'>({avg_logs_per_client_percentage:.2f}%)</span>",
                         "#fcd25b", "chart-line") # Gold
 
-        kpi_card_html(col4_kpi, "Direction Logs", combined_quality_direction_value, "#ff6b6b", "exchange-alt") # Coral
+        kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#ff6b6b", "exchange-alt") # Coral
 
 
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
