@@ -815,7 +815,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             with col2:
                 st.markdown("<h3 style='color: #007bad;'>Logs par Jours</h3>", unsafe_allow_html=True)
                 if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
-                    filtered_logs['Day_of_Week'] = filtered_logs['Date_d_création'].dt.day_name(locale='fr_FR')
+                    filtered_logs['Day_of_Week'] = filtered_logs['Date_d_création'].dt.day_name()
                     day_order = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
 
                     daily_logs_by_day = filtered_logs['Day_of_Week'].value_counts().reindex(day_order, fill_value=0).reset_index()
