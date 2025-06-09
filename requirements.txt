@@ -8,5 +8,5 @@ plotly
 folium
 streamlit-folium
 streamlit-option-menu
-st-aggrid==0.6.0  # Change cette ligne pour fixer une version spécifique
-# ou st-aggrid==0.3.3
+
+
