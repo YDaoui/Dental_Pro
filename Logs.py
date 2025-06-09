@@ -5,6 +5,13 @@ from datetime import datetime
 import numpy as np
 
 # Define logs_page1 to accept staff_df
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import numpy as np
+
+# Define logs_page1 to accept staff_df
 def logs_page1(logs_df, staff_df, start_date, end_date):
 
     # --- Pre-process staff_df to create 'Nom Prénom' once ---
@@ -223,14 +230,13 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
 
         # Configuration commune pour tous les graphiques (Updated for line charts)
-        # Configuration commune pour tous les graphiques (Updated for line charts)
         common_layout = dict(
             plot_bgcolor='white', # Clean background
             paper_bgcolor='white',
             hovermode='x unified', # Unified hover for better data exploration
             xaxis=dict(
-                title="",
-                tickfont=dict(size=14, family='Arial', color='black', weight='bold'), # <--- Possible culprit here!
+                title="", # Le titre sera défini par update_xaxes après
+                tickfont=dict(size=14, family='Arial', color='black'), # RETIRED 'weight' - Previously here
                 titlefont=dict(size=16),
                 showgrid=True, # Show grid
                 gridcolor='#e0e0e0', # Lighter grid lines
@@ -238,17 +244,15 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linewidth=1
             ),
             yaxis=dict(
-                title="",
-                tickfont=dict(size=14, family='Arial', color='black', weight='bold'), # <--- Possible culprit here!
+                title="", # Le titre sera défini par update_yaxes après
+                tickfont=dict(size=14, family='Arial', color='black'), # RETIRED 'weight' - Previously here
                 titlefont=dict(size=16),
                 showgrid=True,
                 gridcolor='#e0e0e0',
                 linecolor='black',
                 linewidth=1
             ),
-            # REMOVED: uniformtext_minsize=14, # These are not direct layout properties
-            # REMOVED: uniformtext_mode='hide', # These are not direct layout properties
-            font=dict(size=14, color='#333') # <--- Not the main culprit, but still a generic font
+            font=dict(size=14, color='#333') # Darker font color
         )
 
         # First row of charts (Line Charts - Restyled)
@@ -275,13 +279,13 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')), # Distinct markers
                 hovertemplate='<b>Mois:</b> %{x}<br><b>Logs:</b> %{y:,}<extra></extra>', # Detailed hover info
                 textposition="top center", # Position text above markers
-                textfont=dict(size=14, color='black', family='Arial', weight='bold'), # Bold and larger font for labels
+                textfont=dict(size=14, color='black', family='Arial'), # MODIFIED: Removed 'weight'
                 fill='tozeroy', # Fill area below the line
                 fillcolor='rgba(78, 205, 196, 0.2)' # Fill color with transparency (rgba for #4ecdc4)
             )
             fig_month.update_layout(**common_layout)
-            fig_month.update_xaxes(title="Mois")
-            fig_month.update_yaxes(title="Nombre de Logs")
+            fig_month.update_xaxes(title="Mois") # Gardez ces lignes pour les titres d'axes spécifiques
+            fig_month.update_yaxes(title="Nombre de Logs") # Gardez ces lignes pour les titres d'axes spécifiques
             st.plotly_chart(fig_month, use_container_width=True)
 
         with col2_g:
@@ -309,7 +313,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
                 hovertemplate='<b>Heure:</b> %{x}H<br><b>Logs:</b> %{y:,}<extra></extra>',
                 textposition="top center",
-                textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                textfont=dict(size=14, color='black', family='Arial'), # MODIFIED: Removed 'weight'
                 fill='tozeroy', # Fill area below the line
                 fillcolor='rgba(252, 210, 91, 0.2)' # Fill color with transparency (rgba for #fcd25b)
             )
@@ -341,7 +345,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
                 hovertemplate='<b>Jour:</b> %{x}<br><b>Logs:</b> %{y:,}<extra></extra>',
                 textposition="top center",
-                textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                textfont=dict(size=14, color='black', family='Arial'), # MODIFIED: Removed 'weight'
                 fill='tozeroy', # Fill area below the line
                 fillcolor='rgba(255, 107, 107, 0.2)' # Fill color with transparency (rgba for #ff6b6b)
             )
@@ -364,7 +368,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             fig_segment.update_traces(
                 texttemplate='%{text:,}',
                 textposition='outside',
-                textfont=dict(size=14)
+                textfont=dict(size=14) # No 'weight' here, so it should be fine.
             )
             fig_segment.update_layout(**common_layout, showlegend=False) # Hide legend
             st.plotly_chart(fig_segment, use_container_width=True)
@@ -380,7 +384,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             fig_canal.update_traces(
                 texttemplate='%{text:,}',
                 textposition='outside',
-                textfont=dict(size=14)
+                textfont=dict(size=14) # No 'weight' here, so it should be fine.
             )
             fig_canal.update_layout(**common_layout, showlegend=False) # Hide legend
             st.plotly_chart(fig_canal, use_container_width=True)
@@ -397,7 +401,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             fig_motif.update_traces(
                 texttemplate='%{text:,}',
                 textposition='outside',
-                textfont=dict(size=14)
+                textfont=dict(size=14) # No 'weight' here, so it should be fine.
             )
             fig_motif.update_layout(**common_layout, showlegend=False) # Hide legend
             st.plotly_chart(fig_motif, use_container_width=True)
@@ -413,7 +417,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             fig_facturation.update_traces(
                 texttemplate='%{text:,}',
                 textposition='outside',
-                textfont=dict(size=14)
+                textfont=dict(size=14) # No 'weight' here, so it should be fine.
             )
             fig_facturation.update_layout(**common_layout, showlegend=False) # Hide legend
             st.plotly_chart(fig_facturation, use_container_width=True)
