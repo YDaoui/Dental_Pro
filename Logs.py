@@ -245,8 +245,6 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linecolor='black',
                 linewidth=1
             ),
-            # REMOVED: uniformtext_minsize=14, # These are not direct layout properties
-            # REMOVED: uniformtext_mode='hide', # These are not direct layout properties
             font=dict(size=14, color='#333') # Darker font color
         )
 
