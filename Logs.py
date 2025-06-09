@@ -292,7 +292,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fill='tozeroy', # Fill area below the line
                     fillcolor='rgba(78, 205, 196, 0.2)' # Fill color with transparency (rgba for #4ecdc4)
                 )
-                fig_month.update_layout(**common_layout)
+                #fig_month.update_layout(**common_layout)
                 fig_month.update_xaxes(title="Mois")
                 fig_month.update_yaxes(title="Nombre de Logs")
                 st.plotly_chart(fig_month, use_container_width=True)
