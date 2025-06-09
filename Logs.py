@@ -210,12 +210,12 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
 
         # Modified display for unique clients and average logs per client
         kpi_card_html(col2_kpi, "Clients Uniques",
-                        f"{unique_clients:,} <span style='font-size: 20px;'>({unique_clients_percentage:.2f}%)</span>",
-                        "#4ecdc4", "users") # Medium Teal
+                                f"{unique_clients:,} <span style='font-size: 20px;'>({unique_clients_percentage:.2f}%)</span>",
+                                "#4ecdc4", "users") # Medium Teal
 
         kpi_card_html(col3_kpi, "Moyenne Logs/Client",
-                        f"{avg_logs_per_client:.2f} <span style='font-size: 20px;'>({avg_logs_per_client_percentage:.2f}%)</span>",
-                        "#fcd25b", "chart-line") # Gold
+                                f"{avg_logs_per_client:.2f} <span style='font-size: 20px;'>({avg_logs_per_client_percentage:.2f}%)</span>",
+                                "#fcd25b", "chart-line") # Gold
 
         kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#ff6b6b", "exchange-alt") # Coral
 
@@ -245,8 +245,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linecolor='black',
                 linewidth=1
             ),
-            uniformtext_minsize=14,
-            uniformtext_mode='hide',
+            # REMOVED: uniformtext_minsize=14, # These are not direct layout properties
+            # REMOVED: uniformtext_mode='hide', # These are not direct layout properties
             font=dict(size=14, color='#333') # Darker font color
         )
 
@@ -474,7 +474,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     f"{col_name}<br>({count})</div>",
                     unsafe_allow_html=True
                 )
-       
+        
         # Display with improved styling for the DataFrame
         st.markdown(
             """
