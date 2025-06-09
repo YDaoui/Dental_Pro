@@ -1,12 +1,12 @@
-streamlit==1.32.2
-pandas>=2.2.3  # Change cette ligne !
+streamlit>=1.35.0
+pandas>=2.2.3
 python-dotenv==1.0.0
 cryptography>=42.0.0
 openpyxl<=3.1.0
-geopy 
-plotly 
-folium  
+geopy
+plotly
+folium
 streamlit-folium
 streamlit-option-menu
-st-aggrid
-plotly.graph_objects
+st-aggrid==0.6.0  # Change cette ligne pour fixer une version spécifique
+# ou st-aggrid==0.3.3
