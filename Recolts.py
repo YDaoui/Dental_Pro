@@ -70,12 +70,13 @@ def filter_recolts_data(df, country_filter, team_filter, activity_filter, agent_
         if 'NOM' in staff_filtered.columns and 'PRENOM' in staff_filtered.columns:
             staff_filtered['NOM PRENOM'] = staff_filtered['NOM'] + ' ' + staff_filtered['PRENOM']
         
-        if team_filter != 'Toutes':
-            staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
-        
+
         if activity_filter != 'Toutes':
             staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
-        
+
+        if team_filter != 'Toutes':
+            staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
+               
         if agent_filter != 'Tous':
             if 'NOM PRENOM' in staff_filtered.columns:
                 staff_filtered = staff_filtered[staff_filtered['NOM PRENOM'] == agent_filter]
@@ -121,9 +122,10 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
     with col1:
         country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()), key='recolts_country_filter')
     with col2:
-        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolts_team_filter')
-    with col3:
         activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolts_activity_filter')
+    with col3:
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolts_team_filter')
+        
     with col4:
         # Dynamically populate agent filter based on selected team
         agents_in_team = ['Tous']

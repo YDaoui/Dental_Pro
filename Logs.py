@@ -4,19 +4,24 @@ import plotly.express as px
 from datetime import datetime
 import numpy as np
 
-# Define logs_page1 to accept staff_df
+
+
+
 def logs_page1(logs_df, staff_df, start_date, end_date):
+    # Ensure logs_df and staff_df are not modified outside this function if they are passed by reference
+    logs_df_copy = logs_df.copy()
+    staff_df_copy = staff_df.copy()
 
     # --- Pre-process staff_df to create 'Nom Prénom' once ---
-    if 'NOM' in staff_df.columns and 'PRENOM' in staff_df.columns:
-        staff_df['Nom Prénom'] = staff_df['NOM'] + ' ' + staff_df['PRENOM']
+    if 'NOM' in staff_df_copy.columns and 'PRENOM' in staff_df_copy.columns:
+        staff_df_copy['Nom Prénom'] = staff_df_copy['NOM'] + ' ' + staff_df_copy['PRENOM']
     else:
         st.warning("Colonnes 'NOM' et/ou 'PRENOM' non trouvées dans les données du personnel. Le filtre Agent pourrait ne pas fonctionner comme prévu.")
         # Fallback: if names aren't available, try to use 'Hyp' or create an empty 'Nom Prénom' column
-        if 'Hyp' in staff_df.columns:
-            staff_df['Nom Prénom'] = staff_df['Hyp']
+        if 'Hyp' in staff_df_copy.columns:
+            staff_df_copy['Nom Prénom'] = staff_df_copy['Hyp']
         else:
-            staff_df['Nom Prénom'] = "" # Or handle appropriately if 'Hyp' also missing
+            staff_df_copy['Nom Prénom'] = "" # Or handle appropriately if 'Hyp' also missing
 
     # Centered Main Title with improved styling
     col1, col2 = st.columns([2, 2])
@@ -33,67 +38,113 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         )
 
     # st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
+    st.markdown("---")
+    st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
+
     col1_f, col2_f, col3_f, col4_f = st.columns(4) # Using _f suffix to avoid variable name conflict
 
     with col1_f:
+        # Check if 'Segment' column exists before trying to get unique values
+        if 'Segment' in logs_df_copy.columns:
+            segment_options = ['Tous'] + sorted(logs_df_copy['Segment'].dropna().unique().tolist())
+        else:
+            segment_options = ['Tous']
+            st.warning("La colonne 'Segment' est manquante dans les données des logs.")
         segment_filter = st.selectbox(
             "Segment",
-            ['Tous'] + sorted(logs_df['Segment'].dropna().unique().tolist()), # Ensure list for concatenation
+            segment_options,
             key='log_segment_filter'
         )
+
+        # Check if 'Sous_motif' column exists
+        if 'Sous_motif' in logs_df_copy.columns:
+            sous_motif_options = ['Tous'] + sorted(logs_df_copy['Sous_motif'].dropna().unique().tolist())
+        else:
+            sous_motif_options = ['Tous']
+            st.warning("La colonne 'Sous_motif' est manquante dans les données des logs.")
         sous_motif_filter = st.selectbox(
             "Sous-motif",
-            ['Tous'] + sorted(logs_df['Sous_motif'].dropna().unique().tolist()),
+            sous_motif_options,
             key='log_sous_motif_filter'
         )
 
     with col2_f:
+        # Check if 'Canal' column exists
+        if 'Canal' in logs_df_copy.columns:
+            canal_options = ['Tous'] + sorted(logs_df_copy['Canal'].dropna().unique().tolist())
+        else:
+            canal_options = ['Tous']
+            st.warning("La colonne 'Canal' est manquante dans les données des logs.")
         canal_filter = st.selectbox(
             "Canal",
-            ['Tous'] + sorted(logs_df['Canal'].dropna().unique().tolist()),
+            canal_options,
             key='log_canal_filter'
         )
+
+        # Check if 'Direction' column exists
+        if 'Direction' in logs_df_copy.columns:
+            direction_options = ['Tous'] + sorted(logs_df_copy['Direction'].dropna().unique().tolist())
+        else:
+            direction_options = ['Tous']
+            st.warning("La colonne 'Direction' est manquante dans les données des logs.")
         direction_filter = st.selectbox(
             "Direction",
-            ['Tous'] + sorted(logs_df['Direction'].dropna().unique().tolist()),
+            direction_options,
             key='log_direction_filter'
         )
 
     with col3_f:
+        # Check if 'Statut_BP' column exists
+        if 'Statut_BP' in logs_df_copy.columns:
+            statut_bp_options = ['Tous'] + sorted(logs_df_copy['Statut_BP'].dropna().unique().tolist())
+        else:
+            statut_bp_options = ['Tous']
+            st.warning("La colonne 'Statut_BP' est manquante dans les données des logs.")
         statut_bp_filter = st.selectbox(
             "Statut BP",
-            ['Tous'] + sorted(logs_df['Statut_BP'].dropna().unique().tolist()),
+            statut_bp_options,
             key='log_statut_bp_filter'
         )
+
+        # Check if 'Mode_facturation' column exists
+        if 'Mode_facturation' in logs_df_copy.columns:
+            mode_facturation_options = ['Tous'] + sorted(logs_df_copy['Mode_facturation'].dropna().unique().tolist())
+        else:
+            mode_facturation_options = ['Tous']
+            st.warning("La colonne 'Mode_facturation' est manquante dans les données des logs.")
         mode_facturation_filter = st.selectbox(
             "Mode de facturation",
-            ['Tous'] + sorted(logs_df['Mode_facturation'].dropna().unique().tolist()),
+            mode_facturation_options,
             key='log_mode_facturation_filter'
         )
 
     with col4_f:
         # Corrected: Equipe filter populated from staff_df
-        # Use staff_df['Team'] for the Equipe filter
+        if 'Team' in staff_df_copy.columns:
+            equipe_options = ['Tous'] + sorted(staff_df_copy['Team'].dropna().unique().tolist())
+        else:
+            equipe_options = ['Tous']
+            st.warning("La colonne 'Team' est manquante dans les données du personnel. Le filtre Equipe ne sera pas disponible.")
         equipe_filter = st.selectbox(
             "Equipe",
-            ['Tous'] + sorted(staff_df['Team'].dropna().unique().tolist()) if 'Team' in staff_df.columns else ['Tous'],
+            equipe_options,
             key='log_equipe_filter'
         )
 
         # Corrected: Agent filter (Nom et Prénom) - dependent on Equipe
         agents_for_dropdown = ['Tous']
         if equipe_filter != 'Tous':
-            # Filter staff_df by the selected team
-            filtered_staff_for_dropdown = staff_df[staff_df['Team'] == equipe_filter]
+            # Filter staff_df_copy by the selected team
+            filtered_staff_for_dropdown = staff_df_copy[staff_df_copy['Team'] == equipe_filter]
             if 'Nom Prénom' in filtered_staff_for_dropdown.columns:
                 agents_for_dropdown += sorted(filtered_staff_for_dropdown['Nom Prénom'].dropna().unique().tolist())
             elif 'Hyp' in filtered_staff_for_dropdown.columns: # Fallback if 'Nom Prénom' wasn't created
                 agents_for_dropdown += sorted(filtered_staff_for_dropdown['Hyp'].dropna().unique().tolist())
         else: # If 'Tous' is selected for Equipe, show all agents
-            if 'Nom Prénom' in staff_df.columns:
-                agents_for_dropdown += sorted(staff_df['Nom Prénom'].dropna().unique().tolist())
-            elif 'Hyp' in staff_df.columns:
-                agents_for_dropdown += sorted(staff_df['Hyp'].dropna().unique().tolist())
+            if 'Nom Prénom' in staff_df_copy.columns:
+                agents_for_dropdown += sorted(staff_df_copy['Nom Prénom'].dropna().unique().tolist())
+            elif 'Hyp' in staff_df_copy.columns:
+                agents_for_dropdown += sorted(staff_df_copy['Hyp'].dropna().unique().tolist())
 
         agent_filter = st.selectbox(
             "Agent (Nom et Prénom)",
@@ -103,58 +154,90 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
 
     # --- Apply filters ---
     with st.spinner("Application des filtres..."):
-        filtered_logs = logs_df.copy()
+        filtered_logs = logs_df_copy.copy()
 
         # Date filtering
         if 'Date_d_création' in filtered_logs.columns and pd.api.types.is_datetime64_any_dtype(filtered_logs['Date_d_création']):
-            # Dates are already datetime objects from preprocess_data, no need to convert again
             filtered_logs = filtered_logs[
                 (filtered_logs['Date_d_création'].dt.date >= start_date) &
                 (filtered_logs['Date_d_création'].dt.date <= end_date)
             ]
         else:
-            st.warning("La colonne 'Date_d_création' n'est pas au format date/heure ou est manquante. Le filtrage par date peut être incorrect.")
+            st.warning("La colonne **'Date_d_création'** n'est pas au format date/heure ou est manquante. Le filtrage par date peut être incorrect.")
+            # If date column is problematic, reset filtered_logs to empty or handle gracefully
+            filtered_logs = pd.DataFrame(columns=logs_df_copy.columns)
+
 
         # Standard filters
         if segment_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
+            if 'Segment' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
+            else:
+                st.warning("La colonne 'Segment' n'est pas disponible pour le filtrage.")
         if sous_motif_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Sous_motif'] == sous_motif_filter]
+            if 'Sous_motif' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Sous_motif'] == sous_motif_filter]
+            else:
+                st.warning("La colonne 'Sous_motif' n'est pas disponible pour le filtrage.")
         if canal_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Canal'] == canal_filter]
+            if 'Canal' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Canal'] == canal_filter]
+            else:
+                st.warning("La colonne 'Canal' n'est pas disponible pour le filtrage.")
         if direction_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Direction'] == direction_filter]
+            if 'Direction' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Direction'] == direction_filter]
+            else:
+                st.warning("La colonne 'Direction' n'est pas disponible pour le filtrage.")
         if statut_bp_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Statut_BP'] == statut_bp_filter]
+            if 'Statut_BP' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Statut_BP'] == statut_bp_filter]
+            else:
+                st.warning("La colonne 'Statut_BP' n'est pas disponible pour le filtrage.")
         if mode_facturation_filter != 'Tous':
-            filtered_logs = filtered_logs[filtered_logs['Mode_facturation'] == mode_facturation_filter]
+            if 'Mode_facturation' in filtered_logs.columns:
+                filtered_logs = filtered_logs[filtered_logs['Mode_facturation'] == mode_facturation_filter]
+            else:
+                st.warning("La colonne 'Mode_facturation' n'est pas disponible pour le filtrage.")
 
         # Apply Equipe and Agent filters using staff_df and the common key 'Hyp'
-        if 'Hyp' in logs_df.columns and not staff_df.empty and 'Hyp' in staff_df.columns:
-            temp_staff_df = staff_df.copy() # Work on a copy for filtering
+        if 'Hyp' in filtered_logs.columns and not staff_df_copy.empty and 'Hyp' in staff_df_copy.columns:
+            temp_staff_df = staff_df_copy.copy() # Work on a copy for filtering
 
-            # Filter staff_df by selected team
+            # Filter staff_df_copy by selected team
             if equipe_filter != 'Tous':
-                temp_staff_df = temp_staff_df[temp_staff_df['Team'] == equipe_filter]
+                if 'Team' in temp_staff_df.columns:
+                    temp_staff_df = temp_staff_df[temp_staff_df['Team'] == equipe_filter]
+                else:
+                    st.warning("La colonne 'Team' est manquante dans les données du personnel pour le filtrage par équipe.")
+                    temp_staff_df = pd.DataFrame(columns=temp_staff_df.columns) # Effectively clear temp_staff_df
 
-            # Filter staff_df by selected agent (using 'Nom Prénom' or 'Hyp')
+            # Filter staff_df_copy by selected agent (using 'Nom Prénom' or 'Hyp')
             if agent_filter != 'Tous':
                 if 'Nom Prénom' in temp_staff_df.columns and agent_filter in temp_staff_df['Nom Prénom'].unique():
                     temp_staff_df = temp_staff_df[temp_staff_df['Nom Prénom'] == agent_filter]
                 elif 'Hyp' in temp_staff_df.columns and agent_filter in temp_staff_df['Hyp'].unique():
                     temp_staff_df = temp_staff_df[temp_staff_df['Hyp'] == agent_filter]
+                else:
+                    st.warning(f"L'agent '{agent_filter}' n'a pas été trouvé ou les colonnes requises sont manquantes.")
+                    temp_staff_df = pd.DataFrame(columns=temp_staff_df.columns) # Effectively clear temp_staff_df
+
 
             # Now, filter logs_df based on the 'Hyp' values from the filtered staff_df
-            # This is the crucial step to link logs to agents/teams
             if not temp_staff_df.empty and 'Hyp' in temp_staff_df.columns:
                 filtered_logs = filtered_logs[filtered_logs['Hyp'].isin(temp_staff_df['Hyp'])]
             else:
                 # If temp_staff_df is empty after filtering, it means no agents match the criteria.
                 # In this case, filtered_logs should also be empty to reflect no matching logs.
                 filtered_logs = pd.DataFrame(columns=filtered_logs.columns) # Create an empty DataFrame with same columns
-        elif 'Hyp' not in logs_df.columns or 'Hyp' not in staff_df.columns:
-            st.warning("La colonne 'Hyp' est manquante dans les données des logs ou du personnel. Le filtrage par agent/équipe sera limité.")
+        elif 'Hyp' not in logs_df_copy.columns or 'Hyp' not in staff_df_copy.columns:
+            st.warning("La colonne **'Hyp'** est manquante dans les données des logs ou du personnel. Le filtrage par agent/équipe sera limité.")
+            # If 'Hyp' is missing, ensure agent/team filters don't incorrectly filter out data.
+            # In this case, if agent/team filter was applied, it should result in no data if 'Hyp' is the only link.
+            # If 'Hyp' is truly the only link, and it's missing, then no agent/team filtering is possible.
+            # The current logic will just skip this block, which is fine.
 
+    st.markdown("---")
 
     if not filtered_logs.empty:
         # --- Enhanced KPIs Section ---
@@ -168,8 +251,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         avg_logs_per_client = round(total_logs / unique_clients, 2) if unique_clients > 0 else 0
 
         # Calculate percentages relative to Total Logs
-        unique_clients_percentage = (unique_clients / total_logs * 100) if total_logs > 0 else 0
-        avg_logs_per_client_percentage = (avg_logs_per_client / total_logs * 100) if total_logs > 0 else 0
+        # unique_clients_percentage = (unique_clients / total_logs * 100) if total_logs > 0 else 0 # This calculation is not standard for display
+        # avg_logs_per_client_percentage = (avg_logs_per_client / total_logs * 100) if total_logs > 0 else 0 # This calculation is not standard for display
 
 
         quality_of_service_value = "N/A"
@@ -196,6 +279,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         # Nouveau style pour les cartes KPI avec icônes (Restyled)
         def kpi_card_html(column, title, value_html, color, icon_name):
             column.markdown(f"""
+                <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
                 <div style="
                     padding: 20px;
                     background: linear-gradient(145deg, {color} 0%, {color}CC 100%); /* Softer gradient */
@@ -223,16 +307,16 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
 
         # Modified display for unique clients and average logs per client
         kpi_card_html(col2_kpi, "Clients Uniques",
-                              f"{unique_clients:,} <span style='font-size: 20px;'>({unique_clients_percentage:.2f}%)</span>",
-                              "#4ecdc4", "users") # Medium Teal
+                                 f"{unique_clients:,}", # Removed percentage as it was confusing
+                                 "#4ecdc4", "users") # Medium Teal
 
         kpi_card_html(col3_kpi, "Moyenne Logs/Client",
-                              f"{avg_logs_per_client:.2f} <span style='font-size: 20px;'>({avg_logs_per_client_percentage:.2f}%)</span>",
-                              "#fcd25b", "chart-line") # Gold
+                                 f"{avg_logs_per_client:.2f}", # Removed percentage as it was confusing
+                                 "#fcd25b", "chart-line") # Gold
 
         kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#ff6b6b", "exchange-alt") # Coral
 
-
+        st.markdown("---")
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
 
         # Configuration commune pour tous les graphiques (Updated and corrected for font weight)
@@ -242,7 +326,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             hovermode='x unified', # Unified hover for better data exploration
             xaxis=dict(
                 title="",
-                tickfont=dict(size=14, family='Arial', color='black'), # Removed 'weight' from here
+                tickfont=dict(size=14, family='Arial', color='black'),
                 titlefont=dict(size=16),
                 showgrid=True, # Show grid
                 gridcolor='#e0e0e0', # Lighter grid lines
@@ -251,7 +335,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             ),
             yaxis=dict(
                 title="",
-                tickfont=dict(size=14, family='Arial', color='black'), # Removed 'weight' from here
+                tickfont=dict(size=14, family='Arial', color='black'),
                 titlefont=dict(size=16),
                 showgrid=True,
                 gridcolor='#e0e0e0',
@@ -260,7 +344,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             ),
             uniformtext_minsize=14,
             uniformtext_mode='hide',
-            font=dict(size=14, color='#333', weight='bold') # Apply bold to the general font object
+            font=dict(size=14, color='#333', family='Arial') # Apply font family and size here. Weight applied per trace if needed.
         )
 
         # First row of charts (Line Charts - Restyled)
@@ -279,10 +363,10 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 )
 
                 fig_month = px.line(monthly_data, x='Mois_Nom', y='Count',
-                                     color_discrete_sequence=['#4ecdc4'], # Single, modern color
-                                     markers=True,
-                                     line_shape='spline', # Smooth line
-                                     text='Count') # Add text labels
+                                    color_discrete_sequence=['#4ecdc4'], # Single, modern color
+                                    markers=True,
+                                    line_shape='spline', # Smooth line
+                                    text='Count') # Add text labels
                 fig_month.update_traces(
                     mode='lines+markers+text', # Ensure lines, markers, and text are shown
                     marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')), # Distinct markers
@@ -292,12 +376,12 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fill='tozeroy', # Fill area below the line
                     fillcolor='rgba(78, 205, 196, 0.2)' # Fill color with transparency (rgba for #4ecdc4)
                 )
-                #fig_month.update_layout(**common_layout)
+                fig_month.update_layout(**common_layout) # Apply common layout after trace updates
                 fig_month.update_xaxes(title="Mois")
                 fig_month.update_yaxes(title="Nombre de Logs")
                 st.plotly_chart(fig_month, use_container_width=True)
             else:
-                st.info("La colonne 'Date_d_création' n'est pas disponible pour l'analyse mensuelle.")
+                st.info("La colonne **'Date_d_création'** n'est pas disponible pour l'analyse mensuelle.")
 
         with col2_g:
             st.markdown("<h3 style='color: #007bad;'>Distribution Horaire des Logs (8H à 23H)</h3>", unsafe_allow_html=True)
@@ -308,37 +392,49 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     # Handle cases where format might just be HH:MM:SS
                     filtered_logs['Heure'] = filtered_logs['Heure'].fillna(pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour)
                 except Exception:
-                    st.warning("Impossible de parser 'Heure_création'. Utilisation de l'heure de 'Date_d_création'.")
-                    filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
+                    st.warning("Impossible de parser **'Heure_création'**. Utilisation de l'heure de **'Date_d_création'**.")
+                    if 'Date_d_création' in filtered_logs.columns:
+                        filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
+                    else:
+                        st.warning("Ni **'Heure_création'** ni **'Date_d_création'** ne sont disponibles pour l'analyse horaire.")
+                        filtered_logs['Heure'] = np.nan # Set to NaN if no time info is available
             else:
-                filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
+                if 'Date_d_création' in filtered_logs.columns:
+                    filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
+                else:
+                    st.warning("Ni **'Heure_création'** ni **'Date_d_création'** ne sont disponibles pour l'analyse horaire.")
+                    filtered_logs['Heure'] = np.nan # Set to NaN if no time info is available
 
-            # Filter for hours 8 to 23
-            hourly_data = filtered_logs[(filtered_logs['Heure'] >= 8) & (filtered_logs['Heure'] <= 23)]
-            hourly_data = hourly_data.groupby('Heure').size().reset_index(name='Count')
-            hourly_data = hourly_data.sort_values('Heure')
+            if 'Heure' in filtered_logs.columns and not filtered_logs['Heure'].isnull().all():
+                # Filter for hours 8 to 23
+                hourly_data = filtered_logs[(filtered_logs['Heure'] >= 8) & (filtered_logs['Heure'] <= 23)]
+                hourly_data = hourly_data.groupby('Heure').size().reset_index(name='Count')
+                hourly_data = hourly_data.sort_values('Heure')
 
-            all_hours = pd.DataFrame({'Heure': range(8, 24)})
-            hourly_data = pd.merge(all_hours, hourly_data, on='Heure', how='left').fillna(0)
+                all_hours = pd.DataFrame({'Heure': range(8, 24)})
+                hourly_data = pd.merge(all_hours, hourly_data, on='Heure', how='left').fillna(0)
 
-            fig_hour = px.line(hourly_data, x='Heure', y='Count',
-                                 color_discrete_sequence=['#fcd25b'], # Single, modern color
-                                 markers=True,
-                                 line_shape='spline', # Smooth line
-                                 text='Count') # Add text labels
-            fig_hour.update_traces(
-                mode='lines+markers+text',
-                marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
-                hovertemplate='<b>Heure:</b> %{x}H<br><b>Logs:</b> %{y:,}<extra></extra>',
-                textposition="top center",
-                textfont=dict(size=14, color='black', family='Arial', weight='bold'),
-                fill='tozeroy', # Fill area below the line
-                fillcolor='rgba(252, 210, 91, 0.2)' # Fill color with transparency (rgba for #fcd25b)
-            )
-            fig_hour.update_layout(**common_layout)
-            fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)))
-            fig_hour.update_yaxes(title="Nombre de Logs")
-            st.plotly_chart(fig_hour, use_container_width=True)
+                fig_hour = px.line(hourly_data, x='Heure', y='Count',
+                                     color_discrete_sequence=['#fcd25b'], # Single, modern color
+                                     markers=True,
+                                     line_shape='spline', # Smooth line
+                                     text='Count') # Add text labels
+                fig_hour.update_traces(
+                    mode='lines+markers+text',
+                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
+                    hovertemplate='<b>Heure:</b> %{x}H<br><b>Logs:</b> %{y:,}<extra></extra>',
+                    textposition="top center",
+                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                    fill='tozeroy', # Fill area below the line
+                    fillcolor='rgba(252, 210, 91, 0.2)' # Fill color with transparency (rgba for #fcd25b)
+                )
+                fig_hour.update_layout(**common_layout)
+                fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)))
+                fig_hour.update_yaxes(title="Nombre de Logs")
+                st.plotly_chart(fig_hour, use_container_width=True)
+            else:
+                st.info("Les données horaires ne sont pas disponibles ou sont invalides pour l'analyse.")
+
 
         with col3_g:
             st.markdown("<h3 style='color: #007bad;'>Volume de Logs par Jour</h3>", unsafe_allow_html=True)
@@ -373,77 +469,90 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 fig_day.update_yaxes(title="Nombre de Logs")
                 st.plotly_chart(fig_day, use_container_width=True)
             else:
-                st.info("La colonne 'Date_d_création' n'est pas disponible pour l'analyse quotidienne.")
+                st.info("La colonne **'Date_d_création'** n'est pas disponible pour l'analyse quotidienne.")
 
-
+        st.markdown("---")
         col1_b, col2_b, col3_b, col4_b = st.columns(4) # Using _b suffix for bar chart columns
 
         with col1_b:
             st.markdown("<h3 style='color: #007bad;'>Répartition par Segment</h3>", unsafe_allow_html=True)
-            segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
-            fig_segment = px.bar(segment_data, x='Count', y='Segment',
-                                     orientation='h',
-                                     color='Count',
-                                     color_continuous_scale='Blues',
-                                     text='Count')
-            fig_segment.update_traces(
-                texttemplate='%{text:,}',
-                textposition='outside',
-                textfont=dict(size=14)
-            )
-            fig_segment.update_layout(**common_layout, showlegend=False) # Hide legend
-            st.plotly_chart(fig_segment, use_container_width=True)
+            if 'Segment' in filtered_logs.columns:
+                segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
+                fig_segment = px.bar(segment_data, x='Count', y='Segment',
+                                         orientation='h',
+                                         color='Count',
+                                         color_continuous_scale='Blues',
+                                         text='Count')
+                fig_segment.update_traces(
+                    texttemplate='%{text:,}',
+                    textposition='outside',
+                    textfont=dict(size=14)
+                )
+                fig_segment.update_layout(**common_layout, showlegend=False, yaxis={'categoryorder':'total ascending'}) # Sort bars
+                st.plotly_chart(fig_segment, use_container_width=True)
+            else:
+                st.info("La colonne **'Segment'** est manquante pour ce graphique.")
 
         with col2_b:
             st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
-            canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
-            fig_canal = px.bar(canal_data, x='Count', y='Canal',
-                                     orientation='h',
-                                     color='Count',
-                                     color_continuous_scale='Blues',
-                                     text='Count')
-            fig_canal.update_traces(
-                texttemplate='%{text:,}',
-                textposition='outside',
-                textfont=dict(size=14)
-            )
-            fig_canal.update_layout(**common_layout, showlegend=False) # Hide legend
-            st.plotly_chart(fig_canal, use_container_width=True)
+            if 'Canal' in filtered_logs.columns:
+                canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
+                fig_canal = px.bar(canal_data, x='Count', y='Canal',
+                                         orientation='h',
+                                         color='Count',
+                                         color_continuous_scale='Blues',
+                                         text='Count')
+                fig_canal.update_traces(
+                    texttemplate='%{text:,}',
+                    textposition='outside',
+                    textfont=dict(size=14)
+                )
+                fig_canal.update_layout(**common_layout, showlegend=False, yaxis={'categoryorder':'total ascending'}) # Sort bars
+                st.plotly_chart(fig_canal, use_container_width=True)
+            else:
+                st.info("La colonne **'Canal'** est manquante pour ce graphique.")
 
         with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
-            sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
-            top_motifs = sous_motif_data.sort_values('Count', ascending=False).head(10)
-            fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
-                                     orientation='h',
-                                     color='Count',
-                                     color_continuous_scale='Blues',
-                                     text='Count')
-            fig_motif.update_traces(
-                texttemplate='%{text:,}',
-                textposition='outside',
-                textfont=dict(size=14)
-            )
-            fig_motif.update_layout(**common_layout, showlegend=False) # Hide legend
-            st.plotly_chart(fig_motif, use_container_width=True)
+            if 'Sous_motif' in filtered_logs.columns:
+                sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
+                top_motifs = sous_motif_data.sort_values('Count', ascending=True).tail(10) # Changed to tail(10) for top 10
+                fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
+                                         orientation='h',
+                                         color='Count',
+                                         color_continuous_scale='Blues',
+                                         text='Count')
+                fig_motif.update_traces(
+                    texttemplate='%{text:,}',
+                    textposition='outside',
+                    textfont=dict(size=14)
+                )
+                fig_motif.update_layout(**common_layout, showlegend=False, yaxis={'categoryorder':'total ascending'}) # Sort bars
+                st.plotly_chart(fig_motif, use_container_width=True)
+            else:
+                st.info("La colonne **'Sous_motif'** est manquante pour ce graphique.")
+
 
         with col4_b:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
-            facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
-            fig_facturation = px.bar(facturation_data, x='Count', y='Mode_facturation',
+            if 'Mode_facturation' in filtered_logs.columns:
+                facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
+                fig_facturation = px.bar(facturation_data, x='Count', y='Mode_facturation',
                                              orientation='h',
                                              color='Count',
                                              color_continuous_scale='Blues',
                                              text='Count')
-            fig_facturation.update_traces(
-                texttemplate='%{text:,}',
-                textposition='outside',
-                textfont=dict(size=14)
-            )
-            fig_facturation.update_layout(**common_layout, showlegend=False) # Hide legend
-            st.plotly_chart(fig_facturation, use_container_width=True)
+                fig_facturation.update_traces(
+                    texttemplate='%{text:,}',
+                    textposition='outside',
+                    textfont=dict(size=14)
+                )
+                fig_facturation.update_layout(**common_layout, showlegend=False, yaxis={'categoryorder':'total ascending'}) # Sort bars
+                st.plotly_chart(fig_facturation, use_container_width=True)
+            else:
+                st.info("La colonne **'Mode_facturation'** est manquante pour ce graphique.")
 
-
+        st.markdown("---")
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Détails des Logs</h2>", unsafe_allow_html=True)
 
         # Select columns to display
@@ -458,8 +567,15 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         display_df = filtered_logs[available_cols].copy()
 
         # Merge with staff_df to get 'Nom Prénom' and 'Team'
-        if 'Hyp' in display_df.columns and 'Hyp' in staff_df.columns:
-            display_df = display_df.merge(staff_df[['Hyp', 'Nom Prénom', 'Team']], on='Hyp', how='left')
+        if 'Hyp' in display_df.columns and not staff_df_copy.empty and 'Hyp' in staff_df_copy.columns:
+            # Select only necessary columns from staff_df_copy before merge for efficiency
+            staff_cols_to_merge = ['Hyp']
+            if 'Nom Prénom' in staff_df_copy.columns:
+                staff_cols_to_merge.append('Nom Prénom')
+            if 'Team' in staff_df_copy.columns:
+                staff_cols_to_merge.append('Team')
+
+            display_df = display_df.merge(staff_df_copy[staff_cols_to_merge].drop_duplicates(subset=['Hyp']), on='Hyp', how='left')
             # Rename for display
             if 'Nom Prénom' in display_df.columns:
                 display_df.rename(columns={'Nom Prénom': 'Nom Prénom Agent'}, inplace=True)
@@ -477,24 +593,24 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             remaining_cols = [col for col in display_df.columns if col not in cols_to_order and col != 'Hyp']
             display_df = display_df[cols_to_order + remaining_cols]
         else:
-            st.warning("Impossible de fusionner les données du personnel pour 'Nom Prénom Agent' ou 'Equipe Agent' car la colonne 'Hyp' est manquante dans les logs ou le personnel.")
+            st.warning("Impossible de fusionner les données du personnel pour **'Nom Prénom Agent'** ou **'Equipe Agent'** car la colonne **'Hyp'** est manquante dans les logs ou le personnel.")
             # If merge isn't possible, ensure 'Hyp' is removed if it was only for merge
             if 'Hyp' in display_df.columns:
                 display_df.drop(columns=['Hyp'], inplace=True)
 
 
         # Format datetime
-        if 'Date_d_création' in display_df.columns:
-            # Check if it's already datetime before formatting
-            if pd.api.types.is_datetime64_any_dtype(display_df['Date_d_création']):
-                display_df['Date_d_création'] = display_df['Date_d_création'].dt.strftime('%Y-%m-%d %H:%M:%S')
+        if 'Date_d_création' in display_df.columns and pd.api.types.is_datetime64_any_dtype(display_df['Date_d_création']):
+            display_df['Date_d_création'] = display_df['Date_d_création'].dt.strftime('%Y-%m-%d %H:%M:%S')
 
         # --- Display column counts above the DataFrame ---
         st.markdown("<h3 style='color: #002a48;'>Nombre de valeurs par colonne:</h3>", unsafe_allow_html=True)
         # Create columns to display counts
-        cols_for_counts = st.columns(len(display_df.columns))
+        # Adjust number of columns for counts dynamically, up to a reasonable limit, e.g., 6, then wrap
+        num_cols_for_counts = min(len(display_df.columns), 6)
+        cols_for_counts = st.columns(num_cols_for_counts)
         for i, col_name in enumerate(display_df.columns):
-            with cols_for_counts[i]:
+            with cols_for_counts[i % num_cols_for_counts]: # Use modulo to wrap columns
                 # Calculate non-null count for the column
                 count = display_df[col_name].count()
                 st.markdown(
@@ -502,6 +618,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     f"{col_name}<br>({count})</div>",
                     unsafe_allow_html=True
                 )
+        st.markdown("---") # Add a separator after counts
 
         # Display with improved styling for the DataFrame
         st.markdown(
