@@ -4,6 +4,12 @@ import plotly.express as px
 from datetime import datetime
 import numpy as np
 
+import streamlit as st
+import pandas as pd
+import plotly.express as px
+from datetime import datetime
+import numpy as np
+
 
 def logs_page1(logs_df, staff_df, start_date, end_date):
     # Ensure logs_df and staff_df are not modified outside this function
@@ -244,9 +250,13 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Distribution Horaire des Logs (8H à 23H)</h3>", unsafe_allow_html=True)
             if 'Heure_création' in filtered_logs.columns:
                 try:
+                    # Convertir l'heure en format datetime
                     filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S.%f', errors='coerce').dt.hour
-                    filtered_logs['Heure'] = filtered_logs['Heure'].fillna(pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour)
-                except Exception:
+                    # Si la conversion échoue, essayer sans les microsecondes
+                    if filtered_logs['Heure'].isnull().any():
+                        filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour
+                except Exception as e:
+                    st.warning(f"Erreur de conversion de l'heure : {str(e)}")
                     if 'Date_d_création' in filtered_logs.columns:
                         filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
                     else:
