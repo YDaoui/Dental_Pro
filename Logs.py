@@ -4,13 +4,6 @@ import plotly.express as px
 from datetime import datetime
 import numpy as np
 
-import streamlit as st
-import pandas as pd
-import plotly.express as px
-from datetime import datetime
-import numpy as np
-
-
 def logs_page1(logs_df, staff_df, start_date, end_date):
     # Ensure logs_df and staff_df are not modified outside this function
     logs_df_copy = logs_df.copy()
@@ -20,7 +13,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
     if 'NOM' in staff_df_copy.columns and 'PRENOM' in staff_df_copy.columns:
         staff_df_copy['Nom Prénom'] = staff_df_copy['NOM'] + ' ' + staff_df_copy['PRENOM']
     else:
-        st.warning("Colonnes 'NOM' et/ou 'PRENOM' non trouvées dans les données du personnel.")
+        st.warning("Colonnes 'NOM' et/ou 'PRENOM' non trouvées dans les données du personnel. Utilisation de 'Hyp' si disponible.")
         if 'Hyp' in staff_df_copy.columns:
             staff_df_copy['Nom Prénom'] = staff_df_copy['Hyp']
         else:
@@ -90,7 +83,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 (filtered_logs['Date_d_création'].dt.date <= end_date)
             ]
         else:
-            filtered_logs = pd.DataFrame(columns=logs_df_copy.columns)
+            st.warning("La colonne 'Date_d_création' n'est pas au format datetime ou est manquante. Le filtrage par date ne sera pas appliqué.")
+            filtered_logs = pd.DataFrame(columns=logs_df_copy.columns) # Empty df if date col is problematic
 
         # Other filters
         if segment_filter != 'Tous' and 'Segment' in filtered_logs.columns:
@@ -120,7 +114,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             if not temp_staff_df.empty and 'Hyp' in temp_staff_df.columns:
                 filtered_logs = filtered_logs[filtered_logs['Hyp'].isin(temp_staff_df['Hyp'])]
             else:
+                # If agent/team filter leads to no staff, then no logs should be shown
                 filtered_logs = pd.DataFrame(columns=filtered_logs.columns)
+        elif agent_filter != 'Tous' or equipe_filter != 'Tous':
+             st.warning("La colonne 'Hyp' est manquante dans les logs ou les données du personnel pour appliquer les filtres Agent/Équipe.")
+             filtered_logs = pd.DataFrame(columns=filtered_logs.columns) # No agent/team filtering possible
 
     st.markdown("---")
 
@@ -180,13 +178,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown("---")
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
 
-        # Common layout configuration
+        # Common layout configuration - Potential source of error
+        # Ensure all keys and values are valid for plotly.graph_objs.Layout
         common_layout = dict(
             plot_bgcolor='white',
             paper_bgcolor='white',
             hovermode='x unified',
             xaxis=dict(
-                title="",
+                title="", # Title can be an empty string, not None
                 tickfont=dict(size=14, family='Arial', color='black'),
                 titlefont=dict(size=16),
                 showgrid=True,
@@ -195,7 +194,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linewidth=1
             ),
             yaxis=dict(
-                title="",
+                title="", # Title can be an empty string, not None
                 tickfont=dict(size=14, family='Arial', color='black'),
                 titlefont=dict(size=16),
                 showgrid=True,
@@ -203,9 +202,13 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linecolor='black',
                 linewidth=1
             ),
-            uniformtext_minsize=14,
-            uniformtext_mode='hide',
-            font=dict(size=14, color='#333', family='Arial')
+            uniformtext=dict(
+                minsize=14, # minsize should be int
+                mode='hide' # mode should be 'hide' or 'overlay'
+            ),
+            font=dict(size=14, color='#333', family='Arial'),
+            # Adding margin might help with text clipping, adjust as needed
+            margin=dict(l=40, r=40, t=40, b=40) 
         )
 
         # First row of charts
@@ -239,10 +242,16 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fill='tozeroy',
                     fillcolor='rgba(78, 205, 196, 0.2)'
                 )
-                fig_month.update_layout(common_layout)
-                fig_month.update_xaxes(title="Mois")
-                fig_month.update_yaxes(title="Nombre de Logs")
-                st.plotly_chart(fig_month, use_container_width=True)
+                try:
+                    # Apply common layout
+                    fig_month.update_layout(common_layout)
+                    # Specific updates for this chart
+                    fig_month.update_xaxes(title="Mois", automargin=True)
+                    fig_month.update_yaxes(title="Nombre de Logs", automargin=True)
+                    st.plotly_chart(fig_month, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique mensuel : {e}")
+                    st.info("Impossible d'afficher le graphique mensuel.")
             else:
                 st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
@@ -250,13 +259,12 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Distribution Horaire des Logs (8H à 23H)</h3>", unsafe_allow_html=True)
             if 'Heure_création' in filtered_logs.columns:
                 try:
-                    # Convertir l'heure en format datetime
+                    # Convertir l'heure en format datetime, puis extraire l'heure
+                    # Prioritize exact format, then more flexible parsing
                     filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S.%f', errors='coerce').dt.hour
-                    # Si la conversion échoue, essayer sans les microsecondes
-                    if filtered_logs['Heure'].isnull().any():
-                        filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour
+                    filtered_logs.loc[filtered_logs['Heure'].isnull(), 'Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour
                 except Exception as e:
-                    st.warning(f"Erreur de conversion de l'heure : {str(e)}")
+                    st.warning(f"Erreur de conversion de l'heure : {str(e)}. Essai d'utiliser 'Date_d_création'.")
                     if 'Date_d_création' in filtered_logs.columns:
                         filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
                     else:
@@ -276,10 +284,10 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 hourly_data = pd.merge(all_hours, hourly_data, on='Heure', how='left').fillna(0)
 
                 fig_hour = px.line(hourly_data, x='Heure', y='Count',
-                                     color_discrete_sequence=['#fcd25b'],
-                                     markers=True,
-                                     line_shape='spline',
-                                     text='Count')
+                                    color_discrete_sequence=['#fcd25b'],
+                                    markers=True,
+                                    line_shape='spline',
+                                    text='Count')
                 fig_hour.update_traces(
                     mode='lines+markers+text',
                     marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
@@ -289,10 +297,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fill='tozeroy',
                     fillcolor='rgba(252, 210, 91, 0.2)'
                 )
-                fig_hour.update_layout(common_layout)
-                fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)))
-                fig_hour.update_yaxes(title="Nombre de Logs")
-                st.plotly_chart(fig_hour, use_container_width=True)
+                try:
+                    fig_hour.update_layout(common_layout)
+                    fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)), automargin=True)
+                    fig_hour.update_yaxes(title="Nombre de Logs", automargin=True)
+                    st.plotly_chart(fig_hour, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique horaire : {e}")
+                    st.info("Impossible d'afficher le graphique horaire.")
             else:
                 st.info("Données horaires non disponibles.")
 
@@ -300,7 +312,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Volume de Logs par Jour</h3>", unsafe_allow_html=True)
             if 'Date_d_création' in filtered_logs.columns:
                 jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi',
-                         3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
+                                3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
                 weekday_order = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
                 filtered_logs['Jour'] = filtered_logs['Date_d_création'].dt.weekday.map(jours)
                 weekday_data = filtered_logs.groupby('Jour').size().reset_index(name='Count')
@@ -311,10 +323,10 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 weekday_data = weekday_data.sort_values('Jour')
 
                 fig_day = px.line(weekday_data, x='Jour', y='Count',
-                                     color_discrete_sequence=['#ff6b6b'],
-                                     markers=True,
-                                     line_shape='spline',
-                                     text='Count')
+                                    color_discrete_sequence=['#ff6b6b'],
+                                    markers=True,
+                                    line_shape='spline',
+                                    text='Count')
                 fig_day.update_traces(
                     mode='lines+markers+text',
                     marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
@@ -324,52 +336,62 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fill='tozeroy',
                     fillcolor='rgba(255, 107, 107, 0.2)'
                 )
-                fig_day.update_layout(common_layout)
-                fig_day.update_xaxes(title="Jour")
-                fig_day.update_yaxes(title="Nombre de Logs")
-                st.plotly_chart(fig_day, use_container_width=True)
+                try:
+                    fig_day.update_layout(common_layout)
+                    fig_day.update_xaxes(title="Jour", automargin=True)
+                    fig_day.update_yaxes(title="Nombre de Logs", automargin=True)
+                    st.plotly_chart(fig_day, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique par jour : {e}")
+                    st.info("Impossible d'afficher le graphique par jour.")
             else:
                 st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
         st.markdown("---")
         col1_b, col2_b, col3_b, col4_b = st.columns(4)
 
+        # Bar chart for segments
         with col1_b:
             st.markdown("<h3 style='color: #007bad;'>Répartition par Segment</h3>", unsafe_allow_html=True)
             if 'Segment' in filtered_logs.columns:
                 segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
                 fig_segment = px.bar(segment_data, x='Count', y='Segment',
-                                     orientation='h',
-                                     color='Count',
-                                     color_continuous_scale='Blues',
-                                     text='Count')
+                                    orientation='h',
+                                    color='Count',
+                                    color_continuous_scale='Blues',
+                                    text='Count')
                 fig_segment.update_traces(
                     texttemplate='%{text:,}',
                     textposition='outside',
                     textfont=dict(size=14)
                 )
                 updated_layout = {
-                    **common_layout,
+                    **common_layout, # Use common_layout as base
                     'yaxis': {
                         **common_layout['yaxis'],
                         'categoryorder': 'total ascending'
                     },
                     'showlegend': False
                 }
-                fig_segment.update_layout(updated_layout)
-                st.plotly_chart(fig_segment, use_container_width=True)
+                try:
+                    fig_segment.update_layout(updated_layout)
+                    st.plotly_chart(fig_segment, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique par segment : {e}")
+                    st.info("Impossible d'afficher le graphique par segment.")
             else:
                 st.info("La colonne 'Segment' est manquante.")
 
+        # Bar chart for canal
         with col2_b:
             st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
             if 'Canal' in filtered_logs.columns:
                 canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
                 fig_canal = px.bar(canal_data, x='Count', y='Canal',
-                                   orientation='h',
-                                   color='Count',
-                                   color_continuous_scale='Blues',
-                                   text='Count')
+                                    orientation='h',
+                                    color='Count',
+                                    color_continuous_scale='Blues',
+                                    text='Count')
                 fig_canal.update_traces(
                     texttemplate='%{text:,}',
                     textposition='outside',
@@ -383,21 +405,26 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     },
                     'showlegend': False
                 }
-                fig_canal.update_layout(updated_layout)
-                st.plotly_chart(fig_canal, use_container_width=True)
+                try:
+                    fig_canal.update_layout(updated_layout)
+                    st.plotly_chart(fig_canal, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique par canal : {e}")
+                    st.info("Impossible d'afficher le graphique par canal.")
             else:
                 st.info("La colonne 'Canal' est manquante.")
 
+        # Bar chart for top 10 sous-motifs
         with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
             if 'Sous_motif' in filtered_logs.columns:
                 sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
                 top_motifs = sous_motif_data.sort_values('Count', ascending=True).tail(10)
                 fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
-                                   orientation='h',
-                                   color='Count',
-                                   color_continuous_scale='Blues',
-                                   text='Count')
+                                    orientation='h',
+                                    color='Count',
+                                    color_continuous_scale='Blues',
+                                    text='Count')
                 fig_motif.update_traces(
                     texttemplate='%{text:,}',
                     textposition='outside',
@@ -411,20 +438,25 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     },
                     'showlegend': False
                 }
-                fig_motif.update_layout(updated_layout)
-                st.plotly_chart(fig_motif, use_container_width=True)
+                try:
+                    fig_motif.update_layout(updated_layout)
+                    st.plotly_chart(fig_motif, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique des sous-motifs : {e}")
+                    st.info("Impossible d'afficher le graphique des sous-motifs.")
             else:
                 st.info("La colonne 'Sous_motif' est manquante.")
 
+        # Bar chart for mode de facturation
         with col4_b:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
             if 'Mode_facturation' in filtered_logs.columns:
                 facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
                 fig_facturation = px.bar(facturation_data, x='Count', y='Mode_facturation',
-                                         orientation='h',
-                                         color='Count',
-                                         color_continuous_scale='Blues',
-                                         text='Count')
+                                            orientation='h',
+                                            color='Count',
+                                            color_continuous_scale='Blues',
+                                            text='Count')
                 fig_facturation.update_traces(
                     texttemplate='%{text:,}',
                     textposition='outside',
@@ -438,8 +470,12 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     },
                     'showlegend': False
                 }
-                fig_facturation.update_layout(updated_layout)
-                st.plotly_chart(fig_facturation, use_container_width=True)
+                try:
+                    fig_facturation.update_layout(updated_layout)
+                    st.plotly_chart(fig_facturation, use_container_width=True)
+                except Exception as e:
+                    st.error(f"Erreur lors de la création du graphique de mode de facturation : {e}")
+                    st.info("Impossible d'afficher le graphique de mode de facturation.")
             else:
                 st.info("La colonne 'Mode_facturation' est manquante.")
 
@@ -463,6 +499,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             if 'Team' in staff_df_copy.columns:
                 staff_cols_to_merge.append('Team')
 
+            # Ensure 'Hyp' column from staff_df_copy is unique before merging to avoid duplicates
             display_df = display_df.merge(staff_df_copy[staff_cols_to_merge].drop_duplicates(subset=['Hyp']), on='Hyp', how='left')
             if 'Nom Prénom' in display_df.columns:
                 display_df.rename(columns={'Nom Prénom': 'Nom Prénom Agent'}, inplace=True)
@@ -481,13 +518,19 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         # Format datetime
         if 'Date_d_création' in display_df.columns and pd.api.types.is_datetime64_any_dtype(display_df['Date_d_création']):
             display_df['Date_d_création'] = display_df['Date_d_création'].dt.strftime('%Y-%m-%d %H:%M:%S')
-
+        
+        # Format Heure_création for display if it exists and is not a datetime object
+        if 'Heure_création' in display_df.columns and not pd.api.types.is_datetime64_any_dtype(display_df['Heure_création']):
+            display_df['Heure_création'] = display_df['Heure_création'].astype(str) # Ensure it's string for display if not parsed as datetime
+        
         # Display column counts
         st.markdown("<h3 style='color: #002a48;'>Nombre de valeurs par colonne:</h3>", unsafe_allow_html=True)
-        num_cols_for_counts = min(len(display_df.columns), 6)
-        cols_for_counts = st.columns(num_cols_for_counts)
+        # Use a more flexible column layout for counts
+        num_cols = len(display_df.columns)
+        num_cols_per_row = min(num_cols, 6) # Max 6 columns per row for display
+        cols_for_counts = st.columns(num_cols_per_row)
         for i, col_name in enumerate(display_df.columns):
-            with cols_for_counts[i % num_cols_for_counts]:
+            with cols_for_counts[i % num_cols_per_row]:
                 count = display_df[col_name].count()
                 st.markdown(
                     f"<div style='text-align: center; font-weight: bold; font-size: 14px; color: #007bad;'>"
