@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pyodbc
+
 import plotly.express as px
 from datetime import datetime
 from streamlit_option_menu import option_menu
@@ -117,7 +117,7 @@ def login_Logs():
     with col3:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         if st.button("**Se connecter**", key="login_button", use_container_width=True):
-            st.info("Bouton 'Se connecter' cliqué (aucune logique de connexion active).")
+            st.info("Bouton 'Se connecter' cliqué (aucgit statusune logique de connexion active).")
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 

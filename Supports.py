@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pyodbc
+
 import plotly.express as px
 from datetime import datetime
 from streamlit_option_menu import option_menu

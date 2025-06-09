@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import pyodbc
+
 from contextlib import closing
 from datetime import datetime
 from geopy.geocoders import Nominatim
