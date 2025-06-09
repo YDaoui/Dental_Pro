@@ -241,90 +241,6 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
         with col2_g:
-            st.markdown("<h3 style='color: #007bad;'>Distribution Horaire des Logs (8H à 23H)</h3>", unsafe_allow_html=True)
-            if 'Heure_création' in filtered_logs.columns:
-                try:
-                    filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S.%f', errors='coerce').dt.hour
-                    filtered_logs['Heure'] = filtered_logs['Heure'].fillna(pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour)
-                except Exception:
-                    if 'Date_d_création' in filtered_logs.columns:
-                        filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
-                    else:
-                        filtered_logs['Heure'] = np.nan
-            else:
-                if 'Date_d_création' in filtered_logs.columns:
-                    filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
-                else:
-                    filtered_logs['Heure'] = np.nan
-
-            if 'Heure' in filtered_logs.columns and not filtered_logs['Heure'].isnull().all():
-                hourly_data = filtered_logs[(filtered_logs['Heure'] >= 8) & (filtered_logs['Heure'] <= 23)]
-                hourly_data = hourly_data.groupby('Heure').size().reset_index(name='Count')
-                hourly_data = hourly_data.sort_values('Heure')
-
-                all_hours = pd.DataFrame({'Heure': range(8, 24)})
-                hourly_data = pd.merge(all_hours, hourly_data, on='Heure', how='left').fillna(0)
-
-                fig_hour = px.line(hourly_data, x='Heure', y='Count',
-                                     color_discrete_sequence=['#fcd25b'],
-                                     markers=True,
-                                     line_shape='spline',
-                                     text='Count')
-                fig_hour.update_traces(
-                    mode='lines+markers+text',
-                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
-                    hovertemplate='<b>Heure:</b> %{x}H<br><b>Logs:</b> %{y:,}<extra></extra>',
-                    textposition="top center",
-                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
-                    fill='tozeroy',
-                    fillcolor='rgba(252, 210, 91, 0.2)'
-                )
-                fig_hour.update_layout(common_layout)
-                fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)))
-                fig_hour.update_yaxes(title="Nombre de Logs")
-                st.plotly_chart(fig_hour, use_container_width=True)
-            else:
-                st.info("Données horaires non disponibles.")
-
-        with col3_g:
-            st.markdown("<h3 style='color: #007bad;'>Volume de Logs par Jour</h3>", unsafe_allow_html=True)
-            if 'Date_d_création' in filtered_logs.columns:
-                jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi',
-                         3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
-                weekday_order = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-                filtered_logs['Jour'] = filtered_logs['Date_d_création'].dt.weekday.map(jours)
-                weekday_data = filtered_logs.groupby('Jour').size().reset_index(name='Count')
-
-                all_days_df = pd.DataFrame({'Jour': weekday_order})
-                weekday_data = pd.merge(all_days_df, weekday_data, on='Jour', how='left').fillna(0)
-                weekday_data['Jour'] = pd.Categorical(weekday_data['Jour'], categories=weekday_order, ordered=True)
-                weekday_data = weekday_data.sort_values('Jour')
-
-                fig_day = px.line(weekday_data, x='Jour', y='Count',
-                                     color_discrete_sequence=['#ff6b6b'],
-                                     markers=True,
-                                     line_shape='spline',
-                                     text='Count')
-                fig_day.update_traces(
-                    mode='lines+markers+text',
-                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
-                    hovertemplate='<b>Jour:</b> %{x}<br><b>Logs:</b> %{y:,}<extra></extra>',
-                    textposition="top center",
-                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
-                    fill='tozeroy',
-                    fillcolor='rgba(255, 107, 107, 0.2)'
-                )
-                fig_day.update_layout(common_layout)
-                fig_day.update_xaxes(title="Jour")
-                fig_day.update_yaxes(title="Nombre de Logs")
-                st.plotly_chart(fig_day, use_container_width=True)
-            else:
-                st.info("La colonne 'Date_d_création' n'est pas disponible.")
-
-        st.markdown("---")
-        col1_b, col2_b, col3_b, col4_b = st.columns(4)
-
-        with col1_b:
             st.markdown("<h3 style='color: #007bad;'>Répartition par Segment</h3>", unsafe_allow_html=True)
             if 'Segment' in filtered_logs.columns:
                 segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
@@ -351,7 +267,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Segment' est manquante.")
 
-        with col2_b:
+        with col3_g:
             st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
             if 'Canal' in filtered_logs.columns:
                 canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
@@ -377,8 +293,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 st.plotly_chart(fig_canal, use_container_width=True)
             else:
                 st.info("La colonne 'Canal' est manquante.")
+        col1_y, col2_y, col3_y = st.columns(3)
 
-        with col3_b:
+        with col1_y:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
             if 'Sous_motif' in filtered_logs.columns:
                 sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
@@ -406,7 +323,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Sous_motif' est manquante.")
 
-        with col4_b:
+        with col2_y:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
             if 'Mode_facturation' in filtered_logs.columns:
                 facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
