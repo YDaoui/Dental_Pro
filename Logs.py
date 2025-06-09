@@ -223,13 +223,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
 
         # Configuration commune pour tous les graphiques (Updated for line charts)
+        # Configuration commune pour tous les graphiques (Updated for line charts)
         common_layout = dict(
             plot_bgcolor='white', # Clean background
             paper_bgcolor='white',
             hovermode='x unified', # Unified hover for better data exploration
             xaxis=dict(
                 title="",
-                tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                tickfont=dict(size=14, family='Arial', color='black', weight='bold'), # <--- Possible culprit here!
                 titlefont=dict(size=16),
                 showgrid=True, # Show grid
                 gridcolor='#e0e0e0', # Lighter grid lines
@@ -238,14 +239,16 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             ),
             yaxis=dict(
                 title="",
-                tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                tickfont=dict(size=14, family='Arial', color='black', weight='bold'), # <--- Possible culprit here!
                 titlefont=dict(size=16),
                 showgrid=True,
                 gridcolor='#e0e0e0',
                 linecolor='black',
                 linewidth=1
             ),
-            font=dict(size=14, color='#333') # Darker font color
+            # REMOVED: uniformtext_minsize=14, # These are not direct layout properties
+            # REMOVED: uniformtext_mode='hide', # These are not direct layout properties
+            font=dict(size=14, color='#333') # <--- Not the main culprit, but still a generic font
         )
 
         # First row of charts (Line Charts - Restyled)
