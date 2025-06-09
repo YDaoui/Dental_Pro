@@ -8,3 +8,4 @@ plotly
 folium  
 streamlit-folium
 streamlit-option-menu
+st-aggrid
