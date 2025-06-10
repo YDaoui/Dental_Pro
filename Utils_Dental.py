@@ -480,14 +480,7 @@ def login_page():
     
     with col2:
         # Centrer l'image avec HTML
-        st.markdown(
-            """
-            <div style="display: flex; justify-content: center;">
-                <img src="Dental_Implant.png" width="380">
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+        st.image("Dental_Implant.png", use_column_width=True)
 
     with col3:
         username = st.text_input("Nom d'utilisateur")
