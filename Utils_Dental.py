@@ -15,6 +15,8 @@ import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from contextlib import closing
+import io
+
 
 load_dotenv()
 
@@ -472,37 +474,15 @@ def reset_password(hyp):
     finally:
         conn.close()
 
-
-def login_page():
+def login_page(): 
     """Affiche la page de connexion."""
-    
-    # Custom CSS for centering the image and general styling
-    st.markdown(
-        """
-        <style>
-        .centered-image {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%; /* Ensure the container takes full width */
-        }
-        .stTextInput, .stButton {
-            width: 100%; /* Make input fields and buttons take full width */
-        }
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # You might not need st.columns for centering the image if CSS handles it
-    # But if you want to keep the layout for other elements, you can
     col1, col2, col3, col4 = st.columns([1, 1, 2, 1])
-
+    
     with col2:
-        # Apply the custom class to the image container
+        # Centrer l'image avec HTML
         st.markdown(
             """
-            <div class="centered-image">
+            <div style="display: flex; justify-content: center;">
                 <img src="Dental_Implant.png" width="380">
             </div>
             """,
@@ -513,18 +493,16 @@ def login_page():
         username = st.text_input("Nom d'utilisateur")
         password = st.text_input("Mot de passe", type="password")
 
-        col_button_1, col_button_2 = st.columns([1, 5]) # Renamed to avoid confusion with outer columns
-        with col_button_1:
+        col1, col2 = st.columns([1, 5])
+        with col1:
             if st.button("**Se connecter**", key="login_button"):
-                # Call your authenticate function here
-                # user_data = authenticate(username, password)
-                user_data = True # Placeholder for testing
+                user_data = authenticate(username, password)
                 if user_data:
                     st.session_state.update({
                         "authenticated": True,
-                        # "hyp": user_data[0],
-                        # "user_type": user_data[1],
-                        # "date_in": user_data[2],
+                        "hyp": user_data[0],
+                        "user_type": user_data[1],
+                        "date_in": user_data[2],
                         "username": username
                     })
                     st.success("Authentification réussie")
@@ -532,7 +510,7 @@ def login_page():
                 else:
                     st.error("Identifiants incorrects")
 
-        with col_button_2:
+        with col2:
             if st.button("**Annuler**", key="Annuler_button"):
                 st.experimental_rerun()
 
@@ -672,9 +650,6 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
         filtered_df = filtered_df[filtered_df['SHORT_MESSAGE'] == transaction_filter]
             
     return filtered_df
-
-
-
 def logs_page(logs_df, staff_df, start_date, end_date):
     """Displays the logs page with specified filters and consistent styling."""
 
@@ -701,9 +676,20 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         with col8:
             qualification_filter = st.selectbox("Qualification", ['Tous'] + sorted(logs_df['Qualification'].dropna().unique().tolist()) if 'Qualification' in logs_df.columns else ['Tous'], key='qualification_filter')
 
-
     with st.spinner("Application des filtres..."):
-        filtered_logs = filter_data(logs_df, 'Tous', team_filter, activity_filter, 'Toutes', start_date, end_date, staff_df)
+        # Assuming filter_data is defined elsewhere and correctly filters the DataFrame
+        # For demonstration purposes, let's create a dummy filter_data function if it's not provided
+        try:
+            filtered_logs = filter_data(logs_df, 'Tous', team_filter, activity_filter, 'Toutes', start_date, end_date, staff_df)
+        except NameError:
+            # Fallback for when filter_data is not defined
+            st.warning("`filter_data` function not found. Using a basic date filter for demonstration.")
+            if 'Date_d_création' in logs_df.columns:
+                logs_df['Date_d_création'] = pd.to_datetime(logs_df['Date_d_création'], errors='coerce')
+                filtered_logs = logs_df[(logs_df['Date_d_création'] >= start_date) & (logs_df['Date_d_création'] <= end_date)]
+            else:
+                filtered_logs = logs_df.copy() # No date filter if column missing
+
 
         if offre_filter != 'Tous' and 'Offre' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Offre'] == offre_filter]
@@ -793,13 +779,158 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 </div>
                 """, unsafe_allow_html=True)
 
-    
+        st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
         st.markdown("<h3 style='color: #007bad;'>Analyse des Logs</h3>", unsafe_allow_html=True)
 
         with st.container(border=True):
-            col1, col2 = st.columns(2)
+            # First row of charts (formerly second row): Qualification/Direction (col1), Mode de Facturation (col2)
+            col1, col2 = st.columns([3, 1])
 
-            # Chart 1: Logs by Canal (Horizontal Bar Chart)
+            # Chart 4: Qualification and Direction Trends Over Months (Line and Bar Chart Combo) - now in col1 (top left)
+            with col1:
+                st.markdown("<h4 style='color: #007bad;'>Tendance des Qualifications et Directions par Mois</h4>", unsafe_allow_html=True)
+                if 'Qualification' in filtered_logs.columns and 'Direction' in filtered_logs.columns and 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
+                    filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
+                    df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
+
+                    if not df_combined.empty:
+                        df_combined['Month_Year_Str'] = df_combined['Date_d_création'].dt.to_period('M').astype(str)
+                        df_combined['Month_Year_Dt'] = df_combined['Date_d_création'].dt.to_period('M').dt.to_timestamp()
+
+                        qualification_monthly_counts = df_combined.groupby(['Month_Year_Str', 'Month_Year_Dt', 'Qualification']).size().reset_index(name='Count')
+                        qualification_monthly_counts = qualification_monthly_counts.sort_values('Month_Year_Dt')
+
+                        direction_monthly_counts = df_combined.groupby(['Month_Year_Str', 'Month_Year_Dt', 'Direction']).size().reset_index(name='Count')
+                        direction_monthly_counts = direction_monthly_counts.sort_values('Month_Year_Dt')
+
+                        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+                        qualification_colors = px.colors.qualitative.Dark24
+                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'}
+
+                        for i, qualification in enumerate(qualification_monthly_counts['Qualification'].unique()):
+                            df_qual = qualification_monthly_counts[qualification_monthly_counts['Qualification'] == qualification]
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=df_qual['Month_Year_Dt'],
+                                    y=df_qual['Count'],
+                                    mode='lines+markers',
+                                    name=f'Qualification: {qualification}',
+                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]),
+                                    marker=dict(size=12),
+                                    hovertemplate=f'Mois: %{{x|%B %Y}}<br>Qualification: {qualification}<br>Logs: %{{y}}<extra></extra>'
+                                ),
+                                secondary_y=False,
+                            )
+
+                        direction_pivot = direction_monthly_counts.pivot(index='Month_Year_Dt', columns='Direction', values='Count').fillna(0).reset_index()
+                        direction_pivot = direction_pivot.sort_values('Month_Year_Dt')
+
+                        direction_pivot['Total'] = direction_pivot.sum(axis=1, numeric_only=True)
+                        
+                        if 'InComming' in direction_pivot.columns:
+                            direction_pivot['InComming_Pct'] = (direction_pivot['InComming'] / direction_pivot['Total'] * 100).round(1)
+                            fig.add_trace(
+                                go.Bar(
+                                    x=direction_pivot['Month_Year_Dt'],
+                                    y=direction_pivot['InComming'],
+                                    name='Direction: InComming',
+                                    marker_color=direction_colors['InComming'],
+                                    opacity=0.7,
+                                    text=direction_pivot.apply(lambda x: f"{int(x['InComming'])} ({x['InComming_Pct']}%)", axis=1),
+                                    textposition='outside',
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
+                                    hovertemplate='Mois: %{x|%B %Y}<br>Direction: InComming<br>Logs: %{y}<extra></extra>'
+                                ),
+                                secondary_y=True,
+                            )
+                        if 'OutComming' in direction_pivot.columns:
+                            direction_pivot['OutComming_Pct'] = (direction_pivot['OutComming'] / direction_pivot['Total'] * 100).round(1)
+                            fig.add_trace(
+                                go.Bar(
+                                    x=direction_pivot['Month_Year_Dt'],
+                                    y=direction_pivot['OutComming'],
+                                    name='Direction: OutComming',
+                                    marker_color=direction_colors['OutComming'],
+                                    opacity=0.7,
+                                    text=direction_pivot.apply(lambda x: f"{int(x['OutComming'])} ({x['OutComming_Pct']}%)", axis=1),
+                                    textposition='outside',
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
+                                    hovertemplate='Mois: %{x|%B %Y}<br>Direction: OutComming<br>Logs: %{y}<extra></extra>'
+                                ),
+                                secondary_y=True,
+                            )
+
+                        fig.update_layout(
+                            xaxis_title={
+                                'text': "Mois",
+                                'font': {'size': 20, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            },
+                            
+                            xaxis=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold'),
+                                tickformat="%B %Y"
+                            ),
+                            yaxis=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            ),
+                            yaxis2=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            ),
+                            margin=dict(l=20, r=20, t=80, b=20),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            font=dict(color='black'),
+                            hovermode="x unified",
+                            barmode='stack',
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                        )
+
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("Données de qualification, direction ou date non valides pour ce graphique.")
+                else:
+                    st.warning("Colonnes 'Qualification', 'Direction' ou 'Date_d_création' manquantes ou vides pour ce graphique.")
+
+            # New Chart: Mode de Facturation (Pie Chart) - in col2 (top right)
+            with col2:
+                st.markdown("<h4 style='color: #007bad;'>Répartition par Mode de Facturation</h4>", unsafe_allow_html=True)
+                if 'Mode_facturation' in filtered_logs.columns and not filtered_logs.empty:
+                    billing_mode_counts = filtered_logs['Mode_facturation'].value_counts().reset_index()
+                    billing_mode_counts.columns = ['Mode_facturation', 'Count']
+                    
+                    fig_pie = go.Figure(data=[go.Pie(
+                        labels=billing_mode_counts['Mode_facturation'],
+                        values=billing_mode_counts['Count'],
+                        hole=.4, # For a donut chart
+                        pull=[0.05 if i == billing_mode_counts['Count'].argmax() else 0 for i in range(len(billing_mode_counts))], # Pull out largest slice
+                        marker_colors=px.colors.qualitative.Set3,
+                        textinfo='percent+label',
+                        insidetextfont=dict(size=22, color='Black', family='Arial', weight='bold'), # Bold, larger text inside
+                        outsidetextfont=dict(size=22, color='black', family='Arial', weight='bold'), # Bold, larger text outside
+                        hovertemplate='Mode: %{label}<br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
+                    )])
+
+                    fig_pie.update_layout(
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        showlegend=False,
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(size=20, color='black', family='Arial', weight='bold')),
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
+                        font=dict(color='black'),
+                        #title_text="Mode de Facturation", # Add title
+                        #title_font=dict(size=20, color='#007bad', family='Arial', weight='bold'),
+                        #title_x=0.5 # Center the title
+                    )
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                else:
+                    st.warning("Données non disponibles pour ce graphique (Mode de Facturation)")
+
+            st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
+            # Second row of charts (formerly first row): Canal (col1), Volume (col2), Offre (col3)
+            col1, col2, col3 = st.columns(3)
+
+            # Chart 1: Logs by Canal (Horizontal Bar Chart) - now in col1 (bottom left)
             with col1:
                 st.markdown("<h4 style='color: #007bad;'>Répartition par Canal</h4>", unsafe_allow_html=True)
                 if 'Canal' in filtered_logs.columns and not filtered_logs.empty:
@@ -816,7 +947,6 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         color='Canal',
                         color_discrete_sequence=px.colors.qualitative.Pastel,
                     )
-                    # Add annotations with count and percentage
                     fig1.update_traces(
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
@@ -842,65 +972,15 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         showlegend=False,
                         plot_bgcolor='white',
                         paper_bgcolor='white',
-                        font=dict(color='black')
+                        font=dict(color='black'),
+                        bargap=0.3
                     )
                     st.plotly_chart(fig1, use_container_width=True)
                 else:
                     st.warning("Données non disponibles pour ce graphique (Canal)")
 
-            # Chart 2: Logs by Offer (Horizontal Bar Chart)
+            # Chart 3: Logs Over Time (Line Chart) - now in col2 (bottom center)
             with col2:
-                st.markdown("<h4 style='color: #007bad;'>Répartition par Offre</h4>", unsafe_allow_html=True)
-                if 'Offre' in filtered_logs.columns and not filtered_logs.empty:
-                    offre_counts = filtered_logs['Offre'].value_counts().reset_index()
-                    offre_counts.columns = ['Offre', 'Count']
-                    total = offre_counts['Count'].sum()
-                    offre_counts['Percentage'] = (offre_counts['Count'] / total * 100).round(1)
-                    
-                    fig2 = px.bar(
-                        offre_counts,
-                        x='Count',
-                        y='Offre',
-                        orientation='h',
-                        color='Offre',
-                        color_discrete_sequence=px.colors.qualitative.Set2,
-                    )
-                    # Add annotations with count and percentage
-                    fig2.update_traces(
-                        texttemplate='%{x} (%{customdata[0]}%)',
-                        textposition='outside',
-                        customdata=offre_counts[['Percentage']],
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
-                    )
-                    fig2.update_layout(
-                        xaxis_title={
-                            'text': "Nombre de Logs",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                        },
-                        yaxis_title={
-                            'text': "Offre",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                        },
-                        xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                        ),
-                        yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                        ),
-                        margin=dict(l=20, r=20, t=50, b=20),
-                        showlegend=False,
-                        plot_bgcolor='white',
-                        paper_bgcolor='white',
-                        font=dict(color='black')
-                    )
-                    st.plotly_chart(fig2, use_container_width=True)
-                else:
-                    st.warning("Données non disponibles pour ce graphique (Offre)")
-
-            col3, col4 = st.columns(2)
-
-            # Chart 3: Logs Over Time (Line Chart)
-            with col3:
                 st.markdown("<h4 style='color: #007bad;'>Volume de Logs au Fil du Temps</h4>", unsafe_allow_html=True)
                 if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
                     daily_counts = filtered_logs['Date_d_création'].dt.to_period('D').value_counts().sort_index().reset_index()
@@ -926,12 +1006,14 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold'),
+                            tickformat="%B %Y"
                         ),
                         yaxis=dict(
                             tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
+                        showlegend=False,
                         plot_bgcolor='white',
                         paper_bgcolor='white',
                         font=dict(color='black')
@@ -940,136 +1022,61 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Données non disponibles pour ce graphique (Date de création)")
 
-            # Chart 4: Qualification and Direction Trends Over Months (Line and Bar Chart Combo)
-            with col4:
-                st.markdown("<h4 style='color: #007bad;'>Tendance des Qualifications et Directions par Mois</h4>", unsafe_allow_html=True)
-                if 'Qualification' in filtered_logs.columns and 'Direction' in filtered_logs.columns and 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
-                    filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
-                    df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
-
-                    if not df_combined.empty:
-                        df_combined['Month_Year'] = df_combined['Date_d_création'].dt.to_period('M').astype(str)
-
-                        # Data for Qualification lines
-                        qualification_monthly_counts = df_combined.groupby(['Month_Year', 'Qualification']).size().reset_index(name='Count')
-                        qualification_monthly_counts['Sort_Key'] = pd.to_datetime(qualification_monthly_counts['Month_Year'])
-                        qualification_monthly_counts = qualification_monthly_counts.sort_values('Sort_Key')
-
-                        # Data for Direction bars
-                        direction_monthly_counts = df_combined.groupby(['Month_Year', 'Direction']).size().reset_index(name='Count')
-                        direction_monthly_counts['Sort_Key'] = pd.to_datetime(direction_monthly_counts['Month_Year'])
-                        direction_monthly_counts = direction_monthly_counts.sort_values('Sort_Key')
-
-                        # Create subplots - 2 y-axes sharing the same x-axis
-                        fig = make_subplots(specs=[[{"secondary_y": True}]])
-
-                        # Define a consistent color scale for qualifications and directions
-                        qualification_colors = px.colors.qualitative.Dark24
-                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'}
-
-                        # Add Qualification lines with labels
-                        for i, qualification in enumerate(qualification_monthly_counts['Qualification'].unique()):
-                            df_qual = qualification_monthly_counts[qualification_monthly_counts['Qualification'] == qualification]
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=df_qual['Month_Year'],
-                                    y=df_qual['Count'],
-                                    mode='lines+markers',
-                                    name=f'Qualification: {qualification}',
-                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]),
-                                    marker=dict(size=8),
-                                    hovertemplate=f'Mois: %{{x}}<br>Qualification: {qualification}<br>Logs: %{{y}}<extra></extra>'
-                                ),
-                                secondary_y=False,
-                            )
-
-                        # Add Direction bars (stacked for Incoming/Outgoing) with labels
-                        direction_pivot = direction_monthly_counts.pivot(index='Month_Year', columns='Direction', values='Count').fillna(0).reset_index()
-                        direction_pivot['Sort_Key'] = pd.to_datetime(direction_pivot['Month_Year'])
-                        direction_pivot = direction_pivot.sort_values('Sort_Key')
-
-                        # Calculate total for each month to compute percentages
-                        direction_pivot['Total'] = direction_pivot.sum(axis=1, numeric_only=True)
-                        
-                        if 'InComming' in direction_pivot.columns:
-                            direction_pivot['InComming_Pct'] = (direction_pivot['InComming'] / direction_pivot['Total'] * 100).round(1)
-                            fig.add_trace(
-                                go.Bar(
-                                    x=direction_pivot['Month_Year'],
-                                    y=direction_pivot['InComming'],
-                                    name='Direction: InComming',
-                                    marker_color=direction_colors['InComming'],
-                                    opacity=0.7,
-                                    text=direction_pivot.apply(lambda x: f"{x['InComming']} ({x['InComming_Pct']}%)", axis=1),
-                                    textposition='outside',
-                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
-                                    hovertemplate='Mois: %{x}<br>Direction: InComming<br>Logs: %{y}<extra></extra>'
-                                ),
-                                secondary_y=True,
-                            )
-                        if 'OutComming' in direction_pivot.columns:
-                            direction_pivot['OutComming_Pct'] = (direction_pivot['OutComming'] / direction_pivot['Total'] * 100).round(1)
-                            fig.add_trace(
-                                go.Bar(
-                                    x=direction_pivot['Month_Year'],
-                                    y=direction_pivot['OutComming'],
-                                    name='Direction: OutComming',
-                                    marker_color=direction_colors['OutComming'],
-                                    opacity=0.7,
-                                    text=direction_pivot.apply(lambda x: f"{x['OutComming']} ({x['OutComming_Pct']}%)", axis=1),
-                                    textposition='outside',
-                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
-                                    hovertemplate='Mois: %{x}<br>Direction: OutComming<br>Logs: %{y}<extra></extra>'
-                                ),
-                                secondary_y=True,
-                            )
-
-                        # Update layout
-                        fig.update_layout(
-                            xaxis_title={
-                                'text': "Mois",
-                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                            },
-                            yaxis_title={
-                                'text': "Nombre de Logs (Qualifications)",
-                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                            },
-                            yaxis2_title={
-                                'text': "Nombre de Logs (Directions)",
-                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                            },
-                            xaxis=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                            ),
-                            yaxis=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                            ),
-                            yaxis2=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                            ),
-                            margin=dict(l=20, r=20, t=80, b=20),
-                            plot_bgcolor='white',
-                            paper_bgcolor='white',
-                            font=dict(color='black'),
-                            hovermode="x unified",
-                            barmode='stack',
-                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
-                        )
-
-                        st.plotly_chart(fig, use_container_width=True)
-                    else:
-                        st.warning("Données de qualification, direction ou date non valides pour ce graphique.")
+            # Chart 2: Logs by Offer (Horizontal Bar Chart) - now in col3 (bottom right)
+            with col3:
+                st.markdown("<h4 style='color: #007bad;'>Répartition par Offre</h4>", unsafe_allow_html=True)
+                if 'Offre' in filtered_logs.columns and not filtered_logs.empty:
+                    offre_counts = filtered_logs['Offre'].value_counts().reset_index()
+                    offre_counts.columns = ['Offre', 'Count']
+                    total = offre_counts['Count'].sum()
+                    offre_counts['Percentage'] = (offre_counts['Count'] / total * 100).round(1)
+                    
+                    fig2 = px.bar(
+                        offre_counts,
+                        x='Count',
+                        y='Offre',
+                        orientation='h',
+                        color='Offre',
+                        color_discrete_sequence=px.colors.qualitative.Set2,
+                    )
+                    fig2.update_traces(
+                        texttemplate='%{x} (%{customdata[0]}%)',
+                        textposition='outside',
+                        customdata=offre_counts[['Percentage']],
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
+                    )
+                    fig2.update_layout(
+                        xaxis_title={
+                            'text': "Nombre de Logs",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        yaxis_title={
+                            'text': "Offre",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        xaxis=dict(
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                        ),
+                        yaxis=dict(
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                        ),
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        showlegend=False,
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
+                        font=dict(color='black'),
+                        bargap=0.3
+                    )
+                    st.plotly_chart(fig2, use_container_width=True)
                 else:
-                    st.warning("Colonnes 'Qualification', 'Direction' ou 'Date_d_création' manquantes ou vides pour ce graphique.")
+                    st.warning("Données non disponibles pour ce graphique (Offre)")
 
-
-        
+        st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
         st.markdown("<h3 style='color: #007bad;'>Données Détaillées des Logs</h3>", unsafe_allow_html=True)
 
         display_df = filtered_logs.sort_values('Date_d_création', ascending=False).copy()
 
-        # Drop specified columns if they exist
-        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key']
+        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key', 'Month_Year_Str', 'Month_Year_Dt']
         display_df = display_df.drop(columns=[col for col in columns_to_drop if col in display_df.columns], errors='ignore')
 
         column_configs = {
@@ -1084,6 +1091,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             "Direction": st.column_config.Column("Direction", width="medium"),
             "Qualification": st.column_config.Column("Qualification", width="medium"),
             "Segment": st.column_config.Column("Segment", width="small"),
+            "Mode_facturation": st.column_config.Column("Mode de Facturation", width="medium"),
         }
 
         existing_columns_configs = {col: config for col, config in column_configs.items() if col in display_df.columns}
@@ -1095,6 +1103,21 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             use_container_width=True,
             height=400,
         )
+        
+        # Add download button for Excel
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
+            filtered_logs.to_excel(writer, index=False, sheet_name='Logs Data')
+        excel_buffer.seek(0)
+
+        st.download_button(
+            label="Télécharger en Excel",
+            data=excel_buffer,
+            file_name="logs_filtered_data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            help="Cliquez ici pour télécharger les données filtrées au format Excel."
+        )
+
         st.markdown("""
         <style>
         .stDataFrame td {
@@ -2034,17 +2057,18 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         </style>
         """, unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["📈 Sales Analytics", "💰 Recolts Analytics", "🧾 Logs Analytics"])
+    tab1, tab2, tab3 = st.tabs(["🧾 Logs Analytics","📈 Sales Analytics", "💰 Recolts Analytics"])
 
 
     
     with tab1:
-        sales_page(sales_df, staff_df, start_date, end_date)
+        logs_page(logs_df, staff_df, start_date, end_date)
+        
     
     with tab2:
-        recolts_page(recolts_df, staff_df, start_date, end_date)
+        sales_page(sales_df, staff_df, start_date, end_date)
     with tab3:
-        logs_page(logs_df, staff_df, start_date, end_date)
+        recolts_page(recolts_df, staff_df, start_date, end_date)
 
 
 

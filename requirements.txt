@@ -9,6 +9,7 @@ folium
 streamlit-folium
 streamlit-option-menu
 streamlit-aggrid
+xlsxwriter
 
 
 
