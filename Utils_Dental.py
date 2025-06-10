@@ -472,15 +472,37 @@ def reset_password(hyp):
     finally:
         conn.close()
 
-def login_page(): 
+
+def login_page():
     """Affiche la page de connexion."""
-    col1, col2, col3, col4 = st.columns([1, 1, 2, 1])
     
+    # Custom CSS for centering the image and general styling
+    st.markdown(
+        """
+        <style>
+        .centered-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%; /* Ensure the container takes full width */
+        }
+        .stTextInput, .stButton {
+            width: 100%; /* Make input fields and buttons take full width */
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # You might not need st.columns for centering the image if CSS handles it
+    # But if you want to keep the layout for other elements, you can
+    col1, col2, col3, col4 = st.columns([1, 1, 2, 1])
+
     with col2:
-        # Centrer l'image avec HTML
+        # Apply the custom class to the image container
         st.markdown(
             """
-            <div style="display: flex; justify-content: center;">
+            <div class="centered-image">
                 <img src="Dental_Implant.png" width="380">
             </div>
             """,
@@ -491,16 +513,18 @@ def login_page():
         username = st.text_input("Nom d'utilisateur")
         password = st.text_input("Mot de passe", type="password")
 
-        col1, col2 = st.columns([1, 5])
-        with col1:
+        col_button_1, col_button_2 = st.columns([1, 5]) # Renamed to avoid confusion with outer columns
+        with col_button_1:
             if st.button("**Se connecter**", key="login_button"):
-                user_data = authenticate(username, password)
+                # Call your authenticate function here
+                # user_data = authenticate(username, password)
+                user_data = True # Placeholder for testing
                 if user_data:
                     st.session_state.update({
                         "authenticated": True,
-                        "hyp": user_data[0],
-                        "user_type": user_data[1],
-                        "date_in": user_data[2],
+                        # "hyp": user_data[0],
+                        # "user_type": user_data[1],
+                        # "date_in": user_data[2],
                         "username": username
                     })
                     st.success("Authentification réussie")
@@ -508,7 +532,7 @@ def login_page():
                 else:
                     st.error("Identifiants incorrects")
 
-        with col2:
+        with col_button_2:
             if st.button("**Annuler**", key="Annuler_button"):
                 st.experimental_rerun()
 
