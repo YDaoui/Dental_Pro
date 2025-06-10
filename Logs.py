@@ -246,8 +246,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     # Apply common layout
                     fig_month.update_layout(common_layout)
                     # Specific updates for this chart
-                    fig_month.update_xaxes(title="Mois", automargin=True)
-                    fig_month.update_yaxes(title="Nombre de Logs", automargin=True)
+                    #fig_month.update_xaxes(title="Mois", automargin=True)
+                    #fig_month.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_month, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique mensuel : {e}")
@@ -299,8 +299,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 )
                 try:
                     fig_hour.update_layout(common_layout)
-                    fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)), automargin=True)
-                    fig_hour.update_yaxes(title="Nombre de Logs", automargin=True)
+                    #fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)), automargin=True)
+                    #fig_hour.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_hour, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique horaire : {e}")
@@ -338,8 +338,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 )
                 try:
                     fig_day.update_layout(common_layout)
-                    fig_day.update_xaxes(title="Jour", automargin=True)
-                    fig_day.update_yaxes(title="Nombre de Logs", automargin=True)
+                    #fig_day.update_xaxes(title="Jour", automargin=True)
+                    #fig_day.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_day, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique par jour : {e}")
@@ -376,9 +376,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
                         'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': {
-                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    'xaxis': { # Added to hide x-axis
+                        'visible': False,
+                        'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
@@ -400,14 +400,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 total = canal_data['Count'].sum()
                 canal_data['Percentage'] = (canal_data['Count'] / total * 100).round(1)
                 fig_canal = px.bar(canal_data, x='Count', y='Canal',
-                                    orientation='h',
-                                    color='Count',
-                                    color_continuous_scale='Blues',
-                                    text=[f'{count:,}<br>({perc}%)' for count, perc in zip(canal_data['Count'], canal_data['Percentage'])])
+                                orientation='h',
+                                color='Count',
+                                color_continuous_scale='Blues',
+                                text=[f'{count:,}<br>({perc}%)' for count, perc in zip(canal_data['Count'], canal_data['Percentage'])])
                 fig_canal.update_traces(
                     texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14, family='Arial', color='black')
+                    textfont=dict(size=18, family='Arial', color='black')
                 )
                 updated_layout = {
                     **common_layout,
@@ -417,9 +417,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
                         'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': {
-                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    'xaxis': { # Added to hide x-axis
+                        'visible': False,
+                        'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
@@ -441,6 +441,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 total = sous_motif_data['Count'].sum()
                 top_motifs = sous_motif_data.sort_values('Count', ascending=True).tail(10)
                 top_motifs['Percentage'] = (top_motifs['Count'] / total * 100).round(1)
+
+                max_count_motif = top_motifs['Count'].max()
+                # Crucially, ensure enough space on the x-axis for text
+                x_axis_range_motif = [0, max_count_motif * 1.2] # Increased buffer for more space
+
                 fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
                                     orientation='h',
                                     color='Count',
@@ -448,10 +453,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                                     text=[f'{count:,}<br>({perc}%)' for count, perc in zip(top_motifs['Count'], top_motifs['Percentage'])])
                 fig_motif.update_traces(
                     texttemplate='%{text}',
-                    textposition='outside',
-                    textfont=dict(size=14, family='Arial', color='black')
+                    textposition='outside', # Set to 'outside' for persistent visibility
+                    textfont=dict(size=18, family='Arial', color='black'),
+                    cliponaxis=True # Added this to prevent clipping if labels extend beyond plot area
                 )
-                updated_layout = {
+                updated_layout_motif = { # Renamed to avoid clash
                     **common_layout,
                     'yaxis': {
                         **common_layout['yaxis'],
@@ -459,16 +465,17 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
                         'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': {
-                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    'xaxis': { # Hide x-axis and set range
+                        'visible': False,
+                        'showticklabels': False,
+                        'range': x_axis_range_motif
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
                     'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
-                    fig_motif.update_layout(updated_layout)
+                    fig_motif.update_layout(updated_layout_motif)
                     st.plotly_chart(fig_motif, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique des sous-motifs : {e}")
@@ -490,7 +497,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 fig_facturation.update_traces(
                     texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14, family='Arial', color='black')
+                    textfont=dict(size=20, family='Arial', color='black')
                 )
                 updated_layout = {
                     **common_layout,
@@ -500,9 +507,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
                         'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': {
-                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    'xaxis': { # Added to hide x-axis
+                        'visible': False,
+                        'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,

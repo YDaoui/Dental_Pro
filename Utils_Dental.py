@@ -748,7 +748,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         with col2:
             st.markdown(f"""
             <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-title">Offres Vendus</div>
+                <div class="metric-title">Offres Vendues</div>
                 <div class="metric-value">{total_unique_offres_count:,}</div>
             </div>
             """.replace(",", " "), unsafe_allow_html=True)

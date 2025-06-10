@@ -368,7 +368,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
     }
     
     col2_data = {
-        "Pays": merged_data["Pays"],
+        "Pays d'opération": merged_data["Pays"],
         "Ville": merged_data["Ville"],
         "Canal": merged_data["Canal"],
         "Direction": merged_data["Direction"]
