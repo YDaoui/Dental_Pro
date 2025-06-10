@@ -9,6 +9,8 @@ from Supports import *
 from Sales import *
 from Recolts import *
 from Logs import *
+from Agents import *
+from New_Sale_Recolt_Log import *
 from Model_Planif import simulation_planning
 
 # Fonctions de chargement et prétraitement des données
@@ -42,7 +44,7 @@ def manager_dashboard():
         
         # Menu en fonction du type d'utilisateur
         if st.session_state.get("user_type") == "Hyperviseur":
-            menu_options = ["Dashbord Global", "Ventes", "Récompences", "Logs", "Coachings", "Settings"]
+            menu_options = ["Dashbord Global", "Ventes", "Récompences", "Logs","Nouvelle Vente","Nouvelle Récolt", "Coachings", "Settings"]
             icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text", "person-lines-fill", "gear"]
 
         elif st.session_state.get("user_type") == "Support":
@@ -96,6 +98,10 @@ def manager_dashboard():
         recolts_page1(recolts_df, staff_df, start_date, end_date)
     elif selected == "Logs":
         logs_page1(logs_df, staff_df, start_date, end_date)
+    elif selected =="Nouvelle Vente":
+        New_Sale_Agent()
+    elif selected =="Nouvelle Récolt":
+        New_Recolt_Agent()
     elif selected == "Coachings":
         afficher_coaching()
     elif selected == "Settings":

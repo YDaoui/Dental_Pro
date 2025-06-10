@@ -113,13 +113,13 @@ def support_dashboard():
     with col1:
         st.image('Dental_Implant2.png', width=150)
     with col2:
-        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Support</h1>", unsafe_allow_html=True)
-        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Coaching Agent</h2>", unsafe_allow_html=True)
+        st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Supports</h1>", unsafe_allow_html=True)
+        st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Coachings Agents</h2>", unsafe_allow_html=True)
         st.markdown("---")
 
     with st.sidebar:
         st.image('Dental_Implant.png', width=350)
-        menu_options = ["Accueil", "Coaching", "My Coaching"]
+        menu_options = ["Accueil", "Coachings", "My Coaching"]
         selected = option_menu(
             menu_title=None,
             options=menu_options,
@@ -133,7 +133,7 @@ def support_dashboard():
             }
         )
 
-    if selected == "Coaching":
+    if selected == "Coachings":
         afficher_coaching()
     else:
         st.write("Bienvenue sur le tableau de bord Support")

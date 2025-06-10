@@ -165,72 +165,67 @@ def afficher_performances_agent():
 
 def afficher_donnees_sales(conn, hyp_agent):
     df_sales = pd.read_sql(f"""
-        SELECT ORDER_DATE,  Total_Sale , Rating, Country, City, SHORT_MESSAGE 
+        SELECT ORDER_DATE, Total_Sale, Rating, Country, City, SHORT_MESSAGE 
         FROM Sales 
         WHERE Hyp = '{hyp_agent}'
         ORDER BY ORDER_DATE DESC
     """, conn)
 
     if not df_sales.empty:
-        # Nettoyage
         df_sales = df_sales.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Sale', 'Rating'])
         df_sales = df_sales[df_sales['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
 
-        # 📊 Calcul KPI
         total_ventes = df_sales["Total_Sale"].sum()
         moyenne_vente = df_sales["Total_Sale"].mean()
         moyenne_rating = df_sales["Rating"].mean()
 
-        # 🧾 Affichage KPI
         col1, col2, col3 = st.columns(3)
-        col1.metric("Ventes Totales", f"€{total_ventes:,.2f}")
-        col2.metric("Vente Moyenne", f"€{moyenne_vente:,.2f}")
-        col3.metric("Note Moyenne", f"{moyenne_rating:.1f}/5")
+        col1.metric("💰 Ventes Totales", f"€{total_ventes:,.2f}")
+        col2.metric("📊 Vente Moyenne", f"€{moyenne_vente:,.2f}")
+        col3.metric("⭐ Note Moyenne", f"{moyenne_rating:.1f}/5")
 
+        st.markdown("## 🎯 Analyse des Ventes")
         st.markdown("---")
-        st.subheader("Analyse des Ventes")
 
-        # 📊 Organisation des graphiques
         col_g1, col_g2 = st.columns(2)
 
         with col_g1:
-            # Ventes par ville selon le statut
+            # Regrouper et trier les ventes par ville
             df_grouped = (
                 df_sales.groupby(['City', 'SHORT_MESSAGE'])['Total_Sale']
                 .sum()
                 .unstack(fill_value=0)
                 .reset_index()
             )
+            df_grouped['Total'] = df_grouped.get('ACCEPTED', 0) + df_grouped.get('REFUSED', 0)
+            df_grouped = df_grouped.sort_values(by='Total', ascending=False)
 
             fig1 = go.Figure()
-            if 'ACCEPTED' in df_grouped.columns:
-                fig1.add_trace(go.Bar(
-                    x=df_grouped['City'],
-                    y=df_grouped['ACCEPTED'],
-                    name='Accepted',
-                    marker_color='#007BAD',
-                    text=df_grouped['ACCEPTED'].apply(lambda x: f'€{x:,.2f}'),
-                    textposition='outside'
-                ))
-            if 'REFUSED' in df_grouped.columns:
-                fig1.add_trace(go.Bar(
-                    x=df_grouped['City'],
-                    y=df_grouped['REFUSED'],
-                    name='Refused',
-                    marker_color='#FF4B4B',
-                    text=df_grouped['REFUSED'].apply(lambda x: f'€{x:,.2f}'),
-                    textposition='outside'
-                ))
+            for status, color in zip(['ACCEPTED', 'REFUSED'], ['#007BAD', '#FF4B4B']):
+                if status in df_grouped.columns:
+                    fig1.add_trace(go.Bar(
+                        y=df_grouped['City'],
+                        x=df_grouped[status],
+                        name=status,
+                        orientation='h',
+                        marker=dict(color=color),
+                        text=[f"<b>€{v:,.0f}</b>" for v in df_grouped[status]],
+                        textposition='outside',
+                        textfont=dict(size=14, color="black")
+                    ))
 
             fig1.update_layout(
-                barmode='group',
-                xaxis_title='Ville',
-                yaxis_title='Montant (€)',
-                hovermode='x unified',
+                barmode='stack',
+                xaxis_title='Montant (€)',
+                yaxis_title='Ville',
+                title='💼 Ventes par Ville et Statut',
                 plot_bgcolor='rgba(0,0,0,0)',
-                height=400,
-                margin=dict(l=20, r=20, t=30, b=20)
+                paper_bgcolor='white',
+                font=dict(family="Arial", size=14),
+                margin=dict(l=50, r=50, t=50, b=50),
+                height=500
             )
+
             st.plotly_chart(fig1, use_container_width=True)
 
         with col_g2:
@@ -238,25 +233,37 @@ def afficher_donnees_sales(conn, hyp_agent):
             df_sales['Heure'] = pd.to_datetime(df_sales['ORDER_DATE']).dt.hour
             ventes_par_heure = df_sales.groupby('Heure')['Total_Sale'].sum().reset_index()
 
-            fig2 = px.line(
+            fig2 = px.bar(
                 ventes_par_heure,
                 x='Heure',
                 y='Total_Sale',
-                labels={'Heure': 'Heure de la journée', 'Total_Sale': 'Montant (€)'},
-                color_discrete_sequence=['#007BAD'],
-                height=400
+                text='Total_Sale',
+                labels={'Heure': 'Heure (0-23)', 'Total_Sale': 'Montant (€)'},
+                color_discrete_sequence=['#007BAD']
             )
+            fig2.update_traces(
+                texttemplate='<b>€%{text:.0f}</b>',
+                textposition='outside',
+                textfont_size=14
+            )
+            fig2.update_layout(
+                title="🕒 Ventes par Heure",
+                xaxis=dict(dtick=1),
+                height=500,
+                plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='white',
+                font=dict(family="Arial", size=14),
+                margin=dict(l=40, r=40, t=50, b=40)
+            )
+
             st.plotly_chart(fig2, use_container_width=True)
 
-        # 📋 Détail des ventes
         st.markdown("---")
-        st.subheader("Détail de vos transactions")
+        st.subheader("📋 Détail des Transactions")
         st.dataframe(df_sales)
 
     else:
         st.info("Aucune donnée de vente trouvée pour cet agent.")
-
-
 
 
 def afficher_donnees_recolts(conn, hyp_agent):
@@ -268,25 +275,25 @@ def afficher_donnees_recolts(conn, hyp_agent):
     """, conn)
     
     if not df_recolts.empty:
-        # Calcul KPI
+        df_recolts = df_recolts.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Recolt'])
+        df_recolts = df_recolts[df_recolts['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
+
+        # KPIs
         total_recoltes = df_recolts["Total_Recolt"].sum()
         moyenne_recolte = df_recolts["Total_Recolt"].mean()
         nombre_operations = len(df_recolts)
 
-        # Affichage KPI
         col1, col2, col3 = st.columns(3)
-        col1.metric("Total Recolté", f"€{total_recoltes:,.2f}")
+        col1.metric("Total Récolté", f"€{total_recoltes:,.2f}")
         col2.metric("Moyenne par Opération", f"€{moyenne_recolte:,.2f}")
-        col3.metric("Nombre d'Opérations", nombre_operations)
+        col3.metric("Nombre d'opérations", nombre_operations)
 
         st.markdown("---")
         st.subheader("Analyse des Récoltes")
 
-        # 📊 Graphique 1 : Récolts par ville selon le statut (style Ventes)
-        col_g1, col_g2 = st.columns(2)
+        colg1, colg2 = st.columns(2)
 
-        with col_g1:
-            st.markdown("### Récoltes par Ville : Accepted vs Refused")
+        with colg1:
             df_grouped = (
                 df_recolts.groupby(['City', 'SHORT_MESSAGE'])['Total_Recolt']
                 .sum()
@@ -295,79 +302,68 @@ def afficher_donnees_recolts(conn, hyp_agent):
             )
 
             fig1 = go.Figure()
-
             if 'ACCEPTED' in df_grouped.columns:
                 fig1.add_trace(go.Bar(
                     x=df_grouped['City'],
                     y=df_grouped['ACCEPTED'],
-                    name='Accepted',
-                    marker_color='#007BAD',
-                    text=df_grouped['ACCEPTED'].apply(lambda x: f'€{x:,.2f}'),
-                    textposition='outside'
+                    name='Acceptée',
+                    marker_color='#28a745',
+                    text=df_grouped['ACCEPTED'].apply(lambda x: f"€{x:,.0f}"),
+                    textposition='outside',
+                    textfont=dict(size=14, color='black', family='Arial Black')
                 ))
-
             if 'REFUSED' in df_grouped.columns:
                 fig1.add_trace(go.Bar(
                     x=df_grouped['City'],
                     y=df_grouped['REFUSED'],
-                    name='Refused',
-                    marker_color='#FF4B4B',
-                    text=df_grouped['REFUSED'].apply(lambda x: f'€{x:,.2f}'),
-                    textposition='outside'
+                    name='Refusée',
+                    marker_color='#dc3545',
+                    text=df_grouped['REFUSED'].apply(lambda x: f"€{x:,.0f}"),
+                    textposition='outside',
+                    textfont=dict(size=14, color='black', family='Arial Black')
                 ))
 
             fig1.update_layout(
                 barmode='group',
                 xaxis_title='Ville',
                 yaxis_title='Montant (€)',
-                hovermode='x unified',
+                title='Récoltes par Ville',
                 plot_bgcolor='rgba(0,0,0,0)',
-                height=450,
-                margin=dict(l=20, r=20, t=40, b=20)
+                height=400,
+                margin=dict(t=40, b=40, l=20, r=20)
             )
-
             st.plotly_chart(fig1, use_container_width=True)
 
-        # 📊 Graphique 2 : Récolts par banque (bar chart bleu harmonisé)
-        with col_g2:
-            st.markdown("### Récoltes par Banque")
-            df_banques = df_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
+        with colg2:
+            df_recolts['Heure'] = pd.to_datetime(df_recolts['ORDER_DATE']).dt.hour
+            recoltes_par_heure = df_recolts.groupby('Heure')['Total_Recolt'].sum().reset_index()
 
-            fig2 = go.Figure(go.Bar(
-                x=df_banques['Banques'],
-                y=df_banques['Total_Recolt'],
-                marker_color='#00B8A9',
-                text=df_banques['Total_Recolt'].apply(lambda x: f'€{x:,.2f}'),
-                textposition='outside'
-            ))
-
-            fig2.update_layout(
-                xaxis_title='Banque',
-                yaxis_title='Montant (€)',
-                plot_bgcolor='rgba(0,0,0,0)',
-                height=450,
-                margin=dict(l=20, r=20, t=40, b=20)
+            fig2 = px.bar(
+                recoltes_par_heure,
+                x='Heure',
+                y='Total_Recolt',
+                text='Total_Recolt',
+                labels={'Heure': 'Heure de la journée', 'Total_Recolt': 'Montant (€)'},
+                color_discrete_sequence=['#007bad']
             )
-
+            fig2.update_traces(
+                texttemplate='%{text:.0f}€',
+                textposition='outside',
+                textfont=dict(size=14, family='Arial Black')
+            )
+            fig2.update_layout(
+                title='Récoltes par Heure',
+                xaxis=dict(title='Heure'),
+                yaxis=dict(title='Montant (€)'),
+                plot_bgcolor='rgba(0,0,0,0)',
+                height=400,
+                margin=dict(t=40, b=40, l=20, r=20)
+            )
             st.plotly_chart(fig2, use_container_width=True)
 
-        # 📈 Graphique 3 : Historique des recolts
-        st.markdown("### Historique des Récoltes")
-        fig3 = px.line(
-            df_recolts,
-            x="ORDER_DATE",
-            y="Total_Recolt",
-            labels={"ORDER_DATE": "Date", "Total_Recolt": "Montant (€)"},
-            color_discrete_sequence=['#007BAD'],
-            height=400
-        )
-        st.plotly_chart(fig3, use_container_width=True)
-
-        # 📋 Détail des opérations
         st.markdown("---")
-        st.subheader("Détail des opérations")
+        st.subheader("Détail de vos Récoltes")
         st.dataframe(df_recolts)
 
     else:
-        st.info("Aucune donnée de recolts trouvée pour cet agent.")
-
+        st.info("Aucune donnée de récolte trouvée pour cet agent.")
