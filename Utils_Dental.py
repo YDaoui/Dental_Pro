@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import os
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+from contextlib import closing
 
 load_dotenv()
 
@@ -650,8 +651,6 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
 
 
 
-
-
 def logs_page(logs_df, staff_df, start_date, end_date):
     """Displays the logs page with specified filters and consistent styling."""
 
@@ -782,6 +781,9 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 if 'Canal' in filtered_logs.columns and not filtered_logs.empty:
                     canal_counts = filtered_logs['Canal'].value_counts().reset_index()
                     canal_counts.columns = ['Canal', 'Count']
+                    total = canal_counts['Count'].sum()
+                    canal_counts['Percentage'] = (canal_counts['Count'] / total * 100).round(1)
+                    
                     fig1 = px.bar(
                         canal_counts,
                         x='Count',
@@ -789,15 +791,15 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         orientation='h',
                         color='Canal',
                         color_discrete_sequence=px.colors.qualitative.Pastel,
-                        text='Count', # Enable text labels
-                        title='Logs par Canal'
                     )
+                    # Add annotations with count and percentage
                     fig1.update_traces(
-                        textposition='outside', # Position text outside bars
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
+                        texttemplate='%{x} (%{customdata[0]}%)',
+                        textposition='outside',
+                        customdata=canal_counts[['Percentage']],
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
                     )
                     fig1.update_layout(
-                        title_x=0.5,
                         xaxis_title={
                             'text': "Nombre de Logs",
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
@@ -807,10 +809,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
@@ -828,6 +830,9 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 if 'Offre' in filtered_logs.columns and not filtered_logs.empty:
                     offre_counts = filtered_logs['Offre'].value_counts().reset_index()
                     offre_counts.columns = ['Offre', 'Count']
+                    total = offre_counts['Count'].sum()
+                    offre_counts['Percentage'] = (offre_counts['Count'] / total * 100).round(1)
+                    
                     fig2 = px.bar(
                         offre_counts,
                         x='Count',
@@ -835,15 +840,15 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         orientation='h',
                         color='Offre',
                         color_discrete_sequence=px.colors.qualitative.Set2,
-                        text='Count', # Enable text labels
-                        title='Logs par Offre'
                     )
+                    # Add annotations with count and percentage
                     fig2.update_traces(
-                        textposition='outside', # Position text outside bars
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
+                        texttemplate='%{x} (%{customdata[0]}%)',
+                        textposition='outside',
+                        customdata=offre_counts[['Percentage']],
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
                     )
                     fig2.update_layout(
-                        title_x=0.5,
                         xaxis_title={
                             'text': "Nombre de Logs",
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
@@ -853,10 +858,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
@@ -876,24 +881,18 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
                     daily_counts = filtered_logs['Date_d_création'].dt.to_period('D').value_counts().sort_index().reset_index()
                     daily_counts.columns = ['Date', 'Count']
-                    daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp() # Convert Period to Timestamp for Plotly
+                    daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp()
+                    
                     fig3 = px.line(
                         daily_counts,
                         x='Date',
                         y='Count',
-                        #title='Logs Quotidiens',
-                        #color_discrete_sequence=['#1f77b4'],
-                        #labels={'Count': 'Nombre de Logs', 'Date': 'Date'},
-                        #text='Count' # Enable text labels
                     )
                     fig3.update_traces(
-                        mode='lines+markers+text', # Add 'text' to mode
+                        mode='lines+markers',
                         marker=dict(size=8),
-                        textposition='top center', # Position text above markers
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
                     )
                     fig3.update_layout(
-                        title_x=0.5,
                         xaxis_title={
                             'text': "Date",
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
@@ -903,10 +902,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         plot_bgcolor='white',
@@ -921,7 +920,6 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             with col4:
                 st.markdown("<h4 style='color: #007bad;'>Tendance des Qualifications et Directions par Mois</h4>", unsafe_allow_html=True)
                 if 'Qualification' in filtered_logs.columns and 'Direction' in filtered_logs.columns and 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
-                    # Ensure Date_d_création is datetime and extract Month-Year
                     filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
                     df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
 
@@ -943,7 +941,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
 
                         # Define a consistent color scale for qualifications and directions
                         qualification_colors = px.colors.qualitative.Dark24
-                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'} # Gold, BlueViolet
+                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'}
 
                         # Add Qualification lines with labels
                         for i, qualification in enumerate(qualification_monthly_counts['Qualification'].unique()):
@@ -952,13 +950,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                 go.Scatter(
                                     x=df_qual['Month_Year'],
                                     y=df_qual['Count'],
-                                    mode='lines+markers+text', # Add 'text' mode for labels
+                                    mode='lines+markers',
                                     name=f'Qualification: {qualification}',
-                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]), # Assign color
+                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]),
                                     marker=dict(size=8),
-                                    text=df_qual['Count'], # Use count as text label
-                                    textposition='top center', # Position text
-                                    textfont=dict(size=14, color='darkgreen', family='Arial', weight='bold'), # Qualification label style
                                     hovertemplate=f'Mois: %{{x}}<br>Qualification: {qualification}<br>Logs: %{{y}}<extra></extra>'
                                 ),
                                 secondary_y=False,
@@ -969,7 +964,11 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         direction_pivot['Sort_Key'] = pd.to_datetime(direction_pivot['Month_Year'])
                         direction_pivot = direction_pivot.sort_values('Sort_Key')
 
+                        # Calculate total for each month to compute percentages
+                        direction_pivot['Total'] = direction_pivot.sum(axis=1, numeric_only=True)
+                        
                         if 'InComming' in direction_pivot.columns:
+                            direction_pivot['InComming_Pct'] = (direction_pivot['InComming'] / direction_pivot['Total'] * 100).round(1)
                             fig.add_trace(
                                 go.Bar(
                                     x=direction_pivot['Month_Year'],
@@ -977,14 +976,15 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                     name='Direction: InComming',
                                     marker_color=direction_colors['InComming'],
                                     opacity=0.7,
-                                    text=direction_pivot['InComming'], # Use count as text label
-                                    textposition='outside', # Position text
-                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'), # Direction label style
+                                    text=direction_pivot.apply(lambda x: f"{x['InComming']} ({x['InComming_Pct']}%)", axis=1),
+                                    textposition='outside',
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
                                     hovertemplate='Mois: %{x}<br>Direction: InComming<br>Logs: %{y}<extra></extra>'
                                 ),
                                 secondary_y=True,
                             )
                         if 'OutComming' in direction_pivot.columns:
+                            direction_pivot['OutComming_Pct'] = (direction_pivot['OutComming'] / direction_pivot['Total'] * 100).round(1)
                             fig.add_trace(
                                 go.Bar(
                                     x=direction_pivot['Month_Year'],
@@ -992,9 +992,9 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                     name='Direction: OutComming',
                                     marker_color=direction_colors['OutComming'],
                                     opacity=0.7,
-                                    text=direction_pivot['OutComming'], # Use count as text label
-                                    textposition='outside', # Position text
-                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'), # Direction label style
+                                    text=direction_pivot.apply(lambda x: f"{x['OutComming']} ({x['OutComming_Pct']}%)", axis=1),
+                                    textposition='outside',
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
                                     hovertemplate='Mois: %{x}<br>Direction: OutComming<br>Logs: %{y}<extra></extra>'
                                 ),
                                 secondary_y=True,
@@ -1002,8 +1002,6 @@ def logs_page(logs_df, staff_df, start_date, end_date):
 
                         # Update layout
                         fig.update_layout(
-                            #title_text='Logs par Qualification (Lignes) et Direction (Barres) par Mois',
-                            #title_x=0.5,
                             xaxis_title={
                                 'text': "Mois",
                                 'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
@@ -1017,13 +1015,13 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                 'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                             },
                             xaxis=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                             ),
                             yaxis=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Primary Y-axis tick values
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                             ),
                             yaxis2=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Secondary Y-axis tick values
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
                             ),
                             margin=dict(l=20, r=20, t=80, b=20),
                             plot_bgcolor='white',
@@ -2073,49 +2071,117 @@ def planning_page(sales_df, staff_df):
 
 
 
-
-def setting_page():
-    add_custom_css()
-    """Affiche la page des paramètres."""
-
+def get_last_agent_id():
+    """
+    Récupère le dernier ID_Effectifs (numérique) de la table Effectifs pour en générer un nouveau.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return 0 # Return 0 or handle error appropriately
     
-    st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Paramètres</h1>", unsafe_allow_html=True)
-    st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Gestion des Utilisateurs</h2>", unsafe_allow_html=True)
-
+    try:
+        with closing(conn.cursor()) as cursor:
+            # This query assumes ID is always a number and gets the max
+            cursor.execute("SELECT MAX(ID) FROM Effectifs")
+            last_id = cursor.fetchone()[0]
+            # Convert to integer, as some drivers might return it as a string
+            return int(last_id) if last_id is not None else 0
+    except sqlite3.Error as e:
+        st.error(f"Erreur lors de la récupération du dernier ID d'agent : {e}")
+        return 0
+    # The ValueError handling for 'invalid literal for int()' would become unnecessary if data is clean
+    except ValueError as e: 
+        st.error(f"Erreur de conversion de l'ID en entier (cette erreur ne devrait plus apparaître après nettoyage DB) : {e}")
+        return 0
+    finally:
+        conn.close()
+def get_last_agent_id():
     
+    conn = get_db_connection()
+    if not conn:
+        return 0 
     
-    st.markdown("<h2 style='font-size: 28px; font-weight: bold; color: #00afe1;'>Paramètres Utilisateur</h2>", unsafe_allow_html=True)
+    max_id_trouve = 0 
     
-    hyp_input = st.text_input("**Entrez l'ID (Hyp) de l'utilisateur**",
-                            placeholder="Saisir l'identifiant Hyp...",
-                            help="Rechercher un utilisateur par son identifiant unique")
+    try:
+        with closing(conn.cursor()) as cursor:
+            
+            cursor.execute("SELECT Id_Effectif FROM Effectifs")
+            all_ids = cursor.fetchall() # Récupère tous les résultats
 
-    # Exemple d'utilisation de l'input (pour montrer que ça fonctionne toujours)
-    if hyp_input:
-        st.write(f"Vous avez saisi : {hyp_input}")
+            for row in all_ids:
+                current_id = row[0] # L'ID est le premier élément de chaque ligne
+                
+                if current_id is None:
+                    continue # Ignore les valeurs NULL
+
+                try:
+                    # Tente de convertir l'ID actuel en entier
+                    numeric_id = int(current_id)
+                    # Si la conversion réussit, compare-le avec le maximum trouvé jusqu'à présent
+                    if numeric_id > max_id_trouve:
+                        max_id_trouve = numeric_id
+                except ValueError:
+                    # Cette erreur se produit si current_id n'est pas un nombre (ex: 'SRP_098')
+                    # Nous l'ignorons silencieusement car nous voulons seulement les IDs numériques
+                    st.warning(f"ID non numérique ignoré lors de la recherche du dernier ID : '{current_id}'")
+                    pass
+                except TypeError:
+                    # Gère les cas où current_id n'est ni un str ni un int (ex: un objet non convertible)
+                    st.warning(f"Type d'ID inattendu ignoré : '{current_id}' ({type(current_id)})")
+                    pass
+            
+            return max_id_trouve # Retourne le plus grand ID numérique trouvé
+
+    except sqlite3.Error as e:
+        st.error(f"Erreur SQLite lors de la récupération des IDs d'agent : {e}")
+        return 0
+    except Exception as e:
+        st.error(f"Une erreur inattendue est survenue dans get_last_agent_id : {e}")
+        return 0
+    finally:
+        conn.close()
 
 
-    if hyp_input:
-        user_details = get_user_details(hyp_input)  # À définir ailleurs
+def add_agent_to_db(agent_data):
+    """
+    Ajoute un nouvel agent à la table Effectifs et un utilisateur à la table Users.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    try:
+        with closing(conn.cursor()) as cursor:
+            # Insert into Effectifs table
+            cursor.execute(
+                """INSERT INTO Effectifs (Id_Effectif, Hyp, ID_AGTSDA, NOM, PRENOM, Team, Type, Activité, Departement, Date_In)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (agent_data["Id_Effectif"], agent_data["Hyp"], agent_data["ID_AGTSDA"], agent_data["NOM"], 
+                 agent_data["PRENOM"], agent_data["Team"], agent_data["Type"], 
+                 agent_data["Activité"], agent_data["Departement"], agent_data["Date_In"])
+            )
+            
+            # Insert into Users table (assuming UserName and Hyp are also in Users table)
+            # You might need to adjust this based on your Users table schema, especially for 'Cnx' and 'PassWord'
+            cursor.execute(
+                """INSERT INTO Users (Hyp, UserName, PassWord, Type_User, Cnx)
+                   VALUES (?, ?, ?, ?, ?)""",
+                (agent_data["Hyp"], agent_data["UserName"], agent_data["Hyp"], # Default password is Hyp
+                 agent_data["Type"], None) # Assuming Type from Effectifs and Cnx is null or needs a default
+            )
+            
+            conn.commit()
+            return True
+    except sqlite3.Error as e:
+        st.error(f"Erreur lors de l'ajout de l'agent à la base de données : {e}")
+        return False
+    finally:
+        conn.close()
 
-        if user_details:
-            try:
-                date_in = pd.to_datetime(user_details[2])
-                anciennete = (datetime.now().date() - date_in.date()).days // 365
-
-                col1, col2, col3 = st.columns([2, 2, 2])
-                with col1:
-                    st.markdown("<h3 style='color: #002a48;'>Informations Professionnelles</h3>", unsafe_allow_html=True)
-                    st.write(f"**Nom:** {user_details[0]}")
-                    st.write(f"**Prénom:** {user_details[1]}")
-                    st.write(f"**Date d'entrée:** {date_in.strftime('%d/%m/%Y')}")
-                    st.write(f"**Ancienneté:** {anciennete} ans")
-            except Exception as e:
-                st.error(f"Erreur lors de l'affichage des détails utilisateur : {e}")
 
 def setting_page():
     """Affiche la page des paramètres avec un design modernisé."""
-    # En-tête avec les titres alignés
     col1, col2 = st.columns([2, 2])
 
     with col1:
@@ -2130,34 +2196,28 @@ def setting_page():
             unsafe_allow_html=True
         )
 
-    
-    # Section recherche utilisateur
+    # --- Section de recherche d'utilisateur ---
     with st.container():
-                
+        st.markdown("---")
+        st.subheader("Rechercher un utilisateur existant")
         hyp_input = st.text_input("**Entrez l'ID (Hyp) de l'utilisateur**", 
-                                placeholder="Saisir l'identifiant Hyp...",
-                                help="Rechercher un utilisateur par son identifiant unique")
+                                  placeholder="Saisir l'identifiant Hyp...",
+                                  help="Rechercher un utilisateur par son identifiant unique")
     
     if hyp_input:
-        user_details = get_user_details(hyp_input)
+        user_details = get_user_details(hyp_input) 
         
         if user_details:
-            # Conversion de la date en objet datetime
-            date_in = user_details[2]
+            date_in = user_details["Date_In"] 
             date_obj = None
             date_str = "Date inconnue"
             anciennete = "N/A"
             
-            if date_in:  # Si la date existe
+            if date_in:  
                 if isinstance(date_in, str):
-                    # Essayer plusieurs formats de date courants
                     date_formats = [
-                        '%Y-%m-%d',  # 2023-12-31
-                        '%d/%m/%Y',  # 31/12/2023
-                        '%m/%d/%Y',  # 12/31/2023
-                        '%Y-%m-%d %H:%M:%S',  # 2023-12-31 23:59:59
-                        '%d-%m-%Y',  # 31-12-2023
-                        '%Y%m%d'     # 20231231
+                        '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', 
+                        '%Y-%m-%d %H:%M:%S', '%d-%m-%Y', '%Y%m%d'     
                     ]
                     
                     for fmt in date_formats:
@@ -2170,7 +2230,7 @@ def setting_page():
                     if not date_obj:
                         st.error(f"Format de date non reconnu: {date_in}")
                         date_str = date_in
-                elif hasattr(date_in, 'strftime'):  # Si c'est déjà un objet date/datetime
+                elif isinstance(date_in, (datetime, datetime.date)):  
                     date_obj = date_in
             
             if date_obj:
@@ -2180,38 +2240,30 @@ def setting_page():
                 except AttributeError:
                     pass
             
-            # Carte utilisateur
-            with st.expander(f"🔍 Fiche utilisateur : {user_details[0]} {user_details[1]}", expanded=True):
+            with st.expander(f"🔍 Fiche utilisateur : {user_details['NOM']} {user_details['PRENOM']}", expanded=True):
                 col1, col2, col3 = st.columns([1, 1, 1])
                 
                 with col1:
                     st.markdown(f"""
                     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 15px;'>
                         <h3 style='color: #002a48; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;'>Informations Professionnelles</h3>
-                        <p><strong>Nom:</strong> {user_details[0]}</p>
-                        <p><strong>Prénom:</strong> {user_details[1]}</p>
+                        <p><strong>Nom:</strong> {user_details['NOM']}</p>
+                        <p><strong>Prénom:</strong> {user_details['PRENOM']}</p>
                         <p><strong>Date d'entrée:</strong> {date_str}</p>
                         <p><strong>Ancienneté:</strong> {anciennete} {"an" if isinstance(anciennete, int) and anciennete == 1 else "ans" if isinstance(anciennete, int) else ""}</p>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col2:
-                    st.markdown("""
+                    st.markdown(f"""
                     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 15px;'>
                         <h3 style='color: #002a48; border-bottom: 1px solid #dee2e6; padding-bottom: 10px;'>Détails</h3>
-                        <p><strong>Team:</strong> {}</p>
-                        <p><strong>Type:</strong> {}</p>
-                        <p><strong>Activité:</strong> {}</p>
-                        <p><strong>Nom d'utilisateur:</strong> {}</p>
-                        
+                        <p><strong>Team:</strong> {user_details['Team']}</p>
+                        <p><strong>Type:</strong> {user_details['Type']}</p>
+                        <p><strong>Activité:</strong> {user_details['Activité']}</p>
+                        <p><strong>Nom d'utilisateur:</strong> {user_details['UserName']}</p>
                     </div>
-                    """.format(
-                        user_details[3], 
-                        user_details[4], 
-                        user_details[5], 
-                        user_details[6], 
-                        user_details[7] if user_details[7] else 'Jamais'
-                    ), unsafe_allow_html=True)
+                    """, unsafe_allow_html=True)
                 
                 with col3:
                     st.markdown("""
@@ -2223,8 +2275,8 @@ def setting_page():
                     
                     if reset_pwd:
                         if st.button("**Confirmer la réinitialisation**", 
-                                   type="primary",
-                                   help="Réinitialise le mot de passe à l'identifiant Hyp par défaut"):
+                                     type="primary",
+                                     help="Réinitialise le mot de passe à l'identifiant Hyp par défaut"):
                             if reset_password(hyp_input):
                                 st.success(f"Mot de passe réinitialisé avec succès à la valeur: `{hyp_input}`")
                             else:
@@ -2232,12 +2284,125 @@ def setting_page():
                     
                     st.markdown("</div>", unsafe_allow_html=True)
             
-           
-           
         else:
             st.warning("⚠️ Aucun utilisateur trouvé avec cet ID (Hyp)")
-                
-                # ... (le reste du code reste inchangé)
+            
+    st.markdown("---")
+    st.subheader("Options de gestion")
+    
+    selected_option = st.selectbox(
+        "Sélectionnez une action :",
+        ["-- Choisir une option --", "Ajouter un Agent", "Injecter des logs", "Injecter des sales", "Injecter des récoltes"]
+    )
+
+    if selected_option == "Ajouter un Agent":
+        st.markdown("---")
+        st.subheader("Ajouter un nouvel Agent")
+
+        next_id = get_last_agent_id() + 1
+        st.info(f"Le prochain ID d'Agent sera automatiquement attribué : **{next_id}**")
+
+        # --- Récupération des valeurs uniques pour les selectbox ---
+        teams = ["-- Sélectionner --"] + get_unique_values("Team")
+        activites = ["-- Sélectionner --"] + get_unique_values("Activité")
+        types = ["-- Sélectionner --"] + get_unique_values("Type")
+        departements = ["-- Sélectionner --"] + get_unique_values("Departement")
+
+        with st.form("add_agent_form"):
+            col_form1, col_form2 = st.columns(2)
+            with col_form1:
+                hyp = st.text_input("ID (Hyp)", placeholder="Ex: HYP001", help="Identifiant unique de l'agent (Hyp)", key="agent_hyp")
+                id_agtsda = st.text_input("ID_AGTSDA", placeholder="Ex: AGT123", help="Identifiant AGTSDA de l'agent", key="agent_id_agtsda")
+                nom = st.text_input("NOM", placeholder="Ex: DUPONT", help="Nom de l'agent", key="agent_nom")
+                # Utilisez st.selectbox avec les valeurs uniques
+                team = st.selectbox("Team", options=teams, help="Équipe de l'agent", key="agent_team_select")
+                activite = st.selectbox("Activité", options=activites, help="Activité principale de l'agent", key="agent_activite_select")
+
+            with col_form2:
+                username = st.text_input("UserName", placeholder="Ex: jean.dupont", help="Nom d'utilisateur pour la connexion", key="agent_username")
+                prenom = st.text_input("PRENOM", placeholder="Ex: Jean", help="Prénom de l'agent", key="agent_prenom")
+                type_agent = st.selectbox("Type", options=types, help="Type de contrat ou statut de l'agent", key="agent_type_select")
+                departement = st.selectbox("Département", options=departements, help="Département de l'agent", key="agent_departement_select")
+                date_in = st.date_input("Date d'entrée", help="Date d'entrée de l'agent", value=datetime.now().date(), key="agent_date_in")
+            
+            st.markdown("---")
+            col_buttons = st.columns(2)
+            with col_buttons[0]:
+                submitted = st.form_submit_button("**Enregistrer**", type="primary")
+            with col_buttons[1]:
+                cancelled = st.form_submit_button("**Annuler**")
+
+            if submitted:
+                # Validation des champs obligatoires, y compris les selectbox
+                if any(val == "-- Sélectionner --" for val in [team, type_agent, activite, departement]):
+                    st.error("Veuillez sélectionner une option valide pour les champs Team, Type, Activité et Département.")
+                elif not all([hyp, id_agtsda, username, nom, prenom, date_in]):
+                    st.error("Veuillez remplir tous les champs obligatoires (texte).")
+                else:
+                    agent_data = {
+                        "Id_Effectif": next_id, # <--- C'est ICI LA MODIFICATION : Assurez-vous que c'est "Id_Effectif"
+                        "Hyp": hyp,
+                        "ID_AGTSDA": id_agtsda,
+                        "UserName": username,
+                        "NOM": nom,
+                        "PRENOM": prenom,
+                        "Team": team,
+                        "Type": type_agent,
+                        "Activité": activite,
+                        "Departement": departement,
+                        "Date_In": date_in.strftime('%Y-%m-%d')
+                    }
+                    if add_agent_to_db(agent_data):
+                        st.success(f"L'agent **{nom} {prenom}** a été ajouté avec succès avec l'ID **{next_id}** !")
+                        st.experimental_rerun()
+                    else:
+                        st.error("Une erreur est survenue lors de l'ajout de l'agent.")
+            elif cancelled:
+                st.info("Ajout de l'agent annulé.")
+                st.experimental_rerun()
+
+    elif selected_option == "Injecter des logs":
+        st.markdown("---")
+        st.subheader("Injecter des données de Logs")
+        st.info("Cette section est dédiée à l'injection de données de logs. Développez l'interface ici.")
+
+    elif selected_option == "Injecter des sales":
+        st.markdown("---")
+        st.subheader("Injecter des données de Ventes")
+        st.info("Cette section est dédiée à l'injection de données de ventes. Développez l'interface ici.")
+
+    elif selected_option == "Injecter des récoltes":
+        st.markdown("---")
+        st.subheader("Injecter des données de Récoltes")
+        st.info("Cette section est dédiée à l'injection de données de récoltes. Développez l'interface ici.")
+
+
+def get_unique_values(column_name):
+    """
+    Récupère toutes les valeurs uniques et non-NULL d'une colonne donnée de la table Effectifs,
+    triées par ordre alphabétique.
+    """
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    unique_values = []
+    try:
+        with closing(conn.cursor()) as cursor:
+            # Utilisez un paramètre pour le nom de la colonne pour éviter l'injection SQL si vous construisez la requête dynamiquement
+            # Cependant, pour les noms de colonnes, c'est généralement sûr si les noms sont internes à l'application.
+            # Dans ce cas, nous utilisons f-string car le nom de la colonne est fixe.
+            cursor.execute(f"SELECT DISTINCT {column_name} FROM Effectifs WHERE {column_name} IS NOT NULL ORDER BY {column_name}")
+            results = cursor.fetchall()
+            unique_values = [row[0] for row in results]
+    except sqlite3.Error as e:
+        st.error(f"Erreur SQLite lors de la récupération des valeurs uniques pour {column_name} : {e}")
+    except Exception as e:
+        st.error(f"Une erreur inattendue est survenue lors de la récupération des valeurs uniques : {e}")
+    finally:
+        conn.close()
+    return unique_values
+        
 def main():
     """Fonction principale de l'application."""
     add_custom_css()
