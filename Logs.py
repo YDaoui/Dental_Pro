@@ -26,7 +26,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
     with col2:
         st.markdown("<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Analyse des Logs</h1>", unsafe_allow_html=True)
 
-    st.markdown("---")
+  
     st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
 
     # Filters
@@ -120,7 +120,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
              st.warning("La colonne 'Hyp' est manquante dans les logs ou les données du personnel pour appliquer les filtres Agent/Équipe.")
              filtered_logs = pd.DataFrame(columns=filtered_logs.columns) # No agent/team filtering possible
 
-    st.markdown("---")
+  
 
     if not filtered_logs.empty:
         # --- KPIs Section ---
@@ -175,7 +175,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         kpi_card_html(col3_kpi, "Moyenne Logs/Client", f"{avg_logs_per_client:.2f}", "#fcd25b", "chart-line")
         kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#ff6b6b", "exchange-alt")
 
-        st.markdown("---")
+       
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
 
         # Common layout configuration - Potential source of error
@@ -347,31 +347,42 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
-        st.markdown("---")
+      
         col1_b, col2_b, col3_b, col4_b = st.columns(4)
 
         # Bar chart for segments
         with col1_b:
+    
             st.markdown("<h3 style='color: #007bad;'>Répartition par Segment</h3>", unsafe_allow_html=True)
             if 'Segment' in filtered_logs.columns:
                 segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
+                total = segment_data['Count'].sum()
+                segment_data['Percentage'] = (segment_data['Count'] / total * 100).round(1)
                 fig_segment = px.bar(segment_data, x='Count', y='Segment',
-                                    orientation='h',
-                                    color='Count',
-                                    color_continuous_scale='Blues',
-                                    text='Count')
+                                        orientation='h',
+                                        color='Count',
+                                        color_continuous_scale='Blues',
+                                        text=[f'{count:,}<br>({perc}%)' for count, perc in zip(segment_data['Count'], segment_data['Percentage'])])
                 fig_segment.update_traces(
-                    texttemplate='%{text:,}',
+                    texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14)
+                    textfont=dict(size=18, family='Arial', color='black')
                 )
                 updated_layout = {
-                    **common_layout, # Use common_layout as base
+                    **common_layout,
                     'yaxis': {
                         **common_layout['yaxis'],
-                        'categoryorder': 'total ascending'
+                        'categoryorder': 'total ascending',
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'showlegend': False
+                    'xaxis': {
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    },
+                    'showlegend': False,
+                    'coloraxis_showscale': False,
+                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_segment.update_layout(updated_layout)
@@ -382,28 +393,37 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Segment' est manquante.")
 
-        # Bar chart for canal
         with col2_b:
             st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
             if 'Canal' in filtered_logs.columns:
                 canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
+                total = canal_data['Count'].sum()
+                canal_data['Percentage'] = (canal_data['Count'] / total * 100).round(1)
                 fig_canal = px.bar(canal_data, x='Count', y='Canal',
                                     orientation='h',
                                     color='Count',
                                     color_continuous_scale='Blues',
-                                    text='Count')
+                                    text=[f'{count:,}<br>({perc}%)' for count, perc in zip(canal_data['Count'], canal_data['Percentage'])])
                 fig_canal.update_traces(
-                    texttemplate='%{text:,}',
+                    texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14)
+                    textfont=dict(size=14, family='Arial', color='black')
                 )
                 updated_layout = {
                     **common_layout,
                     'yaxis': {
                         **common_layout['yaxis'],
-                        'categoryorder': 'total ascending'
+                        'categoryorder': 'total ascending',
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'showlegend': False
+                    'xaxis': {
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    },
+                    'showlegend': False,
+                    'coloraxis_showscale': False,
+                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_canal.update_layout(updated_layout)
@@ -414,29 +434,38 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Canal' est manquante.")
 
-        # Bar chart for top 10 sous-motifs
         with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
             if 'Sous_motif' in filtered_logs.columns:
                 sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
+                total = sous_motif_data['Count'].sum()
                 top_motifs = sous_motif_data.sort_values('Count', ascending=True).tail(10)
+                top_motifs['Percentage'] = (top_motifs['Count'] / total * 100).round(1)
                 fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
                                     orientation='h',
                                     color='Count',
                                     color_continuous_scale='Blues',
-                                    text='Count')
+                                    text=[f'{count:,}<br>({perc}%)' for count, perc in zip(top_motifs['Count'], top_motifs['Percentage'])])
                 fig_motif.update_traces(
-                    texttemplate='%{text:,}',
+                    texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14)
+                    textfont=dict(size=14, family='Arial', color='black')
                 )
                 updated_layout = {
                     **common_layout,
                     'yaxis': {
                         **common_layout['yaxis'],
-                        'categoryorder': 'total ascending'
+                        'categoryorder': 'total ascending',
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'showlegend': False
+                    'xaxis': {
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    },
+                    'showlegend': False,
+                    'coloraxis_showscale': False,
+                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_motif.update_layout(updated_layout)
@@ -447,28 +476,37 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Sous_motif' est manquante.")
 
-        # Bar chart for mode de facturation
         with col4_b:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
             if 'Mode_facturation' in filtered_logs.columns:
                 facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
+                total = facturation_data['Count'].sum()
+                facturation_data['Percentage'] = (facturation_data['Count'] / total * 100).round(1)
                 fig_facturation = px.bar(facturation_data, x='Count', y='Mode_facturation',
                                             orientation='h',
                                             color='Count',
                                             color_continuous_scale='Blues',
-                                            text='Count')
+                                            text=[f'{count:,}<br>({perc}%)' for count, perc in zip(facturation_data['Count'], facturation_data['Percentage'])])
                 fig_facturation.update_traces(
-                    texttemplate='%{text:,}',
+                    texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=14)
+                    textfont=dict(size=14, family='Arial', color='black')
                 )
                 updated_layout = {
                     **common_layout,
                     'yaxis': {
                         **common_layout['yaxis'],
-                        'categoryorder': 'total ascending'
+                        'categoryorder': 'total ascending',
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'showlegend': False
+                    'xaxis': {
+                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
+                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
+                    },
+                    'showlegend': False,
+                    'coloraxis_showscale': False,
+                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_facturation.update_layout(updated_layout)
@@ -479,8 +517,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Mode_facturation' est manquante.")
 
-        st.markdown("---")
-        st.markdown("<h2 style='text-align: center; color: #002a48;'>Détails des Logs</h2>", unsafe_allow_html=True)
+        st.markdown("<h2 style='text-align: center; color: #002a48; font-weight: bold;'>Détails des Logs</h2>", unsafe_allow_html=True)
 
         # Display columns
         display_cols = [
@@ -537,7 +574,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     f"{col_name}<br>({count})</div>",
                     unsafe_allow_html=True
                 )
-        st.markdown("---")
+        
 
         # Display dataframe
         st.markdown(

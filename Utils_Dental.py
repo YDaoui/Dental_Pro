@@ -12,7 +12,8 @@ from streamlit_folium import st_folium
 import numpy as np
 from dotenv import load_dotenv
 import os
-
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 load_dotenv()
 
@@ -470,16 +471,26 @@ def reset_password(hyp):
     finally:
         conn.close()
 
-def login_page():
+def login_page(): 
     """Affiche la page de connexion."""
-    col1, col2, col3, col4 = st.columns([1,1,2,1])
+    col1, col2, col3, col4 = st.columns([1, 1, 2, 1])
+    
     with col2:
-        st.image('Dental_Implant.png', width=380)
+        # Centrer l'image avec HTML
+        st.markdown(
+            """
+            <div style="display: flex; justify-content: center;">
+                <img src="Dental_Implant.png" width="380">
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     with col3:
         username = st.text_input("Nom d'utilisateur")
         password = st.text_input("Mot de passe", type="password")
 
-        col1, col2 = st.columns([1,5])
+        col1, col2 = st.columns([1, 5])
         with col1:
             if st.button("**Se connecter**", key="login_button"):
                 user_data = authenticate(username, password)
@@ -495,9 +506,11 @@ def login_page():
                     st.rerun()
                 else:
                     st.error("Identifiants incorrects")
+
         with col2:
             if st.button("**Annuler**", key="Annuler_button"):
                 st.experimental_rerun()
+
 
 def load_data():
     """Chargement des données depuis SQLite."""
@@ -636,13 +649,15 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
     return filtered_df
 
 
+
+
+
 def logs_page(logs_df, staff_df, start_date, end_date):
-    """Affiche la page des logs avec les filtres spécifiés et un style homogène."""
-    
+    """Displays the logs page with specified filters and consistent styling."""
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Logs</h3>", unsafe_allow_html=True)
 
-    with st.container(border=True): 
+    with st.container(border=True):
         col1, col2, col3, col4 = st.columns(4)
         with col1:
             offre_filter = st.selectbox("Filtrer par Offre", ['Tous'] + sorted(logs_df['Offre'].dropna().unique().tolist()) if 'Offre' in logs_df.columns else ['Tous'], key='logs_offre_top')
@@ -663,12 +678,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         with col8:
             qualification_filter = st.selectbox("Qualification", ['Tous'] + sorted(logs_df['Qualification'].dropna().unique().tolist()) if 'Qualification' in logs_df.columns else ['Tous'], key='qualification_filter')
 
-    
+
     with st.spinner("Application des filtres..."):
-        # Pass 'Tous' for country_filter and transaction_filter, and staff_df
         filtered_logs = filter_data(logs_df, 'Tous', team_filter, activity_filter, 'Toutes', start_date, end_date, staff_df)
 
-        
         if offre_filter != 'Tous' and 'Offre' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Offre'] == offre_filter]
         if segment_filter != 'Tous' and 'Segment' in filtered_logs.columns:
@@ -685,36 +698,27 @@ def logs_page(logs_df, staff_df, start_date, end_date):
     if not filtered_logs.empty:
         st.markdown("<h3 style='color: #007bad;'>Indicateurs Clés des Logs</h3>", unsafe_allow_html=True)
 
-    
         total_logs_count = len(filtered_logs)
         total_unique_offres_count = filtered_logs['Offre'].nunique() if 'Offre' in filtered_logs.columns else 0
-        
-    
+
         if 'Direction' in filtered_logs.columns:
             incoming = len(filtered_logs[filtered_logs['Direction'] == 'InComming'])
             outgoing = len(filtered_logs[filtered_logs['Direction'] == 'OutComming'])
-            conversion_rate = (outgoing / incoming * 100) if incoming > 0 else 0 
+            conversion_rate = (outgoing / incoming * 100) if incoming > 0 else 0
         else:
             conversion_rate = "N/A"
-        
-        
-    
+
         if 'Statut_BP' in filtered_logs.columns:
             actif = len(filtered_logs[filtered_logs['Statut_BP'] == 'actif'])
             resilie = len(filtered_logs[filtered_logs['Statut_BP'] == 'résilié'])
-
             total_relevant_logs = actif + resilie
-
-
             if total_relevant_logs > 0:
-                
-                bp_rate = (resilie / total_relevant_logs * 100) 
+                bp_rate = (resilie / total_relevant_logs * 100)
             else:
-                bp_rate = 0 
+                bp_rate = 0
         else:
             bp_rate = "N/A"
 
-    
         if 'Date_d_création' in filtered_logs.columns:
             filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
             min_date = filtered_logs['Date_d_création'].min()
@@ -723,7 +727,6 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             days = "N/A"
 
-    
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             st.markdown(f"""
@@ -759,7 +762,6 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             </div>
             """, unsafe_allow_html=True)
         with col5:
-        # Période couverte dans une nouvelle ligne si nécessaire
             if days != "N/A":
                 st.markdown(f"""
                 <div class="metric-card" style="margin-top: 20px;">
@@ -768,18 +770,18 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 </div>
                 """, unsafe_allow_html=True)
 
-        st.markdown("<h3 style='color: #007bad;'>Répartition des Logs</h3>", unsafe_allow_html=True)
+    
+        st.markdown("<h3 style='color: #007bad;'>Analyse des Logs</h3>", unsafe_allow_html=True)
 
         with st.container(border=True):
-            col1, col2, col3 = st.columns(3)
+            col1, col2 = st.columns(2)
 
-            # Graphique 1: Répartition par Canal
+            # Chart 1: Logs by Canal (Horizontal Bar Chart)
             with col1:
-                st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
+                st.markdown("<h4 style='color: #007bad;'>Répartition par Canal</h4>", unsafe_allow_html=True)
                 if 'Canal' in filtered_logs.columns and not filtered_logs.empty:
                     canal_counts = filtered_logs['Canal'].value_counts().reset_index()
                     canal_counts.columns = ['Canal', 'Count']
-                    
                     fig1 = px.bar(
                         canal_counts,
                         x='Count',
@@ -787,117 +789,265 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         orientation='h',
                         color='Canal',
                         color_discrete_sequence=px.colors.qualitative.Pastel,
-                        text='Count'
+                        text='Count', # Enable text labels
+                        title='Logs par Canal'
                     )
                     fig1.update_traces(
-                        textposition='auto',
-                        textfont=dict(size=16, color='black', family='Arial')
+                        textposition='outside', # Position text outside bars
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
                     )
                     fig1.update_layout(
-                        margin=dict(l=20, r=20, t=20, b=20),
-                        showlegend=False,
+                        title_x=0.5,
+                        xaxis_title={
+                            'text': "Nombre de Logs",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        yaxis_title={
+                            'text': "Canal",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
                         xaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
                         ),
                         yaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
                         ),
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        showlegend=False,
                         plot_bgcolor='white',
-                        paper_bgcolor='white'
+                        paper_bgcolor='white',
+                        font=dict(color='black')
                     )
                     st.plotly_chart(fig1, use_container_width=True)
                 else:
-                    st.warning("Données non disponibles pour ce graphique")
+                    st.warning("Données non disponibles pour ce graphique (Canal)")
 
-            # Graphique 2: Volume de Logs par Jour
+            # Chart 2: Logs by Offer (Horizontal Bar Chart)
             with col2:
-                st.markdown("<h3 style='color: #007bad;'>Logs par Jours</h3>", unsafe_allow_html=True)
-                if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
-                    filtered_logs['Day_of_Week'] = filtered_logs['Date_d_création'].dt.day_name()
-                    day_order = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche']
-
-                    daily_logs_by_day = filtered_logs['Day_of_Week'].value_counts().reindex(day_order, fill_value=0).reset_index()
-                    daily_logs_by_day.columns = ['Day_of_Week', 'Count']
-
-                    fig2 = px.line(
-                        daily_logs_by_day,
-                        x='Day_of_Week',
-                        y='Count',
-                        line_shape='spline',
-                        color_discrete_sequence=['#007bad'],
-                        category_orders={"Day_of_Week": day_order},
-                        text='Count'
-                    )
-                    fig2.update_traces(
-                        mode='lines+markers+text',
-                        textposition='top center',
-                        textfont=dict(size=16, color='black', family='Arial'),
-                        line=dict(width=3),
-                        marker=dict(size=10, color='#007bad')
-                    )
-                    fig2.update_layout(
-                        margin=dict(l=20, r=20, t=20, b=20),
-                        xaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
-                        ),
-                        yaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
-                        ),
-                        plot_bgcolor='white',
-                        paper_bgcolor='white'
-                    )
-                    st.plotly_chart(fig2, use_container_width=True)
-                else:
-                    st.warning("Données non disponibles pour ce graphique")
-
-            # Graphique 3: Répartition par Offre
-            with col3:
-                st.markdown("<h3 style='color: #007bad;'>Logs par Offre</h3>", unsafe_allow_html=True)
+                st.markdown("<h4 style='color: #007bad;'>Répartition par Offre</h4>", unsafe_allow_html=True)
                 if 'Offre' in filtered_logs.columns and not filtered_logs.empty:
                     offre_counts = filtered_logs['Offre'].value_counts().reset_index()
                     offre_counts.columns = ['Offre', 'Count']
-                    
-                    fig3 = px.bar(
+                    fig2 = px.bar(
                         offre_counts,
                         x='Count',
                         y='Offre',
                         orientation='h',
                         color='Offre',
-                        color_discrete_sequence=px.colors.qualitative.Pastel,
-                        text='Count'
+                        color_discrete_sequence=px.colors.qualitative.Set2,
+                        text='Count', # Enable text labels
+                        title='Logs par Offre'
                     )
-                    fig3.update_traces(
-                        textposition='auto',
-                        textfont=dict(size=16, color='black', family='Arial')
+                    fig2.update_traces(
+                        textposition='outside', # Position text outside bars
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
                     )
-                    fig3.update_layout(
-                        margin=dict(l=20, r=20, t=20, b=20),
-                        showlegend=False,
+                    fig2.update_layout(
+                        title_x=0.5,
+                        xaxis_title={
+                            'text': "Nombre de Logs",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        yaxis_title={
+                            'text': "Offre",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
                         xaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
                         ),
                         yaxis=dict(
-                            title="",
-                            tickfont=dict(size=16, family='Arial', color='black')
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
                         ),
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        showlegend=False,
                         plot_bgcolor='white',
-                        paper_bgcolor='white'
+                        paper_bgcolor='white',
+                        font=dict(color='black')
+                    )
+                    st.plotly_chart(fig2, use_container_width=True)
+                else:
+                    st.warning("Données non disponibles pour ce graphique (Offre)")
+
+            col3, col4 = st.columns(2)
+
+            # Chart 3: Logs Over Time (Line Chart)
+            with col3:
+                st.markdown("<h4 style='color: #007bad;'>Volume de Logs au Fil du Temps</h4>", unsafe_allow_html=True)
+                if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
+                    daily_counts = filtered_logs['Date_d_création'].dt.to_period('D').value_counts().sort_index().reset_index()
+                    daily_counts.columns = ['Date', 'Count']
+                    daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp() # Convert Period to Timestamp for Plotly
+                    fig3 = px.line(
+                        daily_counts,
+                        x='Date',
+                        y='Count',
+                        #title='Logs Quotidiens',
+                        #color_discrete_sequence=['#1f77b4'],
+                        #labels={'Count': 'Nombre de Logs', 'Date': 'Date'},
+                        #text='Count' # Enable text labels
+                    )
+                    fig3.update_traces(
+                        mode='lines+markers+text', # Add 'text' to mode
+                        marker=dict(size=8),
+                        textposition='top center', # Position text above markers
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Style text labels
+                    )
+                    fig3.update_layout(
+                        title_x=0.5,
+                        xaxis_title={
+                            'text': "Date",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        yaxis_title={
+                            'text': "Nombre de Logs",
+                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                        },
+                        xaxis=dict(
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                        ),
+                        yaxis=dict(
+                            tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Y-axis tick values
+                        ),
+                        margin=dict(l=20, r=20, t=50, b=20),
+                        plot_bgcolor='white',
+                        paper_bgcolor='white',
+                        font=dict(color='black')
                     )
                     st.plotly_chart(fig3, use_container_width=True)
                 else:
-                    st.warning("Données non disponibles pour ce graphique")
+                    st.warning("Données non disponibles pour ce graphique (Date de création)")
 
+            # Chart 4: Qualification and Direction Trends Over Months (Line and Bar Chart Combo)
+            with col4:
+                st.markdown("<h4 style='color: #007bad;'>Tendance des Qualifications et Directions par Mois</h4>", unsafe_allow_html=True)
+                if 'Qualification' in filtered_logs.columns and 'Direction' in filtered_logs.columns and 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
+                    # Ensure Date_d_création is datetime and extract Month-Year
+                    filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
+                    df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
+
+                    if not df_combined.empty:
+                        df_combined['Month_Year'] = df_combined['Date_d_création'].dt.to_period('M').astype(str)
+
+                        # Data for Qualification lines
+                        qualification_monthly_counts = df_combined.groupby(['Month_Year', 'Qualification']).size().reset_index(name='Count')
+                        qualification_monthly_counts['Sort_Key'] = pd.to_datetime(qualification_monthly_counts['Month_Year'])
+                        qualification_monthly_counts = qualification_monthly_counts.sort_values('Sort_Key')
+
+                        # Data for Direction bars
+                        direction_monthly_counts = df_combined.groupby(['Month_Year', 'Direction']).size().reset_index(name='Count')
+                        direction_monthly_counts['Sort_Key'] = pd.to_datetime(direction_monthly_counts['Month_Year'])
+                        direction_monthly_counts = direction_monthly_counts.sort_values('Sort_Key')
+
+                        # Create subplots - 2 y-axes sharing the same x-axis
+                        fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+                        # Define a consistent color scale for qualifications and directions
+                        qualification_colors = px.colors.qualitative.Dark24
+                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'} # Gold, BlueViolet
+
+                        # Add Qualification lines with labels
+                        for i, qualification in enumerate(qualification_monthly_counts['Qualification'].unique()):
+                            df_qual = qualification_monthly_counts[qualification_monthly_counts['Qualification'] == qualification]
+                            fig.add_trace(
+                                go.Scatter(
+                                    x=df_qual['Month_Year'],
+                                    y=df_qual['Count'],
+                                    mode='lines+markers+text', # Add 'text' mode for labels
+                                    name=f'Qualification: {qualification}',
+                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]), # Assign color
+                                    marker=dict(size=8),
+                                    text=df_qual['Count'], # Use count as text label
+                                    textposition='top center', # Position text
+                                    textfont=dict(size=14, color='darkgreen', family='Arial', weight='bold'), # Qualification label style
+                                    hovertemplate=f'Mois: %{{x}}<br>Qualification: {qualification}<br>Logs: %{{y}}<extra></extra>'
+                                ),
+                                secondary_y=False,
+                            )
+
+                        # Add Direction bars (stacked for Incoming/Outgoing) with labels
+                        direction_pivot = direction_monthly_counts.pivot(index='Month_Year', columns='Direction', values='Count').fillna(0).reset_index()
+                        direction_pivot['Sort_Key'] = pd.to_datetime(direction_pivot['Month_Year'])
+                        direction_pivot = direction_pivot.sort_values('Sort_Key')
+
+                        if 'InComming' in direction_pivot.columns:
+                            fig.add_trace(
+                                go.Bar(
+                                    x=direction_pivot['Month_Year'],
+                                    y=direction_pivot['InComming'],
+                                    name='Direction: InComming',
+                                    marker_color=direction_colors['InComming'],
+                                    opacity=0.7,
+                                    text=direction_pivot['InComming'], # Use count as text label
+                                    textposition='outside', # Position text
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'), # Direction label style
+                                    hovertemplate='Mois: %{x}<br>Direction: InComming<br>Logs: %{y}<extra></extra>'
+                                ),
+                                secondary_y=True,
+                            )
+                        if 'OutComming' in direction_pivot.columns:
+                            fig.add_trace(
+                                go.Bar(
+                                    x=direction_pivot['Month_Year'],
+                                    y=direction_pivot['OutComming'],
+                                    name='Direction: OutComming',
+                                    marker_color=direction_colors['OutComming'],
+                                    opacity=0.7,
+                                    text=direction_pivot['OutComming'], # Use count as text label
+                                    textposition='outside', # Position text
+                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'), # Direction label style
+                                    hovertemplate='Mois: %{x}<br>Direction: OutComming<br>Logs: %{y}<extra></extra>'
+                                ),
+                                secondary_y=True,
+                            )
+
+                        # Update layout
+                        fig.update_layout(
+                            #title_text='Logs par Qualification (Lignes) et Direction (Barres) par Mois',
+                            #title_x=0.5,
+                            xaxis_title={
+                                'text': "Mois",
+                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            },
+                            yaxis_title={
+                                'text': "Nombre de Logs (Qualifications)",
+                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            },
+                            yaxis2_title={
+                                'text': "Nombre de Logs (Directions)",
+                                'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            },
+                            xaxis=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # X-axis tick values
+                            ),
+                            yaxis=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Primary Y-axis tick values
+                            ),
+                            yaxis2=dict(
+                                tickfont=dict(size=16, family='Arial', color='black', weight='bold') # Secondary Y-axis tick values
+                            ),
+                            margin=dict(l=20, r=20, t=80, b=20),
+                            plot_bgcolor='white',
+                            paper_bgcolor='white',
+                            font=dict(color='black'),
+                            hovermode="x unified",
+                            barmode='stack',
+                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                        )
+
+                        st.plotly_chart(fig, use_container_width=True)
+                    else:
+                        st.warning("Données de qualification, direction ou date non valides pour ce graphique.")
+                else:
+                    st.warning("Colonnes 'Qualification', 'Direction' ou 'Date_d_création' manquantes ou vides pour ce graphique.")
+
+
+        
         st.markdown("<h3 style='color: #007bad;'>Données Détaillées des Logs</h3>", unsafe_allow_html=True)
 
         display_df = filtered_logs.sort_values('Date_d_création', ascending=False).copy()
 
-        # Supprimer les colonnes spécifiées si elles existent
-        columns_to_drop = ['Id_Log', 'Day_of_Week'] 
+        # Drop specified columns if they exist
+        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key']
         display_df = display_df.drop(columns=[col for col in columns_to_drop if col in display_df.columns], errors='ignore')
 
         column_configs = {
@@ -928,6 +1078,28 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         .stDataFrame td {
             text-align: center;
             font-weight: bold;
+        }
+        .metric-card {
+            background-color: #f0f2f6;
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            min-height: 100px; /* Ensure consistent height */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .metric-title {
+            font-size: 1.0em;
+            color: #007bad;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .metric-value {
+            font-size: 2.0em;
+            color: #007bad;
+            font-weight: bolder;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -1080,7 +1252,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                     )
 
                     fig_map.update_layout(
-                        height=600,
+                        height=630,
                         margin={"r":0,"t":40,"l":0,"b":0},
                         hoverlabel=dict(
                             bgcolor="white",
@@ -1165,36 +1337,26 @@ def sales_page(sales_df, staff_df, start_date, end_date):
 
                         # Affichage des cartes de performance d'équipe
                         for index, row in team_stats.iterrows():
-                            st.markdown(f"""
-                            <div class="team-performance-card">
-                                <div class="team-performance-title">{row['Team']}</div>
-                                <div class="team-stat-row">
-                                    <div>
-                                        <div class="team-stat-label">Ventes Totales:</div>
-                                        <div class="team-stat-value">{row['Total_Sale']:,.0f}€</div>
+                          st.markdown(f"""
+                                    <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
+                                        <div class="team-stat-row" style="gap: 10px;">  <div>
+                                                <div class="team-stat-label" style="font-weight: bold;">Ventes Totales:</div>
+                                                <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Sale']:,.0f}€</div>
+                                            </div>
+                                            <div style="text-align: center;">
+                                                <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
+                                                <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
+                                            </div>
+                                            <div style="text-align: right;">
+                                                <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                            <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
+                                            <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
+                                        </div>
                                     </div>
-                                    <div style="text-align: center;">
-                                        <div class="team-stat-label">Taux Conversion:</div>
-                                        <div class="team-conversion-value">{row['Conversion_Rate']:.2f}%</div>
-                                    </div>
-                                    <div style="text-align: right;">
-                                        <div class="team-stat-label">Transactions:</div>
-                                        <div class="team-stat-value">{row['Total_Transactions']:,}</div>
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-around; margin-top: 10px; flex-wrap: wrap;">
-                                    <div style="text-align: center; margin-right: 10px;">
-                                        <span class="sms-rate-label">Accepté: </span><span class="sms-accepted-value">{row['Acceptance_Rate']:.2f}%</span>
-                                    </div>
-                                    <div style="text-align: center; margin-left: 10px;">
-                                        <span class="sms-rate-label">Refusé: </span><span class="sms-refused-value">{row['Refusal_Rate']:.2f}%</span>
-                                    </div>
-                                    <div style="text-align: center;">
-                                        <span class="sms-rate-label">Erreur: </span><span class="sms-error-value">{row['Error_Rate']:.2f}%</span>
-                                    </div>
-                                </div>
-                            </div>
-                            """.replace(",", " "), unsafe_allow_html=True)
+                                """.replace(",", " "), unsafe_allow_html=True)
                     else:
                         st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
                 else:
@@ -1510,7 +1672,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         )
 
                         fig_map.update_layout(
-                            height=600,
+                            height=630,
                             margin={"r":0,"t":40,"l":0,"b":0},
                             hoverlabel=dict(
                                 bgcolor="white",
@@ -1525,6 +1687,11 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     st.warning("Les colonnes 'Latitude' ou 'Longitude' sont manquantes ou vides dans les données de récolte.")
 
             with col2:
+                
+                
+
+
+
                 st.markdown("<h3 style='color: #007bad;'>Performance des 3 Top Équipes</h3>", unsafe_allow_html=True)
                 try:
                     if 'debug_msg_recolts' not in st.session_state:
@@ -1554,79 +1721,59 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     if 'Team' in filtered_recolts.columns and not filtered_recolts['Team'].dropna().empty:
                         team_stats = filtered_recolts.groupby('Team').agg(
                             Total_Recolt=('Total_Recolt', 'sum'),
-                            Total_Transactions=('Total_Recolt', 'count'), # Nombre de transactions
+                            Total_Transactions=('Total_Recolt', 'count'),
                             Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
                             Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
-                            Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum()) # Added for ERROR count
+                            Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
                         ).reset_index()
 
                         if not team_stats.empty:
-                            # Calcul des taux d'acceptation, refus et erreur des SMS
                             team_stats['Total_SMS_Transactions'] = team_stats['Accepted_SMS'] + team_stats['Refused_SMS'] + team_stats['Error_SMS']
-
+                            
                             team_stats['Acceptance_Rate'] = team_stats.apply(
-                                lambda row: (row['Accepted_SMS'] / row['Total_SMS_Transactions']) * 100
-                                if row['Total_SMS_Transactions'] > 0 else 0,
+                                lambda row: (row['Accepted_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
                                 axis=1
                             ).round(2)
-
+                            
                             team_stats['Refusal_Rate'] = team_stats.apply(
-                                lambda row: (row['Refused_SMS'] / row['Total_SMS_Transactions']) * 100
-                                if row['Total_SMS_Transactions'] > 0 else 0,
+                                lambda row: (row['Refused_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
                                 axis=1
                             ).round(2)
-
+                            
                             team_stats['Error_Rate'] = team_stats.apply(
-                                lambda row: (row['Error_SMS'] / row['Total_SMS_Transactions']) * 100
-                                if row['Total_SMS_Transactions'] > 0 else 0,
+                                lambda row: (row['Error_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
                                 axis=1
                             ).round(2)
 
-                            # Calcul du taux de conversion (Total Recolt de l'équipe / Total Recolt global filtré)
                             total_recolt_global = filtered_recolts['Total_Recolt'].sum()
                             team_stats['Conversion_Rate'] = team_stats['Total_Recolt'].apply(
                                 lambda x: (x / total_recolt_global) * 100 if total_recolt_global > 0 else 0
                             ).round(2)
 
-                            team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3) # Top 3 teams
+                            team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3)
                             st.write("")
 
-
-
-                            # Affichage des cartes de performance d'équipe
                             for index, row in team_stats.iterrows():
-                                
                                 st.markdown(f"""
-                                            
-                                <div class="team-performance-card">
-                                    <div class="team-performance-title">{row['Team']}</div>
-                                    <div class="team-stat-row">
-                                        <div>
-                                            <div class="team-stat-label">Récoltes Totales:</div>
-                                            <div class="team-stat-value">{row['Total_Recolt']:,.0f}€</div>
+                                        <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
+                                            <div class="team-stat-row" style="gap: 10px;">  <div>
+                                                    <div class="team-stat-label" style="font-weight: bold;">Récoltes Totales:</div>
+                                                    <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Recolt']:,.0f}€</div>
+                                                </div>
+                                                <div style="text-align: center;">
+                                                    <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
+                                                    <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                                </div>
+                                            </div>
+                                            <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                                <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
+                                                <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
+                                            </div>
                                         </div>
-                                        <div style="text-align: center;">
-                                            <div class="team-stat-label">Taux Conversion:</div>
-                                            <div class="team-conversion-value">{row['Conversion_Rate']:.2f}%</div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div class="team-stat-label">Transactions:</div>
-                                            <div class="team-stat-value">{row['Total_Transactions']:,}</div>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-around; margin-top: 10px; flex-wrap: wrap;">
-                                        <div style="text-align: center; margin-right: 10px;">
-                                            <span class="sms-rate-label">Accepté: </span><span class="sms-accepted-value">{row['Acceptance_Rate']:.2f}%</span>
-                                        </div>
-                                        <div style="text-align: center; margin-right: 10px;">
-                                            <span class="sms-rate-label">Refusé: </span><span class="sms-refused-value">{row['Refusal_Rate']:.2f}%</span>
-                                        </div>
-                                        <div style="text-align: center;">
-                                            <span class="sms-rate-label">Erreur: </span><span class="sms-error-value">{row['Error_Rate']:.2f}%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                                """.replace(",", " "), unsafe_allow_html=True)
+                                    """.replace(",", " "), unsafe_allow_html=True)
                         else:
                             st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
                     else:
@@ -1637,7 +1784,8 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                                 st.write(msg)
                 except Exception as e:
                     st.error(f"Une erreur inattendue est survenue lors du calcul des performances d'équipe : {str(e)}")
-                  
+
+
                         
                        
 
@@ -1800,12 +1948,28 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         start_formatted = f"{start_date.day:02d} {mois_fr[start_date.month]} {start_date.year}"
         end_formatted = f"{end_date.day:02d} {mois_fr[end_date.month]} {end_date.year}"
 
+        # Calcul de la durée
+        duration = end_date - start_date
+        total_days = duration.days
+
+        # Calcul des mois et jours
+        # Une estimation simple des mois (30 jours par mois)
+        months = total_days // 30
+        remaining_days = total_days % 30
+
+        duration_text = ""
+        if months > 0:
+            duration_text += f"{months} Mois "
+        duration_text += f"{remaining_days} jours"
+
+
         st.markdown(
             f"""
             <h1 style='text-align: left; font-size: 2.1em; margin-bottom: 0; color: #002a48;'>
-                Dashboard du 
-                <span style='color: #00afe1;'>{start_formatted}</span> au 
+                Dashboard du
+                <span style='color: #00afe1;'>{start_formatted}</span> au
                 <span style='color: #00afe1;'>{end_formatted}</span>
+                <span style='font-size: 0.7em; color: #555;'>({duration_text})</span>
             </h1>
             """,
             unsafe_allow_html=True
@@ -1817,7 +1981,6 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
             "Analyse Commerciale - Sales - Recolts - Logs</h1>",
             unsafe_allow_html=True
         )
-
     # Custom CSS for tabs
     st.markdown("""
         <style>
