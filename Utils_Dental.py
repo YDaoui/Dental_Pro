@@ -2571,7 +2571,7 @@ def setting_page():
                     if not date_obj:
                         st.error(f"Format de date non reconnu: {date_in}")
                         date_str = date_in
-                elif isinstance(date_in, (datetime, date)):
+                elif isinstance(date_in, (datetime)):
                     date_obj = date_in
 
             if date_obj:

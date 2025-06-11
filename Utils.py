@@ -158,3 +158,4 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
         filtered_df = filtered_df[filtered_df['SHORT_MESSAGE'] == transaction_filter]
 
     return filtered_df
+
