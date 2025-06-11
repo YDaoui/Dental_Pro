@@ -151,7 +151,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
     if not filtered_recolts.empty:
         # Métriques / KPIs (Identical to Sales.py layout)
-        st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
+        #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
 
         
         col1_kpi, col2_kpi, col3_kpi = st.columns(3) # Only 3 KPIs for recolts, no Rating

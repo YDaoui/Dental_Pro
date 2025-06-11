@@ -114,7 +114,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
 
     if not filtered_sales.empty:
         # Métriques / KPIs
-        st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
+        #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
         col1_kpi, col2_kpi, col3_kpi, col4_kpi = st.columns(4)
         
         with col1_kpi:

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Dentale</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <!-- Inclure Plotly.js pour les graphiques -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <img src="/static/Dental_Implant.png" alt="Logo">
+                <h3>Tableau de Bord</h3>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><button class="nav-item active" data-page="dashboard">Tableau de Bord</button></li>
+                    <li><button class="nav-item" data-page="sales">Ventes</button></li>
+                    <li><button class="nav-item" data-page="recolts">Récoltes</button></li>
+                    <li><button class="nav-item" data-page="logs">Logs</button></li>
+                    <li><button class="nav-item" data-page="agents">Agents</button></li>
+                    <li><button class="nav-item" data-page="supports">Supports</button></li>
+                </ul>
+            </nav>
+            <div class="logout">
+                <button id="logoutButton">Déconnexion</button>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <header class="main-header">
+                <h1>Bienvenue sur votre tableau de bord !</h1>
+            </header>
+
+            <section id="dashboard-section" class="content-section active">
+                <h2>Statistiques Générales</h2>
+                <div class="dashboard-metrics">
+                    <div class="metric-card">
+                        <div class="metric-title">Ventes Totales</div>
+                        <div class="metric-value" id="totalSalesMetric">Chargement...</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Récoltes Totales</div>
+                        <div class="metric-value" id="totalRecoltsMetric">Chargement...</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Total Logs</div>
+                        <div class="metric-value" id="totalLogsMetric">Chargement...</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-title">Agents Actifs</div>
+                        <div class="metric-value" id="activeAgentsMetric">Chargement...</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sales-section" class="content-section">
+                <h2>Données de Ventes</h2>
+                <div id="sales-data-container"></div>
+            </section>
+
+            <section id="recolts-section" class="content-section">
+                <h2>Données de Récoltes</h2>
+                <div id="recolts-data-container"></div>
+            </section>
+
+            <section id="logs-section" class="content-section">
+                <h2>Filtrage et Analyse des Logs</h2>
+                <div id="logs-data-container"></div>
+            </section>
+
+            <section id="agents-section" class="content-section">
+                <h2>Gestion des Agents</h2>
+                <div id="agents-data-container"></div>
+            </section>
+
+            <section id="supports-section" class="content-section">
+                <h2>Gestion des Supports</h2>
+                <div id="supports-data-container"></div>
+            </section>
+        </main>
+    </div>
+    <script src="/static/main.js"></script>
+</body>
+</html>

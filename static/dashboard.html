@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - Application Dentale</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Application Dentale</h1>
+        <nav id="main-nav">
+            <button class="nav-item active" data-page="dashboard">Tableau de Bord</button>
+            <button class="nav-item" data-page="sales">Ventes</button>
+            <button class="nav-item" data-page="recolts">Récoltes</button>
+            <button class="nav-item" data-page="logs">Logs</button>
+            <button class="nav-item" data-page="agents">Agents</button>
+            <button class="nav-item" data-page="supports">Supports</button>
+            <button id="logoutButton">Déconnexion</button>
+        </nav>
+    </header>
+
+    <main id="app-content">
+        <section id="dashboard-section" class="content-section active">
+            <h2>Aperçu du Tableau de Bord</h2>
+            </section>
+        <section id="sales-section" class="content-section">
+            <h2>Ventes</h2>
+            </section>
+        <section id="recolts-section" class="content-section">
+            <h2>Récoltes</h2>
+        </section>
+        <section id="logs-section" class="content-section">
+            <h2>Logs</h2>
+        </section>
+        <section id="agents-section" class="content-section">
+            <h2>Agents</h2>
+        </section>
+        <section id="supports-section" class="content-section">
+            <h2>Supports</h2>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+</body>
+</html>

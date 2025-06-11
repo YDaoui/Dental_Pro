@@ -27,7 +27,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown("<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Analyse des Logs</h1>", unsafe_allow_html=True)
 
   
-    st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
+    #st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
 
     # Filters
     col1_f, col2_f, col3_f, col4_f = st.columns(4)
@@ -162,11 +162,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     position: relative;
                     overflow: hidden;
                     color: white;">
-                    <div style="position: absolute; right: 20px; top: 20px; opacity: 0.3;">
-                        <i class="fas fa-{icon_name}" style="font-size: 65px;"></i>
+                    <div style="position: absolute; right: 20px; top: 20px; opacity: 0.9;">
+                        <i class="fas fa-{icon_name}" style="font-size: 40px;"></i>
                     </div>
                     <h3 style="color: white; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">{title}</h3>
-                    <p style="font-size: 42px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
+                    <p style="font-size: 28px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -196,7 +196,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             yaxis=dict(
                 title="", # Title can be an empty string, not None
                 tickfont=dict(size=14, family='Arial', color='black'),
-                titlefont=dict(size=16),
+                titlefont=dict(size=14),
                 showgrid=True,
                 gridcolor='#e0e0e0',
                 linecolor='black',
@@ -206,7 +206,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 minsize=14, # minsize should be int
                 mode='hide' # mode should be 'hide' or 'overlay'
             ),
-            font=dict(size=14, color='#333', family='Arial'),
+            font=dict(size=12, color='#333', family='Arial'),
             # Adding margin might help with text clipping, adjust as needed
             margin=dict(l=40, r=40, t=40, b=40) 
         )

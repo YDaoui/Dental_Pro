@@ -643,8 +643,382 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
         filtered_df = filtered_df[filtered_df['SHORT_MESSAGE'] == transaction_filter]
             
     return filtered_df
+
+
+def recolts_page(recolts_df, staff_df, start_date, end_date):
+    """Affiche la page des récoltes avec le nouveau style, incluant les cartes Top 3 et les graphiques de ligne/transaction."""
+
+    add_custom_css() # Appel de la fonction CSS personnalisée
+
+    st.markdown("<h3 style='color: #007bad;'>Filtrage des Récoltes</h3>", unsafe_allow_html=True)
+
+    with st.container(border=True):
+        col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
+        with col1:
+            country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()), key='recolts_country')
+        with col2:
+            team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolts_team')
+        with col3:
+            activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolts_activity')
+        with col4:
+            transaction_filter = st.selectbox("Type de transaction", ['Toutes'] + sorted(recolts_df['SHORT_MESSAGE'].dropna().unique()), key='recolts_transaction')
+
+    with st.spinner("Application des filtres..."):
+        filtered_recolts = filter_data(recolts_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
+
+        if not filtered_recolts.empty:
+            # S'assurer que les dates sont au bon format pour les opérations temporelles
+            if 'ORDER_DATE' in filtered_recolts.columns:
+                filtered_recolts['ORDER_DATE'] = pd.to_datetime(filtered_recolts['ORDER_DATE'], errors='coerce')
+                # Supprimer les lignes où la conversion de date a échoué
+                filtered_recolts.dropna(subset=['ORDER_DATE'], inplace=True)
+
+            # Géocoder les données après filtrage
+            if 'City' in filtered_recolts.columns and 'Country' in filtered_recolts.columns:
+                # Vérifier si filtered_recolts a déjà Latitude/Longitude ou si staff_df n'est pas nécessaire
+                if 'Latitude' not in filtered_recolts.columns or 'Longitude' not in filtered_recolts.columns:
+                    filtered_recolts = geocode_data(filtered_recolts.copy()) # Utiliser .copy() pour éviter SettingWithCopyWarning
+
+
+            # Assurez-vous que 'Hyp' (employee ID) est disponible pour les métriques
+            # et pour la jointure avec staff_df pour la colonne 'Team'
+            if 'Hyp' not in filtered_recolts.columns and 'Hyp' in recolts_df.columns and 'Hyp' in staff_df.columns:
+                 # Jointure pour ajouter la colonne 'Team' aux récoltes filtrées
+                initial_recolts_rows = len(filtered_recolts)
+                filtered_recolts = filtered_recolts.merge(
+                    staff_df[['Hyp', 'Team', 'Activité']].drop_duplicates(), # Inclure 'Activité' pour le filtre si non déjà fait
+                    on='Hyp',
+                    how='left'
+                )
+                teams_found = filtered_recolts['Team'].notna().sum()
+                if teams_found == 0 and initial_recolts_rows > 0:
+                    st.warning("Aucune correspondance 'Hyp' trouvée entre les récoltes filtrées et les données du personnel.")
+
+
+            # --- Métriques Clés (Top Cards) ---
+            st.markdown("---", unsafe_allow_html=True)
+            st.markdown("<h3 style='color: #007bad;'>Aperçu Global des Récoltes</h3>", unsafe_allow_html=True)
+            col1, col2, col3, col4 = st.columns(4)
+
+            with col1:
+                total_recolts_sum = filtered_recolts['Total_Recolt'].sum() if 'Total_Recolt' in filtered_recolts.columns else 0
+                kpi_card_html(col1, "Total Récoltes", f"{total_recolts_sum:,.0f}€", "#007bad", "seedling") # Icône 'seedling' pour les récoltes
+
+            with col2:
+                if 'Rating' in filtered_recolts.columns:
+                    avg_rating = filtered_recolts['Rating'].mean()
+                    if not pd.isna(avg_rating):
+                        rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
+                        kpi_card_html(col2, "Note Moyenne", rating_display, "#ffc107", "star") # Jaune pour la note
+                    else:
+                         kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt") # Gris si pas de note
+                else:
+                    kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt")
+
+            with col3:
+                total_transactions = len(filtered_recolts)
+                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#20c997", "exchange-alt") # Vert-bleu pour les transactions
+
+            with col4:
+                unique_employees = filtered_recolts['Hyp'].nunique() if 'Hyp' in filtered_recolts.columns else 0
+                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#6f42c1", "users") # Violet pour les employés
+
+            # --- Carte et Top Équipes ---
+            st.markdown("---", unsafe_allow_html=True)
+            col_map, col_teams = st.columns([2, 1])
+
+            with col_map:
+                st.markdown("<h3 style='color: #007bad;'>Récoltes par Ville (Vue Carte)</h3>", unsafe_allow_html=True)
+                # S'assurer que les colonnes Latitude et Longitude existent et ne sont pas toutes NaN
+                if 'Latitude' in filtered_recolts.columns and 'Longitude' in filtered_recolts.columns and not filtered_recolts[['Latitude', 'Longitude']].dropna().empty:
+                    city_recolts_map = filtered_recolts.groupby('City').agg(
+                        Total_Recolt=('Total_Recolt', 'sum'),
+                        Latitude=('Latitude', 'first'),
+                        Longitude=('Longitude', 'first'),
+                        Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
+                        Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
+                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
+                    ).reset_index()
+
+                    city_recolts_map = city_recolts_map.dropna(subset=['Latitude', 'Longitude'])
+
+                    if not city_recolts_map.empty:
+                        city_recolts_map['Formatted_Recolt'] = city_recolts_map['Total_Recolt'].apply(lambda x: f"{x:,.0f}€")
+                        city_recolts_map['Short_Recolt'] = city_recolts_map['Total_Recolt'].apply(lambda x: f"{x/1000:.0f}k" if x >= 1000 else f"{x:.0f}")
+
+                        city_recolts_map['Total_SMS'] = city_recolts_map['Accepted_SMS'] + city_recolts_map['Refused_SMS'] + city_recolts_map['Error_SMS']
+                        
+                        city_recolts_map['Refused_SMS_Percentage'] = city_recolts_map.apply(
+                            lambda row: (row['Refused_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0, axis=1
+                        ).round(2)
+                        city_recolts_map['Error_SMS_Percentage'] = city_recolts_map.apply(
+                            lambda row: (row['Error_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0, axis=1
+                        ).round(2)
+
+                        fig_map = px.scatter_mapbox(
+                            city_recolts_map,
+                            lat="Latitude",
+                            lon="Longitude",
+                            size="Total_Recolt",
+                            text="Short_Recolt",
+                            color_discrete_sequence=['#007bad'] * len(city_recolts_map),
+                            hover_name="City",
+                            hover_data={
+                                "Formatted_Recolt": True,
+                                "Latitude": False,
+                                "Longitude": False,
+                                "Refused_SMS_Percentage": ":.2f",
+                                "Error_SMS_Percentage": ":.2f",
+                                "Total_Recolt": False,
+                                "Accepted_SMS": False,
+                                "Refused_SMS": False,
+                                "Error_SMS": False,
+                                "Short_Recolt": False
+                            },
+                            size_max=35,
+                            zoom=5,
+                            mapbox_style="carto-positron"
+                        )
+
+                        fig_map.update_traces(
+                            textfont=dict(family="Arial", size=12, color="white"),
+                            textposition="middle center",
+                            hovertemplate="<b>%{hover_name}</b><br>" +
+                                          "Récoltes: %{customdata[0]}<br>" +
+                                          "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
+                                          "Transactions Erreur: %{customdata[2]:.2f}%" +
+                                          "<extra></extra>",
+                            customdata=city_recolts_map[['Formatted_Recolt', 'Refused_SMS_Percentage', 'Error_SMS_Percentage', 'City']]
+                        )
+
+                        fig_map.update_layout(
+                            height=630,
+                            margin={"r":0,"t":40,"l":0,"b":0},
+                            hoverlabel=dict(bgcolor="white", font_size=14, font_family="Arial")
+                        )
+                        st.plotly_chart(fig_map, use_container_width=True)
+                    else:
+                        st.warning("Aucune donnée de récolte avec des coordonnées géographiques valides pour afficher sur la carte.")
+                else:
+                    st.warning("Les colonnes 'Latitude' ou 'Longitude' sont manquantes ou vides dans les données de récolte ou ne contiennent pas de valeurs valides.")
+
+            with col_teams:
+                st.markdown("<h3 style='color: #007bad;'>Performance des 3 Top Équipes</h3>", unsafe_allow_html=True)
+                
+                # S'assurer que 'Team' est présent pour le calcul des performances d'équipe
+                if 'Team' not in filtered_recolts.columns or filtered_recolts['Team'].isnull().all():
+                    st.warning("La colonne 'Team' est manquante ou vide après filtrage. Assurez-vous que la jointure avec 'staff_df' via 'Hyp' a réussi ou que 'Team' est déjà dans 'recolts_df'.")
+                
+                if 'Team' in filtered_recolts.columns and not filtered_recolts['Team'].dropna().empty:
+                    team_stats = filtered_recolts.groupby('Team').agg(
+                        Total_Recolt=('Total_Recolt', 'sum'),
+                        Total_Transactions=('Total_Recolt', 'count'),
+                        Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
+                        Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
+                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
+                    ).reset_index()
+
+                    if not team_stats.empty:
+                        team_stats['Total_SMS_Transactions'] = team_stats['Accepted_SMS'] + team_stats['Refused_SMS'] + team_stats['Error_SMS']
+                        
+                        team_stats['Acceptance_Rate'] = team_stats.apply(
+                            lambda row: (row['Accepted_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
+                        
+                        team_stats['Refusal_Rate'] = team_stats.apply(
+                            lambda row: (row['Refused_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
+                        
+                        team_stats['Error_Rate'] = team_stats.apply(
+                            lambda row: (row['Error_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
+
+                        total_recolt_global = filtered_recolts['Total_Recolt'].sum()
+                        team_stats['Conversion_Rate'] = team_stats['Total_Recolt'].apply(
+                            lambda x: (x / total_recolt_global) * 100 if total_recolt_global > 0 else 0
+                        ).round(2)
+
+                        team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3)
+                        st.write("") # Espace pour alignement visuel
+
+                        for index, row in team_stats.iterrows():
+                            st.markdown(f"""
+                                <div class="team-performance-card">
+                                    <div class="team-performance-title">{row['Team']}</div>
+                                    <div class="team-stat-row">
+                                        <div>
+                                            <div class="team-stat-label">Récoltes Totales:</div>
+                                            <div class="team-stat-value">{row['Total_Recolt']:,.0f}€</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div class="team-stat-label">Taux Conversion:</div>
+                                            <div class="team-conversion-value">{row['Conversion_Rate']:.2f}%</div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div class="team-stat-label">Transactions:</div>
+                                            <div class="team-stat-value">{row['Total_Transactions']:,}</div>
+                                        </div>
+                                    </div>
+                                    <div class="team-rates">
+                                        <span class="accepted">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                        <span class="refused">✗ {row['Refusal_Rate']:.1f}%</span>
+                                        <span class="error">⚠ {row['Error_Rate']:.1f}%</span>
+                                    </div>
+                                </div>
+                                """.replace(",", " "), unsafe_allow_html=True)
+                    else:
+                        st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
+                else:
+                    st.warning("Impossible d'afficher les performances des équipes. Vérifiez que la colonne 'Team' est disponible après le filtrage ou que les données 'Hyp' permettent la jointure.")
+
+
+            # --- Graphiques Linéaires et Camembert ---
+            st.markdown("---", unsafe_allow_html=True)
+            col_day, col_pie, col_hour = st.columns([1, 1, 1])
+
+            with col_day:
+                st.markdown("<h3 style='color: #007bad;'>Récoltes par Jour de la Semaine</h3>", unsafe_allow_html=True)
+                if 'ORDER_DATE' in filtered_recolts.columns and not filtered_recolts['ORDER_DATE'].empty:
+                    filtered_recolts['Weekday'] = filtered_recolts['ORDER_DATE'].dt.dayofweek # Renommé pour plus de clarté (0=Lundi)
+                    recoltes_jour = filtered_recolts.groupby('Weekday')['Total_Recolt'].sum().reset_index()
+                    jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi', 3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
+                    
+                    # Assurer que tous les jours sont présents même s'il n'y a pas de données
+                    all_days_df = pd.DataFrame({'Weekday': range(7)})
+                    recoltes_jour = pd.merge(all_days_df, recoltes_jour, on='Weekday', how='left').fillna(0)
+                    recoltes_jour['Jour'] = recoltes_jour['Weekday'].map(jours)
+                    recoltes_jour = recoltes_jour.sort_values('Weekday') # S'assurer de l'ordre des jours
+
+                    fig_jour = px.line(recoltes_jour,
+                                        x='Jour',
+                                        y='Total_Recolt',
+                                        line_shape='spline',
+                                        color_discrete_sequence=['#525CEB'])
+
+                    fig_jour.update_traces(
+                        line=dict(width=4, color='#525CEB'),
+                        mode='lines+markers+text',
+                        marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')),
+                        text=[f"€{y:,.0f}" for y in recoltes_jour['Total_Recolt']],
+                        textposition="top center",
+                        textfont=dict(color="#F70F49", size=14, family='Arial', weight='bold'),
+                        hovertemplate='Jour: %{x}<br>Récoltes: €%{y:,.2f}<extra></extra>',
+                        fill='tozeroy',
+                        fillcolor='rgba(179, 191, 231, 0.4)'
+                    )
+
+                    fig_jour.update_layout(
+                        xaxis_title=None,
+                        yaxis_title=None,
+                        plot_bgcolor='#FFFFFF',
+                        paper_bgcolor='#FFFFFF',
+                        xaxis_gridcolor='#E0E0E0',
+                        yaxis_gridcolor='#E0E0E0',
+                        xaxis=dict(
+                            tickmode='array',
+                            tickvals=recoltes_jour['Jour'],
+                            categoryorder='array',
+                            categoryarray=recoltes_jour['Jour'],
+                            tickfont=dict(size=14, color='#3D3B40', weight='bold')
+                        ),
+                        yaxis=dict(
+                            range=[0, recoltes_jour['Total_Recolt'].max() * 1.2],
+                            tickfont=dict(size=12, color='#3D3B40')
+                        ),
+                        font=dict(family='Arial', size=12, color='#3D3B40'),
+                        margin=dict(t=50, b=50, l=50, r=50)
+                    )
+                    st.plotly_chart(fig_jour, use_container_width=True)
+                else:
+                    st.warning("Données de date de commande manquantes pour ce graphique ou pas de données filtrées.")
+
+            with col_pie:
+                st.markdown("<h3 style='color: #007bad;'>Transactions Acceptées vs Refusées</h3>", unsafe_allow_html=True)
+                if 'SHORT_MESSAGE' in filtered_recolts.columns and 'Total_Recolt' in filtered_recolts.columns and not filtered_recolts['SHORT_MESSAGE'].empty:
+                    status_recolts = filtered_recolts.groupby('SHORT_MESSAGE')['Total_Recolt'].sum().reset_index()
+
+                    fig_pie = px.pie(status_recolts,
+                                         values='Total_Recolt',
+                                         names='SHORT_MESSAGE',
+                                         color='SHORT_MESSAGE',
+                                         color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000', 'ERROR': '#ffa500'},
+                                         hole=0.4)
+
+                    fig_pie.update_traces(
+                        textinfo='value+percent',
+                        textposition='outside',
+                        textfont_size=18,
+                        textfont_color=['#007bad', '#ff0000', '#ffa500'],
+                        marker=dict(line=dict(color='white', width=2)),
+                        pull=[0.05, 0, 0],
+                        rotation=-90
+                    )
+
+                    st.plotly_chart(fig_pie, use_container_width=True)
+                else:
+                    st.warning("Données de message court ou de récolte totale manquantes pour ce graphique ou pas de données filtrées.")
+
+            with col_hour:
+                st.markdown("<h3 style='color: #007bad;'>Récoltes par Heure (9h-20h)</h3>", unsafe_allow_html=True)
+                if 'ORDER_DATE' in filtered_recolts.columns and not filtered_recolts['ORDER_DATE'].empty:
+                    recoltes_heure = filtered_recolts[
+                        (filtered_recolts['ORDER_DATE'].dt.hour >= 9) &
+                        (filtered_recolts['ORDER_DATE'].dt.hour <= 20)
+                    ].groupby(filtered_recolts['ORDER_DATE'].dt.hour)['Total_Recolt'].sum().reset_index()
+
+                    recoltes_heure = recoltes_heure.rename(columns={'ORDER_DATE': 'Heure'})
+                    all_hours = pd.DataFrame({'Heure': range(9, 21)}) # Inclure toutes les heures même si pas de données
+                    recoltes_heure = pd.merge(all_hours, recoltes_heure, on='Heure', how='left').fillna(0)
+                    recoltes_heure = recoltes_heure.sort_values('Heure')
+
+                    fig_heure = px.line(recoltes_heure, x='Heure', y='Total_Recolt',
+                                         line_shape='spline',
+                                         color_discrete_sequence=['#525CEB'])
+
+                    fig_heure.update_traces(
+                        line=dict(width=4, color='#525CEB'),
+                        mode='lines+markers+text',
+                        marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')),
+                        text=[f"€{y:,.0f}" for y in recoltes_heure['Total_Recolt']],
+                        textposition="top center",
+                        textfont=dict(color="#F50808", size=14, family='Arial', weight='bold'),
+                        hovertemplate='Heure: %{x}h<br>Récoltes: €%{y:,.2f}<extra></extra>',
+                        fill='tozeroy',
+                        fillcolor='rgba(179, 191, 231, 0.4)'
+                    )
+
+                    fig_heure.update_layout(
+                        xaxis_title="Heure de la journée",
+                        yaxis_title=None,
+                        plot_bgcolor='#FFFFFF',
+                        paper_bgcolor='#FFFFFF',
+                        xaxis_gridcolor='#E0E0E0',
+                        yaxis_gridcolor='#E0E0E0',
+                        xaxis=dict(
+                            tickmode='linear',
+                            dtick=1,
+                            range=[8.5, 20.5],
+                            tickfont=dict(size=14, color='#3D3B40', weight='bold')
+                        ),
+                        yaxis=dict(
+                            range=[0, recoltes_heure['Total_Recolt'].max() * 1.2],
+                            tickfont=dict(size=12, color='#3D3B40')
+                        ),
+                        font=dict(family='Arial', size=12, color='#3D3B40'),
+                        margin=dict(t=50, b=50, l=50, r=50)
+                    )
+                    st.plotly_chart(fig_heure, use_container_width=True)
+                else:
+                    st.warning("Données de date de commande manquantes pour ce graphique ou pas de données filtrées.")
+        else:
+            st.warning("Aucune donnée de récolte ne correspond aux filtres sélectionnés.")
+
+# --- Fonction Principale de la Page des Logs ---
+
 def logs_page(logs_df, staff_df, start_date, end_date):
-    """Displays the logs page with specified filters and consistent styling."""
+    """Affiche la page des logs avec les filtres spécifiés et un style cohérent."""
+
+    add_custom_css() # Appel de la fonction CSS personnalisée
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Logs</h3>", unsafe_allow_html=True)
 
@@ -670,20 +1044,38 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             qualification_filter = st.selectbox("Qualification", ['Tous'] + sorted(logs_df['Qualification'].dropna().unique().tolist()) if 'Qualification' in logs_df.columns else ['Tous'], key='qualification_filter')
 
     with st.spinner("Application des filtres..."):
-        # Assuming filter_data is defined elsewhere and correctly filters the DataFrame
-        # For demonstration purposes, let's create a dummy filter_data function if it's not provided
+        # Assurez-vous que la colonne 'ORDER_DATE' existe pour filter_data
+        # Pour les logs, la colonne de date peut être 'Date_d_création'
+        logs_df_for_filter = logs_df.copy()
+        if 'Date_d_création' in logs_df_for_filter.columns and 'ORDER_DATE' not in logs_df_for_filter.columns:
+            logs_df_for_filter = logs_df_for_filter.rename(columns={'Date_d_création': 'ORDER_DATE'})
+            
         try:
-            filtered_logs = filter_data(logs_df, 'Tous', team_filter, activity_filter, 'Toutes', start_date, end_date, staff_df)
+            # La fonction filter_data est conçue pour les ventes/récoltes avec 'Country' et 'SHORT_MESSAGE'
+            # Adaptons son appel pour les logs
+            filtered_logs = filter_data(
+                logs_df_for_filter, # Utilisation de logs_df_for_filter avec 'ORDER_DATE'
+                'Tous', # Pas de filtre 'Country' spécifique pour les logs ici, mais 'filter_data' l'attend
+                team_filter, 
+                activity_filter, 
+                'Toutes', # Pas de filtre 'transaction' spécifique pour les logs ici, mais 'filter_data' l'attend
+                start_date, 
+                end_date, 
+                staff_df
+            )
+            # Renommer 'ORDER_DATE' si nécessaire pour les logs si elle a été changée pour 'filter_data'
+            if 'Date_d_création' in logs_df.columns and 'ORDER_DATE' in filtered_logs.columns and 'Date_d_création' not in filtered_logs.columns:
+                filtered_logs = filtered_logs.rename(columns={'ORDER_DATE': 'Date_d_création'})
         except NameError:
-            # Fallback for when filter_data is not defined
-            st.warning("`filter_data` function not found. Using a basic date filter for demonstration.")
+            st.warning("La fonction `filter_data` n'a pas été trouvée. Utilisation d'un filtre de date basique pour la démonstration.")
             if 'Date_d_création' in logs_df.columns:
                 logs_df['Date_d_création'] = pd.to_datetime(logs_df['Date_d_création'], errors='coerce')
-                filtered_logs = logs_df[(logs_df['Date_d_création'] >= start_date) & (logs_df['Date_d_création'] <= end_date)]
+                filtered_logs = logs_df[(logs_df['Date_d_création'] >= start_date) & (logs_df['Date_d_création'] <= end_date)].copy()
             else:
-                filtered_logs = logs_df.copy() # No date filter if column missing
+                filtered_logs = logs_df.copy() # Pas de filtre de date si la colonne est manquante
 
 
+        # Appliquer les filtres spécifiques aux logs
         if offre_filter != 'Tous' and 'Offre' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Offre'] == offre_filter]
         if segment_filter != 'Tous' and 'Segment' in filtered_logs.columns:
@@ -698,11 +1090,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             filtered_logs = filtered_logs[filtered_logs['Qualification'] == qualification_filter]
 
     if not filtered_logs.empty:
-        st.markdown("<h3 style='color: #007bad;'>Indicateurs Clés des Logs</h3>", unsafe_allow_html=True)
+        #st.markdown("<h3 style='color: #007bad;'>Indicateurs Clés des Logs</h3>", unsafe_allow_html=True)
 
         total_logs_count = len(filtered_logs)
         total_unique_offres_count = filtered_logs['Offre'].nunique() if 'Offre' in filtered_logs.columns else 0
 
+        # Calcul du taux de conversion
         if 'Direction' in filtered_logs.columns:
             incoming = len(filtered_logs[filtered_logs['Direction'] == 'InComming'])
             outgoing = len(filtered_logs[filtered_logs['Direction'] == 'OutComming'])
@@ -710,6 +1103,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             conversion_rate = "N/A"
 
+        # Calcul du taux de Statut BP
         if 'Statut_BP' in filtered_logs.columns:
             actif = len(filtered_logs[filtered_logs['Statut_BP'] == 'actif'])
             resilie = len(filtered_logs[filtered_logs['Statut_BP'] == 'résilié'])
@@ -721,7 +1115,8 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             bp_rate = "N/A"
 
-        if 'Date_d_création' in filtered_logs.columns:
+        # Période Couverte
+        if 'Date_d_création' in filtered_logs.columns and not filtered_logs['Date_d_création'].empty:
             filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
             min_date = filtered_logs['Date_d_création'].min()
             max_date = filtered_logs['Date_d_création'].max()
@@ -729,57 +1124,32 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             days = "N/A"
 
+        # Affichage des cartes KPI avec kpi_card_html
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
-            st.markdown(f"""
-            <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-title">Total Logs</div>
-                <div class="metric-value">{total_logs_count:,}</div>
-            </div>
-            """.replace(",", " "), unsafe_allow_html=True)
+            kpi_card_html(col1, "Total Logs", f"{total_logs_count:,}", "#007bad", "clipboard-list")
 
         with col2:
-            st.markdown(f"""
-            <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-title">Offres Vendues</div>
-                <div class="metric-value">{total_unique_offres_count:,}</div>
-            </div>
-            """.replace(",", " "), unsafe_allow_html=True)
+            kpi_card_html(col2, "Offres Uniques", f"{total_unique_offres_count:,}", "#28a745", "tag")
 
         with col3:
             conversion_display = f"{conversion_rate:.1f}%" if isinstance(conversion_rate, (int, float)) else conversion_rate
-            st.markdown(f"""
-            <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-title">Taux de Conversion</div>
-                <div class="metric-value">{conversion_display}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            kpi_card_html(col3, "Taux de Conversion", conversion_display, "#ffc107", "chart-pie")
 
         with col4:
             bp_display = f"{bp_rate:.1f}%" if isinstance(bp_rate, (int, float)) else bp_rate
-            st.markdown(f"""
-            <div class="metric-card" style="margin-top: 20px;">
-                <div class="metric-title">Taux Statut BP</div>
-                <div class="metric-value">{bp_display}</div>
-            </div>
-            """, unsafe_allow_html=True)
+            kpi_card_html(col4, "Taux Statut BP", bp_display, "#dc3545", "clipboard-check")
+            
         with col5:
-            if days != "N/A":
-                st.markdown(f"""
-                <div class="metric-card" style="margin-top: 20px;">
-                    <div class="metric-title">Période Couverte</div>
-                    <div class="metric-value">{days} jours</div>
-                </div>
-                """, unsafe_allow_html=True)
+            days_display = f"{days} jours" if days != "N/A" else "N/A"
+            kpi_card_html(col5, "Période Couverte", days_display, "#6f42c1", "calendar-alt")
 
-        st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
+        #st.markdown("---")
         st.markdown("<h3 style='color: #007bad;'>Analyse des Logs</h3>", unsafe_allow_html=True)
-
         with st.container(border=True):
-            # First row of charts (formerly second row): Qualification/Direction (col1), Mode de Facturation (col2)
+    # First row of charts (formerly second row): Qualification/Direction (col1), Mode de Facturation (col2)
+  
             col1, col2 = st.columns([3, 1])
-
-            # Chart 4: Qualification and Direction Trends Over Months (Line and Bar Chart Combo) - now in col1 (top left)
             with col1:
                 st.markdown("<h4 style='color: #007bad;'>Tendance des Qualifications et Directions par Mois</h4>", unsafe_allow_html=True)
                 if 'Qualification' in filtered_logs.columns and 'Direction' in filtered_logs.columns and 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
@@ -787,10 +1157,17 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
 
                     if not df_combined.empty:
+                        # Filtrer pour garder seulement les 12 derniers mois
+                        df_combined = df_combined[df_combined['Date_d_création'] >= (df_combined['Date_d_création'].max() - pd.DateOffset(months=11))]
+                        
+                        df_combined['Qualification_Grouped'] = df_combined['Qualification'].apply(
+                            lambda x: 'Transfert' if 'Transfert' in x else x
+                        )
+                        
                         df_combined['Month_Year_Str'] = df_combined['Date_d_création'].dt.to_period('M').astype(str)
                         df_combined['Month_Year_Dt'] = df_combined['Date_d_création'].dt.to_period('M').dt.to_timestamp()
 
-                        qualification_monthly_counts = df_combined.groupby(['Month_Year_Str', 'Month_Year_Dt', 'Qualification']).size().reset_index(name='Count')
+                        qualification_monthly_counts = df_combined.groupby(['Month_Year_Str', 'Month_Year_Dt', 'Qualification_Grouped']).size().reset_index(name='Count')
                         qualification_monthly_counts = qualification_monthly_counts.sort_values('Month_Year_Dt')
 
                         direction_monthly_counts = df_combined.groupby(['Month_Year_Str', 'Month_Year_Dt', 'Direction']).size().reset_index(name='Count')
@@ -798,23 +1175,32 @@ def logs_page(logs_df, staff_df, start_date, end_date):
 
                         fig = make_subplots(specs=[[{"secondary_y": True}]])
 
-                        qualification_colors = px.colors.qualitative.Dark24
-                        direction_colors = {'InComming': '#FFD700', 'OutComming': '#8A2BE2'}
+                        qualification_colors = {
+                            'Question': '#1f77b4',
+                            'Suivi de souscription FOP': '#ff7f0e',
+                            'Demande': '#2ca02c',
+                            'Transfert': '#d62728'
+                        }
 
-                        for i, qualification in enumerate(qualification_monthly_counts['Qualification'].unique()):
-                            df_qual = qualification_monthly_counts[qualification_monthly_counts['Qualification'] == qualification]
-                            fig.add_trace(
-                                go.Scatter(
-                                    x=df_qual['Month_Year_Dt'],
-                                    y=df_qual['Count'],
-                                    mode='lines+markers',
-                                    name=f'Qualification: {qualification}',
-                                    line=dict(width=3, color=qualification_colors[i % len(qualification_colors)]),
-                                    marker=dict(size=12),
-                                    hovertemplate=f'Mois: %{{x|%B %Y}}<br>Qualification: {qualification}<br>Logs: %{{y}}<extra></extra>'
-                                ),
-                                secondary_y=False,
-                            )
+                        sorted_qualifications = sorted(qualification_monthly_counts['Qualification_Grouped'].unique(), 
+                                                    key=lambda x: (x != 'Question', x != 'Suivi de souscription FOP', 
+                                                                    x != 'Demande', x != 'Transfert'))
+
+                        for qual in sorted_qualifications:
+                            if qual in ['Question', 'Suivi de souscription FOP', 'Demande', 'Transfert']:
+                                df_qual = qualification_monthly_counts[qualification_monthly_counts['Qualification_Grouped'] == qual]
+                                fig.add_trace(
+                                    go.Scatter(
+                                        x=df_qual['Month_Year_Dt'],
+                                        y=df_qual['Count'],
+                                        mode='lines+markers',
+                                        name=f'Qualification: {qual}',
+                                        line=dict(width=3, color=qualification_colors.get(qual, '#7f7f7f')),
+                                        marker=dict(size=20),
+                                        hovertemplate=f'Mois: %{{x|%B %Y}}<br>Qualification: {qual}<br>Logs: %{{y}}<extra></extra>'
+                                    ),
+                                    secondary_y=False,
+                                )
 
                         direction_pivot = direction_monthly_counts.pivot(index='Month_Year_Dt', columns='Direction', values='Count').fillna(0).reset_index()
                         direction_pivot = direction_pivot.sort_values('Month_Year_Dt')
@@ -828,7 +1214,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                     x=direction_pivot['Month_Year_Dt'],
                                     y=direction_pivot['InComming'],
                                     name='Direction: InComming',
-                                    marker_color=direction_colors['InComming'],
+                                    marker_color='#FFD700',
                                     opacity=0.7,
                                     text=direction_pivot.apply(lambda x: f"{int(x['InComming'])} ({x['InComming_Pct']}%)", axis=1),
                                     textposition='outside',
@@ -844,39 +1230,46 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                     x=direction_pivot['Month_Year_Dt'],
                                     y=direction_pivot['OutComming'],
                                     name='Direction: OutComming',
-                                    marker_color=direction_colors['OutComming'],
+                                    marker_color='#8A2BE2',
                                     opacity=0.7,
                                     text=direction_pivot.apply(lambda x: f"{int(x['OutComming'])} ({x['OutComming_Pct']}%)", axis=1),
                                     textposition='outside',
-                                    textfont=dict(size=14, color='navy', family='Arial', weight='bold'),
+                                    textfont=dict(size=24, color='navy', family='Arial', weight='bold'),
                                     hovertemplate='Mois: %{x|%B %Y}<br>Direction: OutComming<br>Logs: %{y}<extra></extra>'
                                 ),
                                 secondary_y=True,
                             )
 
+                        # Générer les valeurs des ticks pour chaque mois
+                        month_ticks = pd.date_range(
+                            start=df_combined['Month_Year_Dt'].min(), 
+                            end=df_combined['Month_Year_Dt'].max(), 
+                            freq='MS'
+                        )
+
                         fig.update_layout(
-                            xaxis_title={
-                                'text': "Mois",
-                                'font': {'size': 20, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
-                            },
-                            
                             xaxis=dict(
                                 tickfont=dict(size=16, family='Arial', color='black', weight='bold'),
-                                tickformat="%B %Y"
+                                tickformat="%B",  # Noms complets des mois
+                                tickangle=0,      # Horizontal
+                                tickmode='array', # Mode tableau pour contrôle précis
+                                tickvals=month_ticks,  # Positions des ticks
+                                range=[month_ticks[0] - pd.DateOffset(days=15),  # Marge avant
+                                        month_ticks[-1] + pd.DateOffset(days=15)] # Marge après
                             ),
-                            yaxis=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                            ),
-                            yaxis2=dict(
-                                tickfont=dict(size=16, family='Arial', color='black', weight='bold')
-                            ),
-                            margin=dict(l=20, r=20, t=80, b=20),
+                            margin=dict(l=20, r=20, t=80, b=100),
                             plot_bgcolor='white',
                             paper_bgcolor='white',
                             font=dict(color='black'),
                             hovermode="x unified",
                             barmode='stack',
-                            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+                            legend=dict(
+                                orientation="h",
+                                yanchor="bottom",
+                                y=1.02,
+                                xanchor="left",
+                                x=0
+                            )
                         )
 
                         st.plotly_chart(fig, use_container_width=True)
@@ -885,10 +1278,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Colonnes 'Qualification', 'Direction' ou 'Date_d_création' manquantes ou vides pour ce graphique.")
 
-            # New Chart: Mode de Facturation (Pie Chart) - in col2 (top right)
+            # Chart: Mode de Facturation (Pie Chart) - in col2 (top right)
             with col2:
                 st.markdown("<h4 style='color: #007bad;'>Répartition par Mode de Facturation</h4>", unsafe_allow_html=True)
-                if 'Mode_facturation' in filtered_logs.columns and not filtered_logs.empty:
+                if 'Mode_facturation' in filtered_logs.columns and not filtered_logs['Mode_facturation'].empty:
                     billing_mode_counts = filtered_logs['Mode_facturation'].value_counts().reset_index()
                     billing_mode_counts.columns = ['Mode_facturation', 'Count']
                     
@@ -899,34 +1292,31 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         pull=[0.05 if i == billing_mode_counts['Count'].argmax() else 0 for i in range(len(billing_mode_counts))], # Pull out largest slice
                         marker_colors=px.colors.qualitative.Set3,
                         textinfo='percent+label',
-                        insidetextfont=dict(size=22, color='Black', family='Arial', weight='bold'), # Bold, larger text inside
-                        outsidetextfont=dict(size=22, color='black', family='Arial', weight='bold'), # Bold, larger text outside
+                        insidetextfont=dict(size=16, color='Black', family='Arial', weight='bold'), # Adjusted font size
+                        outsidetextfont=dict(size=16, color='black', family='Arial', weight='bold'), # Adjusted font size
                         hovertemplate='Mode: %{label}<br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
                     )])
 
                     fig_pie.update_layout(
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
-                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(size=20, color='black', family='Arial', weight='bold')),
+                        legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5, font=dict(size=14, color='black', family='Arial', weight='bold')), # Adjusted font size
                         plot_bgcolor='white',
                         paper_bgcolor='white',
                         font=dict(color='black'),
-                        #title_text="Mode de Facturation", # Add title
-                        #title_font=dict(size=20, color='#007bad', family='Arial', weight='bold'),
-                        #title_x=0.5 # Center the title
                     )
                     st.plotly_chart(fig_pie, use_container_width=True)
                 else:
                     st.warning("Données non disponibles pour ce graphique (Mode de Facturation)")
 
-            st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
-            # Second row of charts (formerly first row): Canal (col1), Volume (col2), Offre (col3)
+            st.markdown("---")
+            # Second row of charts: Canal (col1), Volume (col2), Offre (col3)
             col1, col2, col3 = st.columns(3)
 
             # Chart 1: Logs by Canal (Horizontal Bar Chart) - now in col1 (bottom left)
             with col1:
                 st.markdown("<h4 style='color: #007bad;'>Répartition par Canal</h4>", unsafe_allow_html=True)
-                if 'Canal' in filtered_logs.columns and not filtered_logs.empty:
+                if 'Canal' in filtered_logs.columns and not filtered_logs['Canal'].empty:
                     canal_counts = filtered_logs['Canal'].value_counts().reset_index()
                     canal_counts.columns = ['Canal', 'Count']
                     total = canal_counts['Count'].sum()
@@ -944,24 +1334,24 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
                         customdata=canal_counts[['Percentage']],
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
+                        textfont=dict(size=14, color='black', family='Arial', weight='bold') # Adjusted font size
                     )
                     fig1.update_layout(
                         xaxis_title={
                             'text': "Nombre de Logs",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'} # Adjusted font size
                         },
                         yaxis_title={
                             'text': "Canal",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'} # Adjusted font size
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold') # Adjusted font size
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold') # Adjusted font size
                         ),
-                        margin=dict(l=20, r=20, t=50, b=20),
+                        margin=dict(l=30, r=20, t=50, b=20),
                         showlegend=False,
                         plot_bgcolor='white',
                         paper_bgcolor='white',
@@ -975,7 +1365,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             # Chart 3: Logs Over Time (Line Chart) - now in col2 (bottom center)
             with col2:
                 st.markdown("<h4 style='color: #007bad;'>Volume de Logs au Fil du Temps</h4>", unsafe_allow_html=True)
-                if 'Date_d_création' in filtered_logs.columns and not filtered_logs.empty:
+                if 'Date_d_création' in filtered_logs.columns and not filtered_logs['Date_d_création'].empty:
                     daily_counts = filtered_logs['Date_d_création'].dt.to_period('D').value_counts().sort_index().reset_index()
                     daily_counts.columns = ['Date', 'Count']
                     daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp()
@@ -992,18 +1382,18 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     fig3.update_layout(
                         xaxis_title={
                             'text': "Date",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         yaxis_title={
                             'text': "Nombre de Logs",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold'),
-                            tickformat="%B %Y"
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                            tickformat="%b %Y"
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
@@ -1018,7 +1408,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             # Chart 2: Logs by Offer (Horizontal Bar Chart) - now in col3 (bottom right)
             with col3:
                 st.markdown("<h4 style='color: #007bad;'>Répartition par Offre</h4>", unsafe_allow_html=True)
-                if 'Offre' in filtered_logs.columns and not filtered_logs.empty:
+                if 'Offre' in filtered_logs.columns and not filtered_logs['Offre'].empty:
                     offre_counts = filtered_logs['Offre'].value_counts().reset_index()
                     offre_counts.columns = ['Offre', 'Count']
                     total = offre_counts['Count'].sum()
@@ -1036,22 +1426,22 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
                         customdata=offre_counts[['Percentage']],
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold')
+                        textfont=dict(size=14, color='black', family='Arial', weight='bold')
                     )
                     fig2.update_layout(
                         xaxis_title={
                             'text': "Nombre de Logs",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         yaxis_title={
                             'text': "Offre",
-                            'font': {'size': 18, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=16, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
@@ -1064,12 +1454,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Données non disponibles pour ce graphique (Offre)")
 
-        st.markdown("---") # Corrected: Added st.markdown for the horizontal rule
+        st.markdown("---")
         st.markdown("<h3 style='color: #007bad;'>Données Détaillées des Logs</h3>", unsafe_allow_html=True)
 
         display_df = filtered_logs.sort_values('Date_d_création', ascending=False).copy()
 
-        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key', 'Month_Year_Str', 'Month_Year_Dt']
+        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key', 'Month_Year_Str', 'Month_Year_Dt', 'ORDER_DATE']
         display_df = display_df.drop(columns=[col for col in columns_to_drop if col in display_df.columns], errors='ignore')
 
         column_configs = {
@@ -1110,45 +1500,38 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             help="Cliquez ici pour télécharger les données filtrées au format Excel."
         )
-
-        st.markdown("""
-        <style>
-        .stDataFrame td {
-            text-align: center;
-            font-weight: bold;
-        }
-        .metric-card {
-            background-color: #f0f2f6;
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            min-height: 100px; /* Ensure consistent height */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-        .metric-title {
-            font-size: 1.0em;
-            color: #007bad;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        .metric-value {
-            font-size: 2.0em;
-            color: #007bad;
-            font-weight: bolder;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
     else:
         st.warning("Aucune donnée disponible avec les filtres sélectionnés. Veuillez ajuster vos sélections.")
 
-def sales_page(sales_df, staff_df, start_date, end_date):
-    """Affiche la page des ventes avec le nouveau style."""
 
-    add_custom_css() # Appel de la fonction CSS personnalisée
+def kpi_card_html(column, title, value_html, color, icon_name):
+    column.markdown(f"""
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <div style="
+            padding: 20px;
+            background: linear-gradient(145deg, {color} 0%, {color}CC 100%);
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.15);
+            height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-left: 8px solid {color}EE;
+            position: relative;
+            overflow: hidden;
+            color: white;">
+            <div style="position: absolute; right: 20px; top: 20px; opacity: 0.9;">
+                <i class="fas fa-{icon_name}" style="font-size: 40px;"></i>
+            </div>
+            <h3 style="color: white; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">{title}</h3>
+            <p style="font-size: 28px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
+        </div>
+    """, unsafe_allow_html=True)
+
+def sales_page(sales_df, staff_df, start_date, end_date):
+    
+
+    add_custom_css()  # Appel de la fonction CSS personnalisée
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Ventes</h3>", unsafe_allow_html=True)
 
@@ -1163,59 +1546,33 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         with col4:
             transaction_filter = st.selectbox("Type de transaction", ['Toutes'] + sorted(sales_df['SHORT_MESSAGE'].dropna().unique()), key='sales_transaction')
 
-        # Assurez-vous de passer transaction_filter ici
         filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
 
     if not filtered_sales.empty:
-        # Geocode data for map after filtering to ensure map reflects filters
         if 'City' in filtered_sales.columns and 'Country' in filtered_sales.columns:
             filtered_sales = geocode_data(filtered_sales)
 
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Total Sales</div>
-                <div class="metric-value">{filtered_sales['Total_Sale'].sum():,.0f}€</div>
-            </div>
-            """.replace(",", " "), unsafe_allow_html=True)
+            kpi_card_html(col1, "Total Sales", f"{filtered_sales['Total_Sale'].sum():,.0f}€", "#007bad", "chart-line")
 
         with col2:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Average Sale</div>
-                <div class="metric-value">{filtered_sales['Total_Sale'].mean():,.2f}€</div>
-            </div>
-            """.replace(",", " "), unsafe_allow_html=True)
+            kpi_card_html(col2, "Average Sale", f"{filtered_sales['Total_Sale'].mean():,.2f}€", "#007bad", "money-bill-wave")
 
         with col3:
             if 'Rating' in filtered_sales.columns:
                 avg_rating = filtered_sales['Rating'].mean()
                 rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Average Rating</div>
-                    <div class="metric-value">{rating_display}</div>
-                </div>
-                """, unsafe_allow_html=True)
+                kpi_card_html(col3, "Average Rating", rating_display, "#007bad", "star")
             else:
-                st.markdown("""
-                <div class="metric-card">
-                    <div class="metric-title">Average Rating</div>
-                    <div class="metric-value">N/A</div>
-                </div>
-                """, unsafe_allow_html=True)
+                kpi_card_html(col3, "Average Rating", "N/A", "#6c757d", "star-half-alt")
 
         with col4:
-            st.markdown(f"""
-            <div class="metric-card">
-                <div class="metric-title">Transactions</div>
-                <div class="metric-value">{len(filtered_sales):,}</div>
-            </div>
-            """.replace(",", " "), unsafe_allow_html=True)
+            kpi_card_html(col4, "Transactions", f"{len(filtered_sales):,}", "#007bad", "exchange-alt")
 
-
+        # The rest of your sales_page function remains the same
+        # ... (map, team performance, daily sales, transaction status, hourly sales)
         col1, col2 = st.columns([2, 1])
 
         with col1:
@@ -1375,26 +1732,26 @@ def sales_page(sales_df, staff_df, start_date, end_date):
 
                         # Affichage des cartes de performance d'équipe
                         for index, row in team_stats.iterrows():
-                          st.markdown(f"""
-                                    <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
-                                        <div class="team-stat-row" style="gap: 10px;">  <div>
-                                                <div class="team-stat-label" style="font-weight: bold;">Ventes Totales:</div>
-                                                <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Sale']:,.0f}€</div>
+                            st.markdown(f"""
+                                        <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
+                                            <div class="team-stat-row" style="gap: 10px;">  <div>
+                                                    <div class="team-stat-label" style="font-weight: bold;">Ventes Totales:</div>
+                                                    <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Sale']:,.0f}€</div>
+                                                </div>
+                                                <div style="text-align: center;">
+                                                    <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
+                                                    <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
+                                                </div>
+                                                <div style="text-align: right;">
+                                                    <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                                </div>
                                             </div>
-                                            <div style="text-align: center;">
-                                                <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
-                                                <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
-                                            </div>
-                                            <div style="text-align: right;">
-                                                <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                            <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                                <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
+                                                <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
                                             </div>
                                         </div>
-                                        <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
-                                            <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
-                                            <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
-                                        </div>
-                                    </div>
-                                """.replace(",", " "), unsafe_allow_html=True)
+                                        """.replace(",", " "), unsafe_allow_html=True)
                     else:
                         st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
                 else:
@@ -1474,11 +1831,11 @@ def sales_page(sales_df, staff_df, start_date, end_date):
             status_sales = filtered_sales.groupby('SHORT_MESSAGE')['Total_Sale'].sum().reset_index()
 
             fig = px.pie(status_sales,
-                                    values='Total_Sale',
-                                    names='SHORT_MESSAGE',
-                                    color='SHORT_MESSAGE',
-                                    color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000', 'ERROR': '#ffa500'}, # Ajout couleur pour ERROR
-                                    hole=0.4)
+                                         values='Total_Sale',
+                                         names='SHORT_MESSAGE',
+                                         color='SHORT_MESSAGE',
+                                         color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000', 'ERROR': '#ffa500'}, # Ajout couleur pour ERROR
+                                         hole=0.4)
 
             fig.update_traces(
                 textinfo='value+percent',
@@ -1506,8 +1863,8 @@ def sales_page(sales_df, staff_df, start_date, end_date):
             ventes_heure = ventes_heure.sort_values('Heure')
 
             fig = px.line(ventes_heure, x='Heure', y='Total_Sale',
-                                     line_shape='spline',
-                                     color_discrete_sequence=['#525CEB'])
+                                         line_shape='spline',
+                                         color_discrete_sequence=['#525CEB'])
 
             fig.update_traces(
                 line=dict(width=4, color='#525CEB'),
@@ -1543,15 +1900,13 @@ def sales_page(sales_df, staff_df, start_date, end_date):
             )
 
             st.plotly_chart(fig, use_container_width=True)
-
     else:
         st.warning("Aucune donnée de vente ne correspond aux filtres sélectionnés.")
-
 
 def recolts_page(recolts_df, staff_df, start_date, end_date):
     """Affiche la page des récoltes avec le nouveau style, incluant les cartes Top 3 et les graphiques de ligne/transaction."""
 
-    add_custom_css()
+    add_custom_css() # Appel de la fonction CSS personnalisée
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Récoltes</h3>", unsafe_allow_html=True)
 
@@ -1564,90 +1919,83 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
         with col3:
             activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolts_activity')
         with col4:
-            # Ajout du filtre de transactions pour les récoltes
             transaction_filter = st.selectbox("Type de transaction", ['Toutes'] + sorted(recolts_df['SHORT_MESSAGE'].dropna().unique()), key='recolts_transaction')
 
     with st.spinner("Application des filtres..."):
-        # Assurez-vous de passer transaction_filter ici
         filtered_recolts = filter_data(recolts_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
 
         if not filtered_recolts.empty:
-            # Geocode data for map after filtering to ensure map reflects filters
+            # S'assurer que les dates sont au bon format pour les opérations temporelles
+            if 'ORDER_DATE' in filtered_recolts.columns:
+                filtered_recolts['ORDER_DATE'] = pd.to_datetime(filtered_recolts['ORDER_DATE'], errors='coerce')
+                # Supprimer les lignes où la conversion de date a échoué
+                filtered_recolts.dropna(subset=['ORDER_DATE'], inplace=True)
+
+            # Géocoder les données après filtrage
             if 'City' in filtered_recolts.columns and 'Country' in filtered_recolts.columns:
-                filtered_recolts = geocode_data(filtered_recolts)
-
-            # Ensure 'Hyp' (employee ID) column is available for 'Employés Uniques' metric and team performance
-            if 'Hyp' not in filtered_recolts.columns:
-                # Assuming 'Hyp' is the common column for merging staff_df
-                if 'Hyp' in staff_df.columns and 'Hyp' in recolts_df.columns: # Check if 'Hyp' exists in both
-                     filtered_recolts = filtered_recolts.merge(
-                        staff_df[['Hyp', 'Team']].drop_duplicates(),
-                        on='Hyp',
-                        how='left'
-                    )
-                else:
-                    st.warning("La colonne 'Hyp' est manquante pour l'association équipe-récolte.")
+                # Vérifier si filtered_recolts a déjà Latitude/Longitude ou si staff_df n'est pas nécessaire
+                if 'Latitude' not in filtered_recolts.columns or 'Longitude' not in filtered_recolts.columns:
+                    filtered_recolts = geocode_data(filtered_recolts.copy()) # Utiliser .copy() pour éviter SettingWithCopyWarning
 
 
+            # Assurez-vous que 'Hyp' (employee ID) est disponible pour les métriques
+            # et pour la jointure avec staff_df pour la colonne 'Team'
+            if 'Hyp' not in filtered_recolts.columns and 'Hyp' in recolts_df.columns and 'Hyp' in staff_df.columns:
+                 # Jointure pour ajouter la colonne 'Team' aux récoltes filtrées
+                initial_recolts_rows = len(filtered_recolts)
+                filtered_recolts = filtered_recolts.merge(
+                    staff_df[['Hyp', 'Team', 'Activité']].drop_duplicates(), # Inclure 'Activité' pour le filtre si non déjà fait
+                    on='Hyp',
+                    how='left'
+                )
+                teams_found = filtered_recolts['Team'].notna().sum()
+                if teams_found == 0 and initial_recolts_rows > 0:
+                    st.warning("Aucune correspondance 'Hyp' trouvée entre les récoltes filtrées et les données du personnel.")
+
+
+            # --- Métriques Clés (Top Cards) ---
+            #st.markdown("---", unsafe_allow_html=True)
+            #st.markdown("<h3 style='color: #007bad;'>Aperçu Global des Récoltes</h3>", unsafe_allow_html=True)
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Total Récoltes</div>
-                    <div class="metric-value">{filtered_recolts['Total_Recolt'].sum():,.0f}€</div>
-                </div>
-                """.replace(",", " "), unsafe_allow_html=True)
+                total_recolts_sum = filtered_recolts['Total_Recolt'].sum() if 'Total_Recolt' in filtered_recolts.columns else 0
+                kpi_card_html(col1, "Total Récoltes", f"{total_recolts_sum:,.0f}€", "#007bad", "seedling") # Icône 'seedling' pour les récoltes
 
             with col2:
                 if 'Rating' in filtered_recolts.columns:
                     avg_rating = filtered_recolts['Rating'].mean()
-                    rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
-                    st.markdown(f"""
-                    <div class="metric-card">
-                        <div class="metric-title">Note Moyenne</div>
-                        <div class="metric-value">{rating_display}</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    if not pd.isna(avg_rating):
+                        rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
+                        kpi_card_html(col2, "Note Moyenne", rating_display, "#007bad", "star") # Jaune pour la note
+                    else:
+                         kpi_card_html(col2, "Note Moyenne", "N/A", "#007bad", "star-half-alt") # Gris si pas de note
                 else:
-                    st.markdown("""
-                    <div class="metric-card">
-                        <div class="metric-title">Note Moyenne</div>
-                        <div class="metric-value">N/A</div>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    kpi_card_html(col2, "Note Moyenne", "N/A", "#007bad", "star-half-alt")
 
             with col3:
-                # Total transactions, regardless of status
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Total Transactions</div>
-                    <div class="metric-value">{len(filtered_recolts):,}</div>
-                </div>
-                """.replace(",", " "), unsafe_allow_html=True)
+                total_transactions = len(filtered_recolts)
+                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#007bad", "exchange-alt") # Vert-bleu pour les transactions
 
             with col4:
                 unique_employees = filtered_recolts['Hyp'].nunique() if 'Hyp' in filtered_recolts.columns else 0
-                st.markdown(f"""
-                <div class="metric-card">
-                    <div class="metric-title">Employés Uniques</div>
-                    <div class="metric-value">{unique_employees:,}</div>
-                </div>
-                """.replace(",", " "), unsafe_allow_html=True)
+                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#007bad", "users") # Violet pour les employés
 
-            # --- Map and Top Teams ---
-            col1, col2 = st.columns([2, 1])
+            # --- Carte et Top Équipes ---
+            st.markdown("---", unsafe_allow_html=True)
+            col_map, col_teams = st.columns([2, 1])
 
-            with col1:
+            with col_map:
                 st.markdown("<h3 style='color: #007bad;'>Récoltes par Ville (Vue Carte)</h3>", unsafe_allow_html=True)
-                if 'Latitude' in filtered_recolts.columns and 'Longitude' in filtered_recolts.columns:
+                # S'assurer que les colonnes Latitude et Longitude existent et ne sont pas toutes NaN
+                if 'Latitude' in filtered_recolts.columns and 'Longitude' in filtered_recolts.columns and not filtered_recolts[['Latitude', 'Longitude']].dropna().empty:
                     city_recolts_map = filtered_recolts.groupby('City').agg(
                         Total_Recolt=('Total_Recolt', 'sum'),
                         Latitude=('Latitude', 'first'),
                         Longitude=('Longitude', 'first'),
                         Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
                         Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
-                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum()) # Added for ERROR count
+                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
                     ).reset_index()
 
                     city_recolts_map = city_recolts_map.dropna(subset=['Latitude', 'Longitude'])
@@ -1656,17 +2004,13 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         city_recolts_map['Formatted_Recolt'] = city_recolts_map['Total_Recolt'].apply(lambda x: f"{x:,.0f}€")
                         city_recolts_map['Short_Recolt'] = city_recolts_map['Total_Recolt'].apply(lambda x: f"{x/1000:.0f}k" if x >= 1000 else f"{x:.0f}")
 
-                        # Adjusted for combined total for percentage calculation
                         city_recolts_map['Total_SMS'] = city_recolts_map['Accepted_SMS'] + city_recolts_map['Refused_SMS'] + city_recolts_map['Error_SMS']
-
+                        
                         city_recolts_map['Refused_SMS_Percentage'] = city_recolts_map.apply(
-                            lambda row: (row['Refused_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0,
-                            axis=1
+                            lambda row: (row['Refused_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0, axis=1
                         ).round(2)
-                        # New: Error SMS Percentage
                         city_recolts_map['Error_SMS_Percentage'] = city_recolts_map.apply(
-                            lambda row: (row['Error_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0,
-                            axis=1
+                            lambda row: (row['Error_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0, axis=1
                         ).round(2)
 
                         fig_map = px.scatter_mapbox(
@@ -1674,20 +2018,20 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                             lat="Latitude",
                             lon="Longitude",
                             size="Total_Recolt",
-                            text="Short_Recolt", # Ajout du texte à afficher sur les cercles
-                            color_discrete_sequence=['#007bad'] * len(city_recolts_map), # Blue color for consistency
+                            text="Short_Recolt",
+                            color_discrete_sequence=['#007bad'] * len(city_recolts_map),
                             hover_name="City",
                             hover_data={
                                 "Formatted_Recolt": True,
                                 "Latitude": False,
                                 "Longitude": False,
                                 "Refused_SMS_Percentage": ":.2f",
-                                "Error_SMS_Percentage": ":.2f", # Added for hover data
+                                "Error_SMS_Percentage": ":.2f",
                                 "Total_Recolt": False,
                                 "Accepted_SMS": False,
                                 "Refused_SMS": False,
-                                "Error_SMS": False, # Exclude raw count from hover
-                                "Short_Recolt": False # Ne pas afficher dans le tooltip
+                                "Error_SMS": False,
+                                "Short_Recolt": False
                             },
                             size_max=35,
                             zoom=5,
@@ -1695,16 +2039,12 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         )
 
                         fig_map.update_traces(
-                            textfont=dict(
-                                family="Arial",
-                                size=12,
-                                color="white"
-                            ),
+                            textfont=dict(family="Arial", size=12, color="white"),
                             textposition="middle center",
-                            hovertemplate="<b>%{hover_name}</b><br>" + # Use hover_name directly
+                            hovertemplate="<b>%{hover_name}</b><br>" +
                                           "Récoltes: %{customdata[0]}<br>" +
                                           "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
-                                          "Transactions Erreur: %{customdata[2]:.2f}%" + # Added to hover template
+                                          "Transactions Erreur: %{customdata[2]:.2f}%" +
                                           "<extra></extra>",
                             customdata=city_recolts_map[['Formatted_Recolt', 'Refused_SMS_Percentage', 'Error_SMS_Percentage', 'City']]
                         )
@@ -1712,141 +2052,106 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         fig_map.update_layout(
                             height=630,
                             margin={"r":0,"t":40,"l":0,"b":0},
-                            hoverlabel=dict(
-                                bgcolor="white",
-                                font_size=14,
-                                font_family="Arial"
-                            )
+                            hoverlabel=dict(bgcolor="white", font_size=14, font_family="Arial")
                         )
                         st.plotly_chart(fig_map, use_container_width=True)
                     else:
                         st.warning("Aucune donnée de récolte avec des coordonnées géographiques valides pour afficher sur la carte.")
                 else:
-                    st.warning("Les colonnes 'Latitude' ou 'Longitude' sont manquantes ou vides dans les données de récolte.")
+                    st.warning("Les colonnes 'Latitude' ou 'Longitude' sont manquantes ou vides dans les données de récolte ou ne contiennent pas de valeurs valides.")
 
-            with col2:
-                
-                
-
-
-
+            with col_teams:
                 st.markdown("<h3 style='color: #007bad;'>Performance des 3 Top Équipes</h3>", unsafe_allow_html=True)
-                try:
-                    if 'debug_msg_recolts' not in st.session_state:
-                        st.session_state.debug_msg_recolts = []
-                    st.session_state.debug_msg_recolts = []
+                
+                # S'assurer que 'Team' est présent pour le calcul des performances d'équipe
+                if 'Team' not in filtered_recolts.columns or filtered_recolts['Team'].isnull().all():
+                    st.warning("La colonne 'Team' est manquante ou vide après filtrage. Assurez-vous que la jointure avec 'staff_df' via 'Hyp' a réussi ou que 'Team' est déjà dans 'recolts_df'.")
+                
+                if 'Team' in filtered_recolts.columns and not filtered_recolts['Team'].dropna().empty:
+                    team_stats = filtered_recolts.groupby('Team').agg(
+                        Total_Recolt=('Total_Recolt', 'sum'),
+                        Total_Transactions=('Total_Recolt', 'count'),
+                        Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
+                        Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
+                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
+                    ).reset_index()
 
-                    if 'Team' not in filtered_recolts.columns:
-                        if 'Hyp' in filtered_recolts.columns and 'Hyp' in staff_df.columns:
-                            initial_recolts_rows = len(filtered_recolts)
-                            filtered_recolts = filtered_recolts.merge(
-                                staff_df[['Hyp', 'Team']].drop_duplicates(),
-                                on='Hyp',
-                                how='left'
-                            )
-                            st.session_state.debug_msg_recolts.append(f"Taille de filtered_recolts après jointure: {len(filtered_recolts)}")
-
-                            teams_found = filtered_recolts['Team'].notna().sum()
-                            if teams_found == 0 and initial_recolts_rows > 0:
-                                st.warning("Aucune correspondance 'Hyp' trouvée entre les récoltes filtrées et les données du personnel. Assurez-vous que les valeurs 'Hyp' sont cohérentes.")
-                                st.session_state.debug_msg_recolts.append(f"Valeurs uniques de 'Hyp' dans filtered_recolts: {filtered_recolts['Hyp'].dropna().unique().tolist()[:5]}...")
-                                st.session_state.debug_msg_recolts.append(f"Valeurs uniques de 'Hyp' dans staff_df: {staff_df['Hyp'].dropna().unique().tolist()[:5]}...")
-                        else:
-                            st.error("Les colonnes 'Hyp' sont manquantes dans les données de récolte ou du personnel, impossibilité de joindre les équipes.")
-                            st.session_state.debug_msg_recolts.append(f"Colonnes filtered_recolts: {filtered_recolts.columns.tolist()}")
-                            st.session_state.debug_msg_recolts.append(f"Colonnes staff_df: {staff_df.columns.tolist()}")
-
-                    if 'Team' in filtered_recolts.columns and not filtered_recolts['Team'].dropna().empty:
-                        team_stats = filtered_recolts.groupby('Team').agg(
-                            Total_Recolt=('Total_Recolt', 'sum'),
-                            Total_Transactions=('Total_Recolt', 'count'),
-                            Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
-                            Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
-                            Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum())
-                        ).reset_index()
-
-                        if not team_stats.empty:
-                            team_stats['Total_SMS_Transactions'] = team_stats['Accepted_SMS'] + team_stats['Refused_SMS'] + team_stats['Error_SMS']
-                            
-                            team_stats['Acceptance_Rate'] = team_stats.apply(
-                                lambda row: (row['Accepted_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
-                                axis=1
-                            ).round(2)
-                            
-                            team_stats['Refusal_Rate'] = team_stats.apply(
-                                lambda row: (row['Refused_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
-                                axis=1
-                            ).round(2)
-                            
-                            team_stats['Error_Rate'] = team_stats.apply(
-                                lambda row: (row['Error_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0,
-                                axis=1
-                            ).round(2)
-
-                            total_recolt_global = filtered_recolts['Total_Recolt'].sum()
-                            team_stats['Conversion_Rate'] = team_stats['Total_Recolt'].apply(
-                                lambda x: (x / total_recolt_global) * 100 if total_recolt_global > 0 else 0
-                            ).round(2)
-
-                            team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3)
-                            st.write("")
-
-                            for index, row in team_stats.iterrows():
-                                st.markdown(f"""
-                                        <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
-                                            <div class="team-stat-row" style="gap: 10px;">  <div>
-                                                    <div class="team-stat-label" style="font-weight: bold;">Récoltes Totales:</div>
-                                                    <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Recolt']:,.0f}€</div>
-                                                </div>
-                                                <div style="text-align: center;">
-                                                    <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
-                                                    <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
-                                                </div>
-                                                <div style="text-align: right;">
-                                                    <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
-                                                </div>
-                                            </div>
-                                            <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
-                                                <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
-                                                <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
-                                            </div>
-                                        </div>
-                                    """.replace(",", " "), unsafe_allow_html=True)
-                        else:
-                            st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
-                    else:
-                        st.warning("Impossible d'afficher les performances des équipes. Vérifiez que la colonne 'Team' est disponible après le filtrage ou que les données 'Hyp' permettent la jointure.")
-                        with st.expander("Détails du problème"):
-                            st.write("Informations de debug:")
-                            for msg in st.session_state.debug_msg_recolts:
-                                st.write(msg)
-                except Exception as e:
-                    st.error(f"Une erreur inattendue est survenue lors du calcul des performances d'équipe : {str(e)}")
-
-
+                    if not team_stats.empty:
+                        team_stats['Total_SMS_Transactions'] = team_stats['Accepted_SMS'] + team_stats['Refused_SMS'] + team_stats['Error_SMS']
                         
-                       
+                        team_stats['Acceptance_Rate'] = team_stats.apply(
+                            lambda row: (row['Accepted_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
+                        
+                        team_stats['Refusal_Rate'] = team_stats.apply(
+                            lambda row: (row['Refused_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
+                        
+                        team_stats['Error_Rate'] = team_stats.apply(
+                            lambda row: (row['Error_SMS'] / row['Total_SMS_Transactions']) * 100 if row['Total_SMS_Transactions'] > 0 else 0, axis=1
+                        ).round(2)
 
-            # --- Line Charts and Pie Chart ---
-            col1, col2, col3 = st.columns([1, 1, 1])
+                        total_recolt_global = filtered_recolts['Total_Recolt'].sum()
+                        team_stats['Conversion_Rate'] = team_stats['Total_Recolt'].apply(
+                            lambda x: (x / total_recolt_global) * 100 if total_recolt_global > 0 else 0
+                        ).round(2)
 
-            with col1:
+                        team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3)
+                        st.write("") # Espace pour alignement visuel
+
+                        for index, row in team_stats.iterrows():
+                            st.markdown(f"""
+                                <div class="team-performance-card">
+                                    <div class="team-performance-title">{row['Team']}</div>
+                                    <div class="team-stat-row">
+                                        <div>
+                                            <div class="team-stat-label">Récoltes Totales:</div>
+                                            <div class="team-stat-value">{row['Total_Recolt']:,.0f}€</div>
+                                        </div>
+                                        <div style="text-align: center;">
+                                            <div class="team-stat-label">Taux Conversion:</div>
+                                            <div class="team-conversion-value">{row['Conversion_Rate']:.2f}%</div>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div class="team-stat-label">Transactions:</div>
+                                            <div class="team-stat-value">{row['Total_Transactions']:,}</div>
+                                        </div>
+                                    </div>
+                                    <div class="team-rates">
+                                        <span class="accepted">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                        <span class="refused">✗ {row['Refusal_Rate']:.1f}%</span>
+                                        <span class="error">⚠ {row['Error_Rate']:.1f}%</span>
+                                    </div>
+                                </div>
+                                """.replace(",", " "), unsafe_allow_html=True)
+                    else:
+                        st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
+                else:
+                    st.warning("Impossible d'afficher les performances des équipes. Vérifiez que la colonne 'Team' est disponible après le filtrage ou que les données 'Hyp' permettent la jointure.")
+
+
+            # --- Graphiques Linéaires et Camembert ---
+            st.markdown("---", unsafe_allow_html=True)
+            col_day, col_pie, col_hour = st.columns([1, 1, 1])
+
+            with col_day:
                 st.markdown("<h3 style='color: #007bad;'>Récoltes par Jour de la Semaine</h3>", unsafe_allow_html=True)
-                if 'ORDER_DATE' in filtered_recolts.columns:
-                    filtered_recolts['Weekday'] = filtered_recolts['ORDER_DATE'].dt.weekday
+                if 'ORDER_DATE' in filtered_recolts.columns and not filtered_recolts['ORDER_DATE'].empty:
+                    filtered_recolts['Weekday'] = filtered_recolts['ORDER_DATE'].dt.dayofweek # Renommé pour plus de clarté (0=Lundi)
                     recoltes_jour = filtered_recolts.groupby('Weekday')['Total_Recolt'].sum().reset_index()
                     jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi', 3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
+                    
+                    # Assurer que tous les jours sont présents même s'il n'y a pas de données
+                    all_days_df = pd.DataFrame({'Weekday': range(7)})
+                    recoltes_jour = pd.merge(all_days_df, recoltes_jour, on='Weekday', how='left').fillna(0)
                     recoltes_jour['Jour'] = recoltes_jour['Weekday'].map(jours)
-                    all_days = pd.DataFrame({'Weekday': range(7)})
-                    recoltes_jour = pd.merge(all_days, recoltes_jour, on='Weekday', how='left').fillna(0)
-                    recoltes_jour['Jour'] = recoltes_jour['Weekday'].map(jours)
-                    recoltes_jour = recoltes_jour.sort_values('Weekday')
+                    recoltes_jour = recoltes_jour.sort_values('Weekday') # S'assurer de l'ordre des jours
 
                     fig_jour = px.line(recoltes_jour,
                                         x='Jour',
                                         y='Total_Recolt',
                                         line_shape='spline',
-                                        color_discrete_sequence=['#525CEB']) # Consistent color
+                                        color_discrete_sequence=['#525CEB'])
 
                     fig_jour.update_traces(
                         line=dict(width=4, color='#525CEB'),
@@ -1881,22 +2186,21 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         font=dict(family='Arial', size=12, color='#3D3B40'),
                         margin=dict(t=50, b=50, l=50, r=50)
                     )
-
                     st.plotly_chart(fig_jour, use_container_width=True)
                 else:
-                    st.warning("Données de date de commande manquantes pour ce graphique.")
+                    st.warning("Données de date de commande manquantes pour ce graphique ou pas de données filtrées.")
 
-            with col2:
+            with col_pie:
                 st.markdown("<h3 style='color: #007bad;'>Transactions Acceptées vs Refusées</h3>", unsafe_allow_html=True)
-                if 'SHORT_MESSAGE' in filtered_recolts.columns and 'Total_Recolt' in filtered_recolts.columns:
+                if 'SHORT_MESSAGE' in filtered_recolts.columns and 'Total_Recolt' in filtered_recolts.columns and not filtered_recolts['SHORT_MESSAGE'].empty:
                     status_recolts = filtered_recolts.groupby('SHORT_MESSAGE')['Total_Recolt'].sum().reset_index()
 
                     fig_pie = px.pie(status_recolts,
-                                    values='Total_Recolt',
-                                    names='SHORT_MESSAGE',
-                                    color='SHORT_MESSAGE',
-                                    color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000', 'ERROR': '#ffa500'},
-                                    hole=0.4)
+                                         values='Total_Recolt',
+                                         names='SHORT_MESSAGE',
+                                         color='SHORT_MESSAGE',
+                                         color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000', 'ERROR': '#ffa500'},
+                                         hole=0.4)
 
                     fig_pie.update_traces(
                         textinfo='value+percent',
@@ -1910,24 +2214,24 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 
                     st.plotly_chart(fig_pie, use_container_width=True)
                 else:
-                    st.warning("Données de message court ou de récolte totale manquantes pour ce graphique.")
+                    st.warning("Données de message court ou de récolte totale manquantes pour ce graphique ou pas de données filtrées.")
 
-            with col3:
+            with col_hour:
                 st.markdown("<h3 style='color: #007bad;'>Récoltes par Heure (9h-20h)</h3>", unsafe_allow_html=True)
-                if 'ORDER_DATE' in filtered_recolts.columns:
+                if 'ORDER_DATE' in filtered_recolts.columns and not filtered_recolts['ORDER_DATE'].empty:
                     recoltes_heure = filtered_recolts[
                         (filtered_recolts['ORDER_DATE'].dt.hour >= 9) &
                         (filtered_recolts['ORDER_DATE'].dt.hour <= 20)
                     ].groupby(filtered_recolts['ORDER_DATE'].dt.hour)['Total_Recolt'].sum().reset_index()
 
                     recoltes_heure = recoltes_heure.rename(columns={'ORDER_DATE': 'Heure'})
-                    all_hours = pd.DataFrame({'Heure': range(9, 21)})
+                    all_hours = pd.DataFrame({'Heure': range(9, 21)}) # Inclure toutes les heures même si pas de données
                     recoltes_heure = pd.merge(all_hours, recoltes_heure, on='Heure', how='left').fillna(0)
                     recoltes_heure = recoltes_heure.sort_values('Heure')
 
                     fig_heure = px.line(recoltes_heure, x='Heure', y='Total_Recolt',
-                                    line_shape='spline',
-                                    color_discrete_sequence=['#525CEB'])
+                                         line_shape='spline',
+                                         color_discrete_sequence=['#525CEB'])
 
                     fig_heure.update_traces(
                         line=dict(width=4, color='#525CEB'),
@@ -1961,15 +2265,11 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         font=dict(family='Arial', size=12, color='#3D3B40'),
                         margin=dict(t=50, b=50, l=50, r=50)
                     )
-
                     st.plotly_chart(fig_heure, use_container_width=True)
                 else:
-                    st.warning("Données de date de commande manquantes pour ce graphique.")
+                    st.warning("Données de date de commande manquantes pour ce graphique ou pas de données filtrées.")
         else:
             st.warning("Aucune donnée de récolte ne correspond aux filtres sélectionnés.")
-
-
-
 def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date):
     """Affiche le tableau de bord principal."""
     
@@ -2219,21 +2519,21 @@ def add_agent_to_db(agent_data):
         return False
     finally:
         conn.close()
-
-
 def setting_page():
-    """Affiche la page des paramètres avec un design modernisé."""
+    # Assurez-vous d'appeler cette fonction au début de setting_page
+    add_custom_css()
+    
     col1, col2 = st.columns([2, 2])
 
     with col1:
         st.markdown(
-            "<h1 style='text-align: left; color: #002a48; margin-bottom: 0;'>Paramètres</h1>", 
+            "<h1 style='text-align: left; color: #002a48; margin-bottom: 0;'>Paramètres</h1>",
             unsafe_allow_html=True
         )
 
     with col2:
         st.markdown(
-            "<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Gestion des Utilisateurs</h1>", 
+            "<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Gestion des Utilisateurs</h1>",
             unsafe_allow_html=True
         )
 
@@ -2241,49 +2541,49 @@ def setting_page():
     with st.container():
         st.markdown("---")
         st.subheader("Rechercher un utilisateur existant")
-        hyp_input = st.text_input("**Entrez l'ID (Hyp) de l'utilisateur**", 
-                                  placeholder="Saisir l'identifiant Hyp...",
-                                  help="Rechercher un utilisateur par son identifiant unique")
-    
+        hyp_input = st.text_input("**Entrez l'ID (Hyp) de l'utilisateur**",
+                                    placeholder="Saisir l'identifiant Hyp...",
+                                    help="Rechercher un utilisateur par son identifiant unique")
+
     if hyp_input:
-        user_details = get_user_details(hyp_input) 
-        
+        user_details = get_user_details(hyp_input)
+
         if user_details:
-            date_in = user_details["Date_In"] 
+            date_in = user_details["Date_In"]
             date_obj = None
             date_str = "Date inconnue"
             anciennete = "N/A"
-            
-            if date_in:  
+
+            if date_in:
                 if isinstance(date_in, str):
                     date_formats = [
-                        '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', 
-                        '%Y-%m-%d %H:%M:%S', '%d-%m-%Y', '%Y%m%d'     
+                        '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y',
+                        '%Y-%m-%d %H:%M:%S', '%d-%m-%Y', '%Y%m%d'
                     ]
-                    
+
                     for fmt in date_formats:
                         try:
                             date_obj = datetime.strptime(date_in, fmt)
                             break
                         except ValueError:
                             continue
-                    
+
                     if not date_obj:
                         st.error(f"Format de date non reconnu: {date_in}")
                         date_str = date_in
-                elif isinstance(date_in, (datetime, datetime.date)):  
+                elif isinstance(date_in, (datetime, date)):
                     date_obj = date_in
-            
+
             if date_obj:
                 try:
                     anciennete = (datetime.now().date() - date_obj.date()).days // 365
                     date_str = date_obj.strftime('%d/%m/%Y')
                 except AttributeError:
                     pass
-            
+
             with st.expander(f"🔍 Fiche utilisateur : {user_details['NOM']} {user_details['PRENOM']}", expanded=True):
                 col1, col2, col3 = st.columns([1, 1, 1])
-                
+
                 with col1:
                     st.markdown(f"""
                     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 15px;'>
@@ -2294,7 +2594,7 @@ def setting_page():
                         <p><strong>Ancienneté:</strong> {anciennete} {"an" if isinstance(anciennete, int) and anciennete == 1 else "ans" if isinstance(anciennete, int) else ""}</p>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 with col2:
                     st.markdown(f"""
                     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 15px;'>
@@ -2305,32 +2605,33 @@ def setting_page():
                         <p><strong>Nom d'utilisateur:</strong> {user_details['UserName']}</p>
                     </div>
                     """, unsafe_allow_html=True)
-                
+
                 with col3:
                     st.markdown("""
                     <div style='background-color: #f8f9fa; padding: 20px; border-radius: 15px; height: 100%;'>
                         <h3 style='color: #007bad; border-bottom: 1px solid #dee2e6; padding-bottom: 8px;'>Actions</h3>
                     """, unsafe_allow_html=True)
-                    
+
                     reset_pwd = st.checkbox("🔑 Réinitialiser le mot de passe")
-                    
+
                     if reset_pwd:
-                        if st.button("**Confirmer la réinitialisation**", 
-                                     type="primary",
-                                     help="Réinitialise le mot de passe à l'identifiant Hyp par défaut"):
+                        if st.button("**Confirmer la réinitialisation**",
+                                        type="primary",
+                                        help="Réinitialise le mot de passe à l'identifiant Hyp par défaut",
+                                        use_container_width=True):
                             if reset_password(hyp_input):
                                 st.success(f"Mot de passe réinitialisé avec succès à la valeur: `{hyp_input}`")
                             else:
                                 st.error("Erreur lors de la réinitialisation du mot de passe")
-                    
+
                     st.markdown("</div>", unsafe_allow_html=True)
-            
+
         else:
             st.warning("⚠️ Aucun utilisateur trouvé avec cet ID (Hyp)")
-            
+
     st.markdown("---")
     st.subheader("Options de gestion")
-    
+
     selected_option = st.selectbox(
         "Sélectionnez une action :",
         ["-- Choisir une option --", "Ajouter un Agent", "Injecter des logs", "Injecter des sales", "Injecter des récoltes"]
@@ -2343,19 +2644,17 @@ def setting_page():
         next_id = get_last_agent_id() + 1
         st.info(f"Le prochain ID d'Agent sera automatiquement attribué : **{next_id}**")
 
-        # --- Récupération des valeurs uniques pour les selectbox ---
         teams = ["-- Sélectionner --"] + get_unique_values("Team")
         activites = ["-- Sélectionner --"] + get_unique_values("Activité")
         types = ["-- Sélectionner --"] + get_unique_values("Type")
         departements = ["-- Sélectionner --"] + get_unique_values("Departement")
 
         with st.form("add_agent_form"):
-            col_form1, col_form2 = st.columns(2)
+            col_form1, col_form2, col_form3 = st.columns(3)
             with col_form1:
                 hyp = st.text_input("ID (Hyp)", placeholder="Ex: HYP001", help="Identifiant unique de l'agent (Hyp)", key="agent_hyp")
                 id_agtsda = st.text_input("ID_AGTSDA", placeholder="Ex: AGT123", help="Identifiant AGTSDA de l'agent", key="agent_id_agtsda")
                 nom = st.text_input("NOM", placeholder="Ex: DUPONT", help="Nom de l'agent", key="agent_nom")
-                # Utilisez st.selectbox avec les valeurs uniques
                 team = st.selectbox("Team", options=teams, help="Équipe de l'agent", key="agent_team_select")
                 activite = st.selectbox("Activité", options=activites, help="Activité principale de l'agent", key="agent_activite_select")
 
@@ -2366,22 +2665,56 @@ def setting_page():
                 departement = st.selectbox("Département", options=departements, help="Département de l'agent", key="agent_departement_select")
                 date_in = st.date_input("Date d'entrée", help="Date d'entrée de l'agent", value=datetime.now().date(), key="agent_date_in")
             
-            st.markdown("---")
-            col_buttons = st.columns(2)
-            with col_buttons[0]:
-                submitted = st.form_submit_button("**Enregistrer**", type="primary")
-            with col_buttons[1]:
-                cancelled = st.form_submit_button("**Annuler**")
+            with col_form3:
+                # --- NOUVELLE CARTE DE RÉCAPITULATIF ---
+                st.markdown("""
+                <div class="summary-card">
+                    <h5>Récapitulatif des Informations</h5>
+                """, unsafe_allow_html=True)
+                
+                # Récupérer les valeurs des inputs pour les afficher
+                # Utiliser st.session_state pour accéder aux valeurs si elles ne sont pas encore soumises
+                display_hyp = st.session_state.get('agent_hyp', '')
+                display_id_agtsda = st.session_state.get('agent_id_agtsda', '')
+                display_nom = st.session_state.get('agent_nom', '')
+                display_prenom = st.session_state.get('agent_prenom', '')
+                display_team = st.session_state.get('agent_team_select', '-- Sélectionner --')
+                display_activite = st.session_state.get('agent_activite_select', '-- Sélectionner --')
+                display_username = st.session_state.get('agent_username', '')
+                display_type_agent = st.session_state.get('agent_type_select', '-- Sélectionner --')
+                display_departement = st.session_state.get('agent_departement_select', '-- Sélectionner --')
+                display_date_in = st.session_state.get('agent_date_in', datetime.now().date()).strftime('%d/%m/%Y')
+
+                st.markdown(f"""
+                    <p><strong>ID (Hyp):</strong> {display_hyp}</p>
+                    <p><strong>ID_AGTSDA:</strong> {display_id_agtsda}</p>
+                    <p><strong>Nom:</strong> {display_nom}</p>
+                    <p><strong>Prénom:</strong> {display_prenom}</p>
+                    <p><strong>Team:</strong> {display_team}</p>
+                    <p><strong>Activité:</strong> {display_activite}</p>
+                    <p><strong>Nom d'utilisateur:</strong> {display_username}</p>
+                    <p><strong>Type:</strong> {display_type_agent}</p>
+                    <p><strong>Département:</strong> {display_departement}</p>
+                    <p><strong>Date d'entrée:</strong> {display_date_in}</p>
+                </div>
+                """, unsafe_allow_html=True)
+                # --- FIN NOUVELLE CARTE DE RÉCAPITULATIF ---
+
+                st.markdown("<h3 style='color: #007bad; margin-top: 20px;'>Actions</h3>", unsafe_allow_html=True) # Ajout d'un titre pour les boutons
+                col_buttons = st.columns(2)
+                with col_buttons[0]:
+                    submitted = st.form_submit_button("**Enregistrer**", type="primary", use_container_width=True)
+                with col_buttons[1]:
+                    cancelled = st.form_submit_button("**Annuler**", use_container_width=True)
 
             if submitted:
-                # Validation des champs obligatoires, y compris les selectbox
                 if any(val == "-- Sélectionner --" for val in [team, type_agent, activite, departement]):
                     st.error("Veuillez sélectionner une option valide pour les champs Team, Type, Activité et Département.")
                 elif not all([hyp, id_agtsda, username, nom, prenom, date_in]):
                     st.error("Veuillez remplir tous les champs obligatoires (texte).")
                 else:
                     agent_data = {
-                        "Id_Effectif": next_id, # <--- C'est ICI LA MODIFICATION : Assurez-vous que c'est "Id_Effectif"
+                        "Id_Effectif": next_id,
                         "Hyp": hyp,
                         "ID_AGTSDA": id_agtsda,
                         "UserName": username,
@@ -2416,7 +2749,6 @@ def setting_page():
         st.markdown("---")
         st.subheader("Injecter des données de Récoltes")
         st.info("Cette section est dédiée à l'injection de données de récoltes. Développez l'interface ici.")
-
 
 def get_unique_values(column_name):
     """
