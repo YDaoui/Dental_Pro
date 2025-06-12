@@ -385,29 +385,25 @@ def add_custom_css():
     """, unsafe_allow_html=True)
 
 def get_db_connection():
-    # Accédez aux secrets via st.secrets
     try:
         db_path = st.secrets["database"]["path"]
-        password = st.secrets["database"]["password"]
+        # You might not need password if not encrypting, or use it for other auth if applicable
+        # password = st.secrets["database"]["password"]
     except KeyError as e:
-        st.error(f"Erreur de configuration des secrets : {e}. Assurez-vous que 'path' et 'password' sont définis dans [database] dans secrets.toml.")
+        st.error(f"Erreur de configuration des secrets : {e}. Assurez-vous que 'path' est défini dans [database] dans secrets.toml.")
+        # If password isn't needed, adjust the error message accordingly
         return None
 
     try:
         conn = sqlite3.connect(db_path)
-        # Si vous utilisez SQLCipher (et non sqlite3 standard), cette ligne est valide.
-        # Sinon, pour sqlite3 standard, elle n'aura aucun effet de chiffrement.
-        if password: # S'assurer que le mot de passe n'est pas vide
-             conn.execute(f"PRAGMA key='{password}'")
-        
-        # Exemple de configuration supplémentaire (comme le mode de row_factory)
-        conn.row_factory = sqlite3.Row # Accéder aux colonnes par leur nom
-        
+        # No PRAGMA key if not using SQLCipher
+
+        conn.row_factory = sqlite3.Row 
         return conn
-    except sqlite3.Error as e: # Capturez les erreurs spécifiques à sqlite3
+    except sqlite3.Error as e:
         st.error(f"Erreur de connexion à la base de données : {e}")
         return None
-    except Exception as e: # Capturez d'autres erreurs inattendues
+    except Exception as e:
         st.error(f"Une erreur inattendue est survenue lors de la connexion : {e}")
         return None
 
