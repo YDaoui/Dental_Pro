@@ -696,8 +696,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 
 
             # --- Métriques Clés (Top Cards) ---
-            st.markdown("---", unsafe_allow_html=True)
-            st.markdown("<h3 style='color: #007bad;'>Aperçu Global des Récoltes</h3>", unsafe_allow_html=True)
+            
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
@@ -724,7 +723,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                 kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#6f42c1", "users") # Violet pour les employés
 
             # --- Carte et Top Équipes ---
-            st.markdown("---", unsafe_allow_html=True)
+            
             col_map, col_teams = st.columns([2, 1])
 
             with col_map:
@@ -873,7 +872,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 
 
             # --- Graphiques Linéaires et Camembert ---
-            st.markdown("---", unsafe_allow_html=True)
+           
             col_day, col_pie, col_hour = st.columns([1, 1, 1])
 
             with col_day:
