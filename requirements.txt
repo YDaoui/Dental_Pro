@@ -3,13 +3,15 @@ pandas>=2.2.3
 python-dotenv==1.0.0
 cryptography>=42.0.0
 openpyxl<=3.1.0
-geopy
-plotly==5.22.0  
-folium
-streamlit-folium
-streamlit-option-menu
-streamlit-aggrid
-xlsxwriter
+geopy>=2.0.0  # Pour RateLimiter
+plotly==5.22.0
+folium>=0.14.0
+streamlit-folium>=0.1.2
+streamlit-option-menu>=0.3.2
+streamlit-aggrid>=0.3.4
+xlsxwriter>=3.1.0
+
+
 
 
 
