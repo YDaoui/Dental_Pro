@@ -1016,9 +1016,9 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 # --- Fonction Principale de la Page des Logs ---
 
 def logs_page(logs_df, staff_df, start_date, end_date):
-    """Affiche la page des logs avec les filtres spécifiés et un style cohérent."""
+    
 
-    add_custom_css() # Appel de la fonction CSS personnalisée
+    add_custom_css() 
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Logs</h3>", unsafe_allow_html=True)
 
@@ -1454,7 +1454,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Données non disponibles pour ce graphique (Offre)")
 
-        st.markdown("---")
+    
         st.markdown("<h3 style='color: #007bad;'>Données Détaillées des Logs</h3>", unsafe_allow_html=True)
 
         display_df = filtered_logs.sort_values('Date_d_création', ascending=False).copy()

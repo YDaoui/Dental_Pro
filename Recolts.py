@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime,timedelta  
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import plotly.express as px
@@ -60,9 +60,7 @@ def filter_recolts_data(df, country_filter, team_filter, activity_filter, agent_
     if country_filter != 'Tous' and 'Country' in filtered_df.columns:
         filtered_df = filtered_df[filtered_df['Country'] == country_filter]
     
-    # This filter is specific to recolts, adjust if sales_page1 doesn't have it
-    # if bank_filter != 'Toutes' and 'Banques' in filtered_df.columns:
-    #     filtered_df = filtered_df[filtered_df['Banques'] == bank_filter]
+   
 
     if 'Hyp' in filtered_df.columns and not staff_df.empty:
         staff_filtered = staff_df.copy()
@@ -89,6 +87,71 @@ def filter_recolts_data(df, country_filter, team_filter, activity_filter, agent_
 
     return filtered_df
 
+def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label="", line_color='#525CEB', global_start_date=None, global_end_date=None):
+    """
+    Crée un graphique linéaire pour la tendance d'un KPI.
+    Args:
+        df (pd.DataFrame): DataFrame contenant les données de tendance.
+        x_col (str): Nom de la colonne pour l'axe des X (généralement la date).
+        y_col (str): Nom de la colonne pour l'axe des Y (la valeur du KPI).
+        title (str): Titre du graphique.
+        value_prefix (str): Préfixe à afficher sur les étiquettes de valeur (ex: '€').
+        y_label (str): Étiquette pour l'axe des Y.
+        line_color (str): Couleur de la ligne du graphique.
+        global_start_date (datetime.date): La date de début globale du filtre.
+        global_end_date (datetime.date): La date de fin globale du filtre.
+    Returns:
+        plotly.graph_objects.Figure: Le graphique Plotly.
+    """
+    if df.empty:
+        return None # Return None if no data
+
+    fig = px.line(df,
+                  x=x_col,
+                  y=y_col,
+                  title=title,
+                  labels={y_col: y_label},
+                  line_shape='spline',
+                  color_discrete_sequence=[line_color])
+
+    fig.update_traces(
+        mode='lines+markers',
+        marker=dict(size=8, color=line_color, line=dict(width=1, color='#FFFFFF')),
+        hovertemplate=f'{x_col}: %{{x|%Y-%m-%d}}<br>{y_label}: {value_prefix}%{{y:,.2f}}<extra></extra>',
+        fill='tozeroy',
+        fillcolor='rgba(179, 191, 231, 0.4)'
+    )
+
+    # Set x-axis range based on global filter dates
+    x_axis_range = None
+    if global_start_date and global_end_date:
+        # Convert to datetime objects for Plotly range
+        x_axis_range = [global_start_date, global_end_date + timedelta(days=1)] # Add one day to end_date to include the full day
+
+    fig.update_layout(
+        xaxis_title=None,
+        yaxis_title=None,
+        plot_bgcolor='#FFFFFF',
+        paper_bgcolor='#FFFFFF',
+        xaxis_gridcolor='#E0E0E0',
+        yaxis_gridcolor='#E0E0E0',
+        xaxis=dict(
+            tickfont=dict(size=12, color='#3D3B40'),
+            tickformat='%Y-%m-%d', # Format for date axis
+            range=x_axis_range # Set x-axis range
+        ),
+        yaxis=dict(
+            range=[0, df[y_col].max() * 1.2], # Dynamic range
+            tickfont=dict(size=12, color='#3D3B40')
+        ),
+        font=dict(family='Arial', size=12, color='#3D3B40'),
+        margin=dict(t=30, b=30, l=30, r=30),
+        title=dict(x=0.05, y=0.95, xanchor='left', yanchor='top', font=dict(size=16, color='#007bad'))
+    )
+    return fig
+
+
+
 
 def recolts_page1(recolts_df, staff_df, start_date, end_date):
     """Affiche la page des récoltes, similaire à la page des ventes."""
@@ -99,8 +162,9 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
     else:
         st.warning("Columns 'NOM' and/or 'PRENOM' not found in staff data. Agent filter will use 'Hyp'.")
     
-
-
+    # Convert ORDER_DATE to datetime at the beginning of the function for consistency
+    if 'ORDER_DATE' in recolts_df.columns:
+        recolts_df['ORDER_DATE'] = pd.to_datetime(recolts_df['ORDER_DATE'])
 
     col1, col2 = st.columns([2, 2])
 
@@ -115,7 +179,6 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             "<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Analyse des Résolts</h1>", 
             unsafe_allow_html=True
         )
-
 
     # Filters (Identical to Sales.py layout)
     col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2,2])
@@ -137,11 +200,9 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 agents_in_team += sorted(filtered_staff_for_dropdown['Hyp'].dropna().unique())
         agent_filter = st.selectbox("Sélectionner Agent", agents_in_team, key='recolts_agent_filter')
     with col5:
-    # Add a specific filter for 'Banques' in recolts
         bank_filter = st.selectbox("Filtrer par Banque", ['Toutes'] + sorted(recolts_df['Banques'].dropna().unique()), key='recolts_bank_filter')
 
-
-    # Filter data (using the adapted filter_recolts_data)
+    # Filter data
     with st.spinner("Application des filtres..."):
         filtered_recolts = filter_recolts_data(recolts_df, country_filter, team_filter, activity_filter, agent_filter, start_date, end_date, staff_df)
         
@@ -150,10 +211,11 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             filtered_recolts = filtered_recolts[filtered_recolts['Banques'] == bank_filter]
 
     if not filtered_recolts.empty:
-        # Métriques / KPIs (Identical to Sales.py layout)
-        #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
+        # Ensure start_date and end_date are datetime objects for consistency
+        global_start_date_dt = pd.to_datetime(start_date).date()
+        global_end_date_dt = pd.to_datetime(end_date).date()
 
-        
+        # Métriques / KPIs (Identical to Sales.py layout)
         col1_kpi, col2_kpi, col3_kpi = st.columns(3) # Only 3 KPIs for recolts, no Rating
 
         with col1_kpi:
@@ -167,9 +229,36 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     background-color: #f0fff0;
                 '>
                     <h3 style='color: #333333; margin-bottom: 5px;'>Total Récoltes</h3>
-                    <p style='font-size: 24px; color: #008000; font-weight: bold;'>€{filtered_recolts['Total_Recolt'].sum():,.0f}</p>
+                    <p style='font-size: 24px; color: #008000; font-weight: bold;'>{filtered_recolts['Total_Recolt'].sum():,.0f} €</p>
                 </div>
             """, unsafe_allow_html=True)
+            
+            with st.expander("Tendance des Récoltes Totales"):
+                daily_recolts_trend = filtered_recolts.groupby(filtered_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].sum().reset_index()
+                daily_recolts_trend.columns = ['Date', 'Total_Recolt']
+                daily_recolts_trend['Date'] = pd.to_datetime(daily_recolts_trend['Date'])
+                
+                if not daily_recolts_trend.empty:
+                    trend_min_date = daily_recolts_trend['Date'].min()
+                    trend_max_date = daily_recolts_trend['Date'].max()
+                else:
+                    trend_min_date = global_start_date_dt
+                    trend_max_date = global_end_date_dt
+                    
+                full_date_range = pd.date_range(start=trend_min_date, end=trend_max_date, freq='D')
+                daily_recolts_trend = daily_recolts_trend.set_index('Date').reindex(full_date_range, fill_value=0).reset_index()
+                daily_recolts_trend.rename(columns={'index': 'Date'}, inplace=True)
+
+                if not daily_recolts_trend.empty:
+                    fig_total_recolts_trend = create_line_chart_for_kpi(
+                        daily_recolts_trend, 'Date', 'Total_Recolt', 'Tendance des Récoltes Quotidiennes', '€', 'Récoltes (€)', 
+                        line_color='#228B22',  # Green color for recolts
+                        global_start_date=global_start_date_dt, 
+                        global_end_date=global_end_date_dt
+                    )
+                    st.plotly_chart(fig_total_recolts_trend, use_container_width=True)
+                else:
+                    st.info("Pas de données de récoltes pour cette période.")
 
         with col2_kpi:
             st.markdown(f"""
@@ -182,9 +271,36 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     background-color: #f0fff0;
                 '>
                     <h3 style='color: #333333; margin-bottom: 5px;'>Récolte Moyenne</h3>
-                    <p style='font-size: 24px; color: #008000; font-weight: bold;'>€{filtered_recolts['Total_Recolt'].mean():,.2f}</p>
+                    <p style='font-size: 24px; color: #008000; font-weight: bold;'>{filtered_recolts['Total_Recolt'].mean():,.2f} €</p>
                 </div>
             """, unsafe_allow_html=True)
+            
+            with st.expander("Tendance de la Récolte Moyenne"):
+                daily_avg_recolts_trend = filtered_recolts.groupby(filtered_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].mean().reset_index()
+                daily_avg_recolts_trend.columns = ['Date', 'Average_Recolt']
+                daily_avg_recolts_trend['Date'] = pd.to_datetime(daily_avg_recolts_trend['Date'])
+                
+                if not daily_avg_recolts_trend.empty:
+                    trend_min_date = daily_avg_recolts_trend['Date'].min()
+                    trend_max_date = daily_avg_recolts_trend['Date'].max()
+                else:
+                    trend_min_date = global_start_date_dt
+                    trend_max_date = global_end_date_dt
+
+                full_date_range = pd.date_range(start=trend_min_date, end=trend_max_date, freq='D')
+                daily_avg_recolts_trend = daily_avg_recolts_trend.set_index('Date').reindex(full_date_range, fill_value=0).reset_index()
+                daily_avg_recolts_trend.rename(columns={'index': 'Date'}, inplace=True)
+
+                if not daily_avg_recolts_trend.empty:
+                    fig_avg_recolts_trend = create_line_chart_for_kpi(
+                        daily_avg_recolts_trend, 'Date', 'Average_Recolt', 'Tendance de la Récolte Moyenne Quotidienne', '€', 'Récolte Moyenne (€)',
+                        line_color='#228B22',  # Green color for recolts
+                        global_start_date=global_start_date_dt, 
+                        global_end_date=global_end_date_dt
+                    )
+                    st.plotly_chart(fig_avg_recolts_trend, use_container_width=True)
+                else:
+                    st.info("Pas de données de récoltes pour cette période.")
         
         with col3_kpi:
             st.markdown(f"""
@@ -200,9 +316,35 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     <p style='font-size: 24px; color: #008000; font-weight: bold;'>{len(filtered_recolts)}</p>
                 </div>
             """, unsafe_allow_html=True)
-        
-        
+            
+            with st.expander("Tendance du Nombre de Transactions"):
+                daily_transactions_trend = filtered_recolts.groupby(filtered_recolts['ORDER_DATE'].dt.date).size().reset_index(name='Total_Transactions')
+                daily_transactions_trend.columns = ['Date', 'Total_Transactions']
+                daily_transactions_trend['Date'] = pd.to_datetime(daily_transactions_trend['Date'])
+                
+                if not daily_transactions_trend.empty:
+                    trend_min_date = daily_transactions_trend['Date'].min()
+                    trend_max_date = daily_transactions_trend['Date'].max()
+                else:
+                    trend_min_date = global_start_date_dt
+                    trend_max_date = global_end_date_dt
 
+                full_date_range = pd.date_range(start=trend_min_date, end=trend_max_date, freq='D')
+                daily_transactions_trend = daily_transactions_trend.set_index('Date').reindex(full_date_range, fill_value=0).reset_index()
+                daily_transactions_trend.rename(columns={'index': 'Date'}, inplace=True)
+
+                if not daily_transactions_trend.empty:
+                    fig_total_transactions_trend = create_line_chart_for_kpi(
+                        daily_transactions_trend, 'Date', 'Total_Transactions', 'Tendance du Nombre de Transactions Quotidiennes', '', 'Transactions',
+                        line_color='#228B22',  # Green color for recolts
+                        global_start_date=global_start_date_dt, 
+                        global_end_date=global_end_date_dt
+                    )
+                    st.plotly_chart(fig_total_transactions_trend, use_container_width=True)
+                else:
+                    st.info("Pas de données de transactions pour cette période.")
+
+        # Reste du code existant (Principaux Graphiques, Répartition Temporelle, etc.)
         ## Principaux Graphiques (Similar to Sales.py layout)
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
         col_main1, col_main2, col_main3 = st.columns([2, 2, 2])
@@ -211,12 +353,15 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Récoltes par Ville</h3>", unsafe_allow_html=True)
             recolts_ville = filtered_recolts.groupby('City')['Total_Recolt'].sum().reset_index()
             fig = px.bar(recolts_ville, y='City', x='Total_Recolt', orientation='h', 
-                         color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000']) # Changed to green scale
-            fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                              yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
-            fig.update_traces(text=recolts_ville['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), textposition='outside',
-                              textfont=dict(size=14, family='Arial', color='black', weight='bold'))
-            st.plotly_chart(fig, use_container_width=True, key="recolts_par_ville") # Added key
+                         color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+            fig.update_layout(
+                xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+            fig.update_traces(
+                text=recolts_ville['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                textposition='outside',
+                textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+            st.plotly_chart(fig, use_container_width=True, key="recolts_par_ville")
 
         with col_main2:
             st.markdown("<h3 style='color: #007bad;'>Statut des Transactions de Récoltes</h3>", unsafe_allow_html=True)
@@ -224,15 +369,14 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             fig = px.pie(status_recolts, 
                          values='Total_Recolt', 
                          names='SHORT_MESSAGE',
-                         
                          color='SHORT_MESSAGE',
-                         color_discrete_map={'ACCEPTED': '#228B22', 'REFUSED': '#ff0000'}, # Changed 'ACCEPTED' to green
+                         color_discrete_map={'ACCEPTED': '#228B22', 'REFUSED': '#ff0000'},
                          hole=0.5)
             fig.update_traces(
                 textinfo='value+percent',
                 textposition='outside',
                 textfont_size=14,
-                textfont_color=['#228B22', '#ff0000'], # Changed text color for 'ACCEPTED' to green
+                textfont_color=['#228B22', '#ff0000'],
                 marker=dict(line=dict(color='white', width=2)),
                 pull=[0.05, 0],
                 rotation=-90,
@@ -253,7 +397,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 uniformtext_minsize=10,
                 uniformtext_mode='hide'
             )
-            st.plotly_chart(fig, use_container_width=True, key="statut_recolts_pie") # Added key
+            st.plotly_chart(fig, use_container_width=True, key="statut_recolts_pie")
 
         with col_main3:
             st.markdown("<h3 style='color: #007bad;'>Récoltes par Banque</h3>", unsafe_allow_html=True)
@@ -261,16 +405,19 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 recolts_by_bank_bar = filtered_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
                 fig = px.bar(recolts_by_bank_bar.sort_values(by='Total_Recolt', ascending=False),
                      y='Banques', x='Total_Recolt', orientation='h',
-                     color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000']) # Unified to green scale
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                          yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
-                fig.update_traces(text=recolts_by_bank_bar['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), textposition='outside',
-                          textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+                     color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+                fig.update_layout(
+                    xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                fig.update_traces(
+                    text=recolts_by_bank_bar['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                    textposition='outside',
+                    textfont=dict(size=14, family='Arial', color='black', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="recolts_par_banque_bar")
             else:
                 st.info("Les données de récoltes ne contiennent pas d'information sur les banques.")
 
-        
+        # Reste du code existant (Répartition Temporelle, Performance et Tendances, etc.)
         ## Répartition Temporelle Détaillée
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Répartition Temporelle Détaillée des Récoltes</h2>", unsafe_allow_html=True)
         col_temp1, col_temp2, col_temp3 = st.columns(3)
@@ -291,18 +438,18 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                                 x='Jour',
                                 y='Total_Recolt',
                                 line_shape='spline',
-                                color_discrete_sequence=['#228B22']) # Changed to green
+                                color_discrete_sequence=['#228B22'])
 
             fig_jour.update_traces(
-                line=dict(width=4, color='#228B22'), # Changed to green
+                line=dict(width=4, color='#228B22'),
                 mode='lines+markers+text',
                 marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')), 
                 text=[f"€{y:,.0f}" for y in recolts_jour['Total_Recolt']],
                 textposition="top center", 
-                textfont=dict(color="#F00A16", size=14, family='Arial', weight='bold'), # Changed text color to grey
+                textfont=dict(color="#F00A16", size=14, family='Arial', weight='bold'),
                 hovertemplate='Jour: %{x}<br>Récoltes: €%{y:,.2f}<extra></extra>',
                 fill='tozeroy',
-                fillcolor='rgba(144, 238, 144, 0.4)' # Changed to light green rgba
+                fillcolor='rgba(144, 238, 144, 0.4)'
             )
 
             fig_jour.update_layout(
@@ -321,12 +468,12 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 ),
                 yaxis=dict(
                     range=[0, recolts_jour['Total_Recolt'].max() * 1.2], 
-                    tickfont=dict(size=14, color='#3D3B40') 
+                    tickfont=dict(size=16, color='#3D3B40') 
                 ),
                 font=dict(family='Arial', size=14, color='#3D3B40'), 
                 margin=dict(t=50, b=50, l=50, r=50) 
             )
-            st.plotly_chart(fig_jour, use_container_width=True, key="recolts_par_jour") # Added key
+            st.plotly_chart(fig_jour, use_container_width=True, key="recolts_par_jour")
             
         with col_temp2:
             # Récoltes par Heure de la Journée
@@ -344,18 +491,18 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
             fig_heure = px.line(recolts_heure, x='Heure', y='Total_Recolt',
                                  line_shape='spline',
-                                 color_discrete_sequence=['#228B22']) # Changed to green
+                                 color_discrete_sequence=['#228B22'])
 
             fig_heure.update_traces(
-                line=dict(width=4, color='#228B22'), # Changed to green
+                line=dict(width=4, color='#228B22'),
                 mode='lines+markers+text',
                 marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')), 
                 text=[f"€{y:,.0f}" for y in recolts_heure['Total_Recolt']],
                 textposition="top center", 
-                textfont=dict(color="#F00A16", size=16, family='Arial', weight='bold'), # Changed text color to grey
+                textfont=dict(color="#F00A16", size=16, family='Arial', weight='bold'),
                 hovertemplate='Heure: %{x}h<br>Récoltes: €%{y:,.2f}<extra></extra>',
                 fill='tozeroy',
-                fillcolor='rgba(144, 238, 144, 0.4)' # Changed to light green rgba
+                fillcolor='rgba(144, 238, 144, 0.4)'
             )
 
             fig_heure.update_layout(
@@ -378,7 +525,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 font=dict(family='Arial', size=14, color='#3D3B40'),
                 margin=dict(t=50, b=50, l=50, r=50)
             )
-            st.plotly_chart(fig_heure, use_container_width=True, key="recolts_par_heure") # Added key
+            st.plotly_chart(fig_heure, use_container_width=True, key="recolts_par_heure")
 
         with col_temp3:
             # Récoltes par Mois
@@ -391,7 +538,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août', 
                 9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'
             }
-            all_months = pd.DataFrame({'MonthNum': range(1, 13)})
+            all_months = pd.DataFrame({'MonthNum': range(1, 13)})  # Correction ici - enlevé la parenthèse en trop
             recolts_mois = pd.merge(all_months, recolts_mois, on='MonthNum', how='left').fillna(0)
             recolts_mois['Mois'] = recolts_mois['MonthNum'].map(months)
             recolts_mois = recolts_mois.sort_values('MonthNum') 
@@ -400,18 +547,18 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                                 x='Mois',
                                 y='Total_Recolt',
                                 line_shape='spline',
-                                color_discrete_sequence=['#228B22']) # Changed to green
+                                color_discrete_sequence=['#228B22'])
 
             fig_mois.update_traces(
-                line=dict(width=4, color='#228B22'), # Changed to green
+                line=dict(width=4, color='#228B22'),
                 mode='lines+markers+text',
                 marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')), 
                 text=[f"€{y:,.0f}" for y in recolts_mois['Total_Recolt']],
                 textposition="top center", 
-                textfont=dict(color="#F00A16", size=16, family='Arial', weight='bold'), # Changed text color to grey
+                textfont=dict(color="#F00A16", size=16, family='Arial', weight='bold'),
                 hovertemplate='Mois: %{x}<br>Récoltes: €%{y:,.2f}<extra></extra>',
                 fill='tozeroy',
-                fillcolor='rgba(144, 238, 144, 0.4)' # Changed to light green rgba
+                fillcolor='rgba(144, 238, 144, 0.4)'
             )
 
             fig_mois.update_layout(
@@ -435,9 +582,8 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 font=dict(family='Arial', size=14, color='#3D3B40'), 
                 margin=dict(t=50, b=50, l=50, r=50) 
             )
-            st.plotly_chart(fig_mois, use_container_width=True, key="recolts_par_mois") # Added key
+            st.plotly_chart(fig_mois, use_container_width=True, key="recolts_par_mois")
 
-      
         ## Graphiques de Performance et Tendances
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Performance et Tendances</h2>", unsafe_allow_html=True)
 
@@ -445,24 +591,25 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
         with col_g1:
             st.markdown("<h3 style='color: #007bad;'>Récoltes par Équipe</h3>", unsafe_allow_html=True)
-           
             if 'Team' in staff_df.columns:
                 recolts_by_team = filtered_recolts.merge(staff_df[['Hyp', 'Team']], on='Hyp', how='left')
                 team_performance = recolts_by_team.groupby('Team')['Total_Recolt'].sum().reset_index()
                 fig = px.bar(team_performance.sort_values(by='Total_Recolt', ascending=False),
                              y='Team', x='Total_Recolt', orientation='h',
-                             color='Total_Recolt', color_continuous_scale=px.colors.sequential.Greens) # Changed to green sequential
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                                  yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
-                fig.update_traces(text=team_performance['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), textposition='outside',
-                                  textfont=dict(size=14, family='Arial', color='black', weight='bold'))
-                st.plotly_chart(fig, use_container_width=True, key="recolts_par_equipe") # Added key
+                             color='Total_Recolt', color_continuous_scale=px.colors.sequential.Greens)
+                fig.update_layout(
+                    xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                fig.update_traces(
+                    text=team_performance['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                    textposition='outside',
+                    textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+                st.plotly_chart(fig, use_container_width=True, key="recolts_par_equipe")
             else:
                 st.info("Les données du personnel ne contiennent pas d'information sur les équipes.")
 
         with col_g2:
             st.markdown("<h3 style='color: #007bad;'>Top 10 des Récolteurs</h3>", unsafe_allow_html=True)
-           
             if 'Hyp' in filtered_recolts.columns:
                 recolts_by_hyp = filtered_recolts.groupby('Hyp')['Total_Recolt'].sum().reset_index()
                 top_recolteurs = recolts_by_hyp.sort_values(by='Total_Recolt', ascending=False).head(10)
@@ -478,34 +625,33 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
                 fig = px.bar(top_recolteurs,
                             y=x_col, x='Total_Recolt', orientation='h',
-                            color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000']) # Unified to green scale
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                                yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
-                fig.update_traces(text=top_recolteurs['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), textposition='outside',
-                                textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+                            color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+                fig.update_layout(
+                    xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                fig.update_traces(
+                    text=top_recolteurs['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                    textposition='outside',
+                    textfont=dict(size=14, family='Arial', color='black', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="top_recolteurs")
             else:
                 st.info("Les données de récoltes ne contiennent pas d'information sur les récolteurs (Hyp).")
             
         with col_g3:
             st.markdown("<h3 style='color: #007bad;'>Distribution des Valeurs de Récolte</h3>", unsafe_allow_html=True)
-           
             if 'Total_Recolt' in filtered_recolts.columns:
                 fig = px.histogram(filtered_recolts, x='Total_Recolt', nbins=20,
-                                   
                                    labels={'Total_Recolt': 'Valeur de Récolte (€)'},
-                                   color_discrete_sequence=['#228B22']) # Changed to green
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                                  yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
-                st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_recolte") # Added key
+                                   color_discrete_sequence=['#228B22'])
+                fig.update_layout(
+                    xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_recolte")
             else:
                 st.info("Les données de récoltes ne contiennent pas de 'Total_Recolt'.")
 
-        
         ## Autres Analyses
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Autres Analyses</h2>", unsafe_allow_html=True)
-        
-
         
         st.markdown("<h3 style='text-align: center; color: #007bad;'>Détails des Transactions de Récoltes</h3>", unsafe_allow_html=True)
         if not filtered_recolts.empty:
@@ -517,7 +663,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 if 'Hyp' in recolts_list_df.columns and 'NOM PRENOM' in staff_df.columns:
                     recolts_list_df = recolts_list_df.merge(staff_df[['Hyp', 'NOM PRENOM']], on='Hyp', how='left')
                 else:
-                    recolts_list_df['NOM PRENOM'] = 'N/A' # Fallback if agent name isn't available
+                    recolts_list_df['NOM PRENOM'] = 'N/A'
 
                 recolts_list_df['Acceptée'] = recolts_list_df['SHORT_MESSAGE'] == 'ACCEPTED'
                 recolts_list_df['Refusée'] = recolts_list_df['SHORT_MESSAGE'] == 'REFUSED'
@@ -535,7 +681,6 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 display_cols['Montant (€)'] = display_cols['Montant (€)'].apply(lambda x: f"€{x:,.2f}".replace(",", " "))
                 display_cols['Date Création'] = display_cols['Date Création'].dt.strftime('%Y-%m-%d %H:%M')
 
-                # Styling functions - adapted for recolts (no rating here)
                 def apply_cell_style(val):
                     return 'font-weight: bold; text-align: center; font-size: 14px;'
 
@@ -576,7 +721,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 )
 
                 st.markdown("<div class='styled-dataframe-frame dataframe-styling'>", unsafe_allow_html=True)
-                st.dataframe(styled_df, use_container_width=True, key="recolts_transactions_detail_list") # Added key
+                st.dataframe(styled_df, use_container_width=True, key="recolts_transactions_detail_list")
                 st.markdown("</div>", unsafe_allow_html=True)
 
         else:

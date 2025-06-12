@@ -45,7 +45,7 @@ def manager_dashboard():
         # Menu en fonction du type d'utilisateur
         if st.session_state.get("user_type") == "Hyperviseur":
             menu_options = ["Dashbord Global", "Ventes", "Récompences", "Logs","Nouvelle Vente","Nouvelle Récolt", "Coachings", "Settings"]
-            icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text", "person-lines-fill", "gear"]
+            icons = ["bar-chart", "credit-card", "box-seam", "file-earmark-text","credit-card","credit-card", "person-lines-fill", "gear"]
 
         elif st.session_state.get("user_type") == "Support":
             menu_options = ["Dashbord Global", "Coachings"]
