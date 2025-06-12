@@ -29,6 +29,7 @@ def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date
         logs_page(logs_df, staff_df, start_date, end_date)
 # Fonction principale
 def manager_dashboard():
+    
     add_custom_css()
     """Tableau de bord principal."""
     # Chargement des données
@@ -41,6 +42,21 @@ def manager_dashboard():
     # Sidebar
     with st.sidebar:
         st.image('Dental_Implant.png', width=350)
+        st.markdown(
+        f"<h2 style='color: #007bad;text-align: left;'>Bienvenu : {st.session_state.get('username', 'Agent')}</h2>",
+        unsafe_allow_html=True
+    )
+        st.markdown("<h2 style='font-size: 16px; color: #0E2148;'>Filtres de Dates</h2>", unsafe_allow_html=True)
+
+        with st.expander("Période", expanded=True):
+            min_date = sales_df['ORDER_DATE'].min() if not sales_df.empty else datetime.now()
+            max_date = sales_df['ORDER_DATE'].max() if not sales_df.empty else datetime.now()
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                start_date = st.date_input("Date début", min_date, min_value=min_date, max_value=max_date)
+            with col2:
+                end_date = st.date_input("Date fin", max_date, min_value=min_date, max_value=max_date)
         
         # Menu en fonction du type d'utilisateur
         if st.session_state.get("user_type") == "Hyperviseur":
@@ -76,18 +92,9 @@ def manager_dashboard():
             }
         )
         
-        st.markdown("---")
-        st.markdown("<h2 style='font-size: 16px; color: #0E2148;'>Filtres de Dates</h2>", unsafe_allow_html=True)
         
-        with st.expander("Période", expanded=True):
-            min_date = sales_df['ORDER_DATE'].min() if not sales_df.empty else datetime.now()
-            max_date = sales_df['ORDER_DATE'].max() if not sales_df.empty else datetime.now()
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                start_date = st.date_input("Date début", min_date, min_value=min_date, max_value=max_date)
-            with col2:
-                end_date = st.date_input("Date fin", max_date, min_value=min_date, max_value=max_date)
+        
+        
 
     # Gestion des pages
     if selected == "Dashbord Global":

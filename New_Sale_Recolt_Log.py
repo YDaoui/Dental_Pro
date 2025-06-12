@@ -37,8 +37,11 @@ def display_sales_graphs(df):
         st.info("Aucune donnée de vente disponible.")
         return
 
-    st.markdown("---")
-    st.markdown("### Statistiques de Ventes")
+    
+    st.markdown(
+        f"<h2 style='color: #007bad;text-align: left;'>Statistique de Vente : {st.session_state.get('username', )}</h2>",
+        unsafe_allow_html=True
+    )
 
     # KPI Cards
     total_sales = df["Total_Sale"].sum()
@@ -107,8 +110,10 @@ def display_recolt_graphs(df):
         st.info("Aucune donnée de récolte disponible.")
         return
 
-    st.markdown("---")
-    st.markdown("###  Statistiques de Récoltes")
+    st.markdown(
+        f"<h2 style='color: #007bad;text-align: left;'>Statistiques de Récoltes : {st.session_state.get('username', 'Agent')}</h2>",
+        unsafe_allow_html=True
+    )
 
     # KPI Cards
     total_recolt = df["Total_Recolt"].sum()
