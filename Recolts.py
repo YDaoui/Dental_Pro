@@ -581,4 +581,3 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
         else:
                 st.info("Aucune donnée de transaction de récoltes disponible pour les filtres sélectionnés.")
-        

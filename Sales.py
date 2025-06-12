@@ -255,18 +255,81 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         with col_main3: # This is now the place for "Statut des Transactions par Pays"
             st.markdown("<h3 style='color: #007bad;'>Statut des Transactions par Pays</h3>", unsafe_allow_html=True)
             if 'SHORT_MESSAGE' in filtered_sales.columns and 'Country' in filtered_sales.columns:
+                # Préparation des données avec calcul des pourcentages
                 status_by_country = filtered_sales.groupby(['Country', 'SHORT_MESSAGE'])['Total_Sale'].sum().unstack(fill_value=0)
+                total_by_country = status_by_country.sum(axis=1)
+                status_by_country_perc = status_by_country.div(total_by_country, axis=0) * 100
+                
+                # Création du graphique
                 fig = px.bar(status_by_country,
-                             y=status_by_country.index, x=status_by_country.columns, orientation='h',
-                            
-                             color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'})
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')),
-                                  yaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')))
-                st.plotly_chart(fig, use_container_width=True, key="statut_transactions_par_pays_main") # Added key
+                            y=status_by_country.index, 
+                            x=status_by_country.columns, 
+                            orientation='h',
+                            color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'})
+                
+                # Ajout des étiquettes avec montant et pourcentage
+                for i, country in enumerate(status_by_country.index):
+                    total = total_by_country[country]
+                    for j, status in enumerate(status_by_country.columns):
+                        value = status_by_country.loc[country, status]
+                        if value > 0:  # Only show label if value exists
+                            percentage = status_by_country_perc.loc[country, status]
+                            fig.add_annotation(
+                                x=sum(status_by_country.loc[country, status_by_country.columns[:j]]) + value/2,
+                                y=country,
+                                text=f"{value:,.0f} €<br>({percentage:.1f}%)",
+                                showarrow=False,
+                                font=dict(
+                                    family="Arial",
+                                    size=20,
+                                    color="white",
+                                    weight="bold"
+                                ),
+                                xanchor="center",
+                                yanchor="middle"
+                            )
+                
+                # Mise en forme du layout
+                fig.update_layout(
+                    xaxis=dict(
+                        title=None, 
+                        showticklabels=False,
+                        visible=False
+                    ),
+                    yaxis=dict(
+                        title=None, 
+                        tickfont=dict(
+                            size=12, 
+                            family='Arial', 
+                            color='black', 
+                            weight='bold'
+                        ),
+                        categoryorder='total ascending'
+                    ),
+                    barmode='stack',
+                    showlegend=True,
+                    legend=dict(
+                        orientation="h",
+                        yanchor="bottom",
+                        y=-0.3,
+                        xanchor="center",
+                        x=0.5,
+                        font=dict(
+                            family="Arial",
+                            size=12,
+                            color="black"
+                        )
+                    ),
+                    margin=dict(l=0, r=0, t=30, b=0),
+                    hoverlabel=dict(
+                        font_size=14,
+                        font_family="Arial"
+                    )
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="statut_transactions_par_pays_main")
             else:
                 st.info("Données insuffisantes pour l'analyse du statut des transactions par pays.")
-
-
        
         ## Répartition Temporelle Détaillée
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Répartition Temporelle Détaillée des Ventes</h2>", unsafe_allow_html=True)
@@ -591,5 +654,3 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
 
         else:
                 st.info("Aucune donnée de transaction disponible pour les filtres sélectionnés.")
-        
-        

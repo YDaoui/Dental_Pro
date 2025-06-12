@@ -122,28 +122,42 @@ def New_Sale_Agent():
             
             rating = st.slider("Rating", min_value=1, max_value=9, key="sale_rating")
 
-        valider, annuler = st.columns(2)
-        with valider:
-            if st.button("✅ Valider", key="validate_sale"):
-                total_sale = montant_input if montant_input > 0 else montant_slider
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        """INSERT INTO Sales (Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Sale, Rating)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (hyp_agent, order_reference, order_date, short_message, country, city, total_sale, rating)
-                    )
-                    conn.commit()
-                    st.success("Vente enregistrée avec succès!")
-                    st.cache_data.clear()  # Force le rechargement des données
-                except Exception as e:
-                    st.error(f"Erreur: {str(e)}")
-        
-        with annuler:
-            if st.button("❌ Annuler", key="cancel_sale"):
-                st.warning("Opération annulée")
-
-        # Afficher les graphiques après le formulaire
+            valider, annuler = st.columns(2)
+            with valider:
+                st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                if st.button("**Valider**", key="validate_sale", use_container_width=True):
+                    total_sale = montant_input if montant_input > 0 else montant_slider
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """INSERT INTO Sales (Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Sale, Rating)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                            (hyp_agent, order_reference, order_date, short_message, country, city, total_sale, rating)
+                        )
+                        conn.commit()
+                        st.success("Vente enregistrée avec succès!")
+                        st.cache_data.clear()  # Force le rechargement des données
+                    except Exception as e:
+                        st.error(f"Erreur: {str(e)}")
+                
+            with annuler:
+                    st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    if st.button("**Annuler**", key="cancel_sale"):
+                        st.warning("Opération annulée")
+                # Afficher les graphiques après le formulaire
         display_sales_graphs(agent_sales)
 
     except Exception as e:
@@ -190,28 +204,42 @@ def New_Recolt_Agent():
             
             rating = st.slider("Rating", min_value=1, max_value=9, key="recolt_rating")
 
-        valider, annuler = st.columns(2)
-        with valider:
-            if st.button("✅ Valider", key="validate_recolt"):
-                total_recolt = montant_input if montant_input > 0 else montant_slider
-                try:
-                    cursor = conn.cursor()
-                    cursor.execute(
-                        """INSERT INTO Recolt (Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Rating)
-                           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                        (hyp_agent, order_reference, order_date, short_message, country, city, total_recolt, rating)
-                    )
-                    conn.commit()
-                    st.success("Récolte enregistrée avec succès!")
-                    st.cache_data.clear()  # Force le rechargement des données
-                except Exception as e:
-                    st.error(f"Erreur: {str(e)}")
-        
-        with annuler:
-            if st.button("❌ Annuler", key="cancel_recolt"):
-                st.warning("Opération annulée")
+            valider, annuler = st.columns(2)
+            with valider:
+                st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                if st.button("**Valider**", key="validate_recolt"):
+                    total_recolt = montant_input if montant_input > 0 else montant_slider
+                    try:
+                        cursor = conn.cursor()
+                        cursor.execute(
+                            """INSERT INTO Recolt (Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Rating)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                            (hyp_agent, order_reference, order_date, short_message, country, city, total_recolt, rating)
+                        )
+                        conn.commit()
+                        st.success("Récolte enregistrée avec succès!")
+                        st.cache_data.clear()  # Force le rechargement des données
+                    except Exception as e:
+                        st.error(f"Erreur: {str(e)}")
+            
+            with annuler:
+                st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+                if st.button("**Annuler**", key="cancel_recolt"):
+                    st.warning("Opération annulée")
 
-        # Afficher les graphiques après le formulaire
+            # Afficher les graphiques après le formulaire
         display_recolt_graphs(agent_recolts)
 
     except Exception as e:

@@ -27,7 +27,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown("<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Analyse des Logs</h1>", unsafe_allow_html=True)
 
   
-    st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
+    #st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
 
     # Filters
     col1_f, col2_f, col3_f, col4_f = st.columns(4)
@@ -124,7 +124,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
 
     if not filtered_logs.empty:
         # --- KPIs Section ---
-        st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés</h2>", unsafe_allow_html=True)
+        #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés</h2>", unsafe_allow_html=True)
         col1_kpi, col2_kpi, col3_kpi, col4_kpi = st.columns(4)
 
         total_logs = len(filtered_logs)
@@ -151,7 +151,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
                 <div style="
                     padding: 20px;
-                    background: linear-gradient(145deg, {color} 0%, {color}CC 100%);
+                    background: linear-gradient(165deg, {color} 0%, {color}CC 100%);
                     border-radius: 12px;
                     box-shadow: 0 6px 18px rgba(0,0,0,0.15);
                     height: 140px;
@@ -162,11 +162,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     position: relative;
                     overflow: hidden;
                     color: white;">
-                    <div style="position: absolute; right: 20px; top: 20px; opacity: 0.3;">
-                        <i class="fas fa-{icon_name}" style="font-size: 65px;"></i>
+                    <div style="position: absolute; right: 20px; top: 20px; opacity: 0.9;">
+                        <i class="fas fa-{icon_name}" style="font-size: 40px;"></i>
                     </div>
                     <h3 style="color: white; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">{title}</h3>
-                    <p style="font-size: 42px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
+                    <p style="font-size: 40px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
                 </div>
             """, unsafe_allow_html=True)
 
@@ -348,7 +348,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
       
-        col1_b, col2_b, col3_b, col4_b = st.columns(4)
+        col1_b, col2_b, col3_b = st.columns(3)
 
         # Bar chart for segments
         with col1_b:
@@ -382,8 +382,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
-                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
-                }
+                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'},
+                    'margin': {'r': 50 }
+                    }
                 try:
                     fig_segment.update_layout(updated_layout)
                     st.plotly_chart(fig_segment, use_container_width=True)
@@ -434,7 +435,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Canal' est manquante.")
 
-        with col3_b:
+        """ with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
             if 'Sous_motif' in filtered_logs.columns:
                 sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
@@ -482,8 +483,9 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     st.info("Impossible d'afficher le graphique des sous-motifs.")
             else:
                 st.info("La colonne 'Sous_motif' est manquante.")
+                """
 
-        with col4_b:
+        with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
             if 'Mode_facturation' in filtered_logs.columns:
                 facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
