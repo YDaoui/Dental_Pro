@@ -357,8 +357,8 @@ def afficher_donnees_sales(conn, hyp_agent):
         moyenne_rating = df_sales["Rating"].mean()
 
         col1, col2, col3 = st.columns(3)
-        kpi_card_html(col1, "Ventes Totales", f"€{total_ventes:,.2f}", "#007bad", "money-bill-wave")
-        kpi_card_html(col2, "Vente Moyenne", f"€{moyenne_vente:,.2f}", "#00afe1", "chart-line")
+        kpi_card_html(col1, "Ventes Totales", f"{total_ventes:,.2f} €", "#007bad", "money-bill-wave")
+        kpi_card_html(col2, "Vente Moyenne", f"{moyenne_vente:,.2f} €", "#00afe1", "chart-line")
         kpi_card_html(col3, "Note Moyenne", f"{moyenne_rating:.1f}/5", "#ffc107", "star")
 
         st.markdown("## 🎯 Analyse des Ventes")
@@ -457,7 +457,7 @@ def afficher_donnees_sales(conn, hyp_agent):
                     mode='lines+markers',
                     line=dict(color='#007bad', width=3),
                     marker=dict(size=8, color='#007bad'),
-                    text=df_date['Total_Sale'].apply(lambda x: f'€{x:,.0f}'),
+                    text=df_date['Total_Sale'].apply(lambda x: f'{x:,.0f} €'),
                     textposition='top center'
                 )
                 fig3.update_layout(
@@ -526,8 +526,8 @@ def afficher_donnees_recolts(conn, hyp_agent):
         nombre_operations = len(df_recolts)
 
         col1, col2, col3 = st.columns(3)
-        kpi_card_html(col1, "Total Récolté", f"€{total_recoltes:,.2f}", "#28a745", "leaf")
-        kpi_card_html(col2, "Moyenne par Opération", f"€{moyenne_recolte:,.2f}", "#17a2b8", "seedling")
+        kpi_card_html(col1, "Total Récolté", f"{total_recoltes:,.2f} €", "#28a745", "leaf")
+        kpi_card_html(col2, "Moyenne par Opération", f"{moyenne_recolte:,.2f} €", "#17a2b8", "seedling")
         kpi_card_html(col3, "Nombre d'opérations", str(nombre_operations), "#ffc107", "tasks")
 
         st.markdown("---")

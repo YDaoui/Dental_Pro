@@ -348,15 +348,16 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
         ## Principaux Graphiques (Similar to Sales.py layout)
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
         col_main1, col_main2, col_main3 = st.columns([2, 2, 2])
-        
         with col_main1:
             st.markdown("<h3 style='color: #007bad;'>Récoltes par Ville</h3>", unsafe_allow_html=True)
             recolts_ville = filtered_recolts.groupby('City')['Total_Recolt'].sum().reset_index()
             fig = px.bar(recolts_ville, y='City', x='Total_Recolt', orientation='h', 
-                         color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+                        color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
             fig.update_layout(
                 xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                showlegend=False,
+                coloraxis_showscale=False)  # Ajouté pour supprimer l'échelle de couleur
             fig.update_traces(
                 text=recolts_ville['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
                 textposition='outside',
@@ -367,11 +368,11 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Statut des Transactions de Récoltes</h3>", unsafe_allow_html=True)
             status_recolts = filtered_recolts.groupby('SHORT_MESSAGE')['Total_Recolt'].sum().reset_index()
             fig = px.pie(status_recolts, 
-                         values='Total_Recolt', 
-                         names='SHORT_MESSAGE',
-                         color='SHORT_MESSAGE',
-                         color_discrete_map={'ACCEPTED': '#228B22', 'REFUSED': '#ff0000'},
-                         hole=0.5)
+                        values='Total_Recolt', 
+                        names='SHORT_MESSAGE',
+                        color='SHORT_MESSAGE',
+                        color_discrete_map={'ACCEPTED': '#228B22', 'REFUSED': '#ff0000'},
+                        hole=0.5)
             fig.update_traces(
                 textinfo='value+percent',
                 textposition='outside',
@@ -404,11 +405,13 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             if 'Banques' in filtered_recolts.columns:
                 recolts_by_bank_bar = filtered_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
                 fig = px.bar(recolts_by_bank_bar.sort_values(by='Total_Recolt', ascending=False),
-                     y='Banques', x='Total_Recolt', orientation='h',
-                     color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+                    y='Banques', x='Total_Recolt', orientation='h',
+                    color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
                 fig.update_layout(
                     xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    showlegend=False,
+                    coloraxis_showscale=False)  # Ajouté pour supprimer l'échelle de couleur
                 fig.update_traces(
                     text=recolts_by_bank_bar['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
                     textposition='outside',
@@ -416,7 +419,6 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 st.plotly_chart(fig, use_container_width=True, key="recolts_par_banque_bar")
             else:
                 st.info("Les données de récoltes ne contiennent pas d'information sur les banques.")
-
         # Reste du code existant (Répartition Temporelle, Performance et Tendances, etc.)
         ## Répartition Temporelle Détaillée
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Répartition Temporelle Détaillée des Récoltes</h2>", unsafe_allow_html=True)
@@ -595,15 +597,18 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 recolts_by_team = filtered_recolts.merge(staff_df[['Hyp', 'Team']], on='Hyp', how='left')
                 team_performance = recolts_by_team.groupby('Team')['Total_Recolt'].sum().reset_index()
                 fig = px.bar(team_performance.sort_values(by='Total_Recolt', ascending=False),
-                             y='Team', x='Total_Recolt', orientation='h',
-                             color='Total_Recolt', color_continuous_scale=px.colors.sequential.Greens)
+                            y='Team', x='Total_Recolt', orientation='h',
+                            color='Total_Recolt', 
+                            color_continuous_scale=['#a8e6a8', '#4CAF50', '#388E3C', '#2E7D32', '#1B5E20'])
                 fig.update_layout(
                     xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    showlegend=False,
+                    coloraxis_showscale=False)
                 fig.update_traces(
                     text=team_performance['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
-                    textposition='outside',
-                    textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+                    textposition='inside',
+                    textfont=dict(size=18, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="recolts_par_equipe")
             else:
                 st.info("Les données du personnel ne contiennent pas d'information sur les équipes.")
@@ -625,14 +630,17 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
 
                 fig = px.bar(top_recolteurs,
                             y=x_col, x='Total_Recolt', orientation='h',
-                            color='Total_Recolt', color_continuous_scale=['#a3d9a3', '#008000'])
+                            color='Total_Recolt', 
+                            color_continuous_scale=['#a8e6a8', '#4CAF50', '#388E3C', '#2E7D32', '#1B5E20'])
                 fig.update_layout(
                     xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    showlegend=False,
+                    coloraxis_showscale=False)
                 fig.update_traces(
                     text=top_recolteurs['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
-                    textposition='outside',
-                    textfont=dict(size=14, family='Arial', color='black', weight='bold'))
+                    textposition='inside',
+                    textfont=dict(size=16, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="top_recolteurs")
             else:
                 st.info("Les données de récoltes ne contiennent pas d'information sur les récolteurs (Hyp).")
@@ -641,14 +649,19 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             st.markdown("<h3 style='color: #007bad;'>Distribution des Valeurs de Récolte</h3>", unsafe_allow_html=True)
             if 'Total_Recolt' in filtered_recolts.columns:
                 fig = px.histogram(filtered_recolts, x='Total_Recolt', nbins=20,
-                                   labels={'Total_Recolt': 'Valeur de Récolte (€)'},
-                                   color_discrete_sequence=['#228B22'])
+                                labels={'Total_Recolt': 'Valeur de Récolte (€)'},
+                                color_discrete_sequence=['#4CAF50'])
                 fig.update_layout(
                     xaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
-                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')))
+                    yaxis=dict(title=None, tickfont=dict(size=14, family='Arial', color='black', weight='bold')),
+                    showlegend=False)
+                fig.update_traces(
+                    texttemplate='%{y}',
+                    textposition='inside',
+                    textfont=dict(size=12, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_recolte")
-            else:
-                st.info("Les données de récoltes ne contiennent pas de 'Total_Recolt'.")
+    else:
+        st.info("Les données de récoltes ne contiennent pas de 'Total_Recolt'.")
 
         ## Autres Analyses
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Autres Analyses</h2>", unsafe_allow_html=True)

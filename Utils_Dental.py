@@ -2184,7 +2184,7 @@ def add_agent_to_db(agent_data):
 
 
 def setting_page():
-    """Affiche la page des paramètres avec un design modernisé."""
+    
     col1, col2 = st.columns([2, 2])
 
     with col1:
@@ -2199,7 +2199,7 @@ def setting_page():
             unsafe_allow_html=True
         )
 
-    # --- Section de recherche d'utilisateur ---
+ 
     with st.container():
         st.markdown("---")
         st.subheader("Rechercher un utilisateur existant")
@@ -2305,7 +2305,7 @@ def setting_page():
         next_id = get_last_agent_id() + 1
         st.info(f"Le prochain ID d'Agent sera automatiquement attribué : **{next_id}**")
 
-        # --- Récupération des valeurs uniques pour les selectbox ---
+      
         teams = ["-- Sélectionner --"] + get_unique_values("Team")
         activites = ["-- Sélectionner --"] + get_unique_values("Activité")
         types = ["-- Sélectionner --"] + get_unique_values("Type")
@@ -2317,7 +2317,8 @@ def setting_page():
                 hyp = st.text_input("ID (Hyp)", placeholder="Ex: HYP001", help="Identifiant unique de l'agent (Hyp)", key="agent_hyp")
                 id_agtsda = st.text_input("ID_AGTSDA", placeholder="Ex: AGT123", help="Identifiant AGTSDA de l'agent", key="agent_id_agtsda")
                 nom = st.text_input("NOM", placeholder="Ex: DUPONT", help="Nom de l'agent", key="agent_nom")
-                # Utilisez st.selectbox avec les valeurs uniques
+                
+                
                 team = st.selectbox("Team", options=teams, help="Équipe de l'agent", key="agent_team_select")
                 activite = st.selectbox("Activité", options=activites, help="Activité principale de l'agent", key="agent_activite_select")
 
@@ -2336,14 +2337,15 @@ def setting_page():
                 cancelled = st.form_submit_button("**Annuler**")
 
             if submitted:
-                # Validation des champs obligatoires, y compris les selectbox
+                
+                
                 if any(val == "-- Sélectionner --" for val in [team, type_agent, activite, departement]):
                     st.error("Veuillez sélectionner une option valide pour les champs Team, Type, Activité et Département.")
                 elif not all([hyp, id_agtsda, username, nom, prenom, date_in]):
                     st.error("Veuillez remplir tous les champs obligatoires (texte).")
                 else:
                     agent_data = {
-                        "Id_Effectif": next_id, # <--- C'est ICI LA MODIFICATION : Assurez-vous que c'est "Id_Effectif"
+                        "Id_Effectif": next_id,
                         "Hyp": hyp,
                         "ID_AGTSDA": id_agtsda,
                         "UserName": username,
@@ -2362,7 +2364,7 @@ def setting_page():
                         st.error("Une erreur est survenue lors de l'ajout de l'agent.")
             elif cancelled:
                 st.info("Ajout de l'agent annulé.")
-                st.experimental_rerun()
+                
 
     elif selected_option == "Injecter des logs":
         st.markdown("---")
@@ -2392,9 +2394,7 @@ def get_unique_values(column_name):
     unique_values = []
     try:
         with closing(conn.cursor()) as cursor:
-            # Utilisez un paramètre pour le nom de la colonne pour éviter l'injection SQL si vous construisez la requête dynamiquement
-            # Cependant, pour les noms de colonnes, c'est généralement sûr si les noms sont internes à l'application.
-            # Dans ce cas, nous utilisons f-string car le nom de la colonne est fixe.
+           
             cursor.execute(f"SELECT DISTINCT {column_name} FROM Effectifs WHERE {column_name} IS NOT NULL ORDER BY {column_name}")
             results = cursor.fetchall()
             unique_values = [row[0] for row in results]

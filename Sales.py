@@ -5,16 +5,7 @@ import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 
-# Assuming Utils_Dental, Managers, Logs, Recolts are custom modules and available
-# from Utils_Dental import *
-# from Managers import *
-# from Logs import *
-# from Recolts import *
 
-# Géocodage sécurisé
-
-
-# Filtrage des données
 def filter_data(df, country_filter, team_filter, activity_filter, agent_filter, start_date, end_date, staff_df, current_hyp=None):
     """Filtre les données selon les critères."""
     filtered_df = df.copy()
@@ -731,14 +722,38 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
             if 'Total_Sale' in filtered_sales.columns:
                 fig = px.histogram(filtered_sales, x='Total_Sale', nbins=20,
                                 labels={'Total_Sale': 'Valeur de Vente (€)'},
-                                color_discrete_sequence=['#007bad']) # Changed color to blue
-                fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')),
-                                yaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')),
-                                showlegend=False) # Removed legend (though histograms usually don't have one by default in this setup)
-                st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_vente") # Added key
+                                color_discrete_sequence=['#007bad'])
+                
+                # Ajout des étiquettes de données en blanc
+                fig.update_traces(
+                    texttemplate='%{y}',  # Affiche le count pour chaque barre
+                    textposition='inside',
+                    textfont=dict(
+                        size=16,
+                        color='white',
+                        family='Arial',
+                        weight='bold'
+                    )
+                )
+                
+                fig.update_layout(
+                    xaxis=dict(
+                        title=None, 
+                        tickfont=dict(size=12, family='Arial', color='black', weight='bold')
+                    ),
+                    yaxis=dict(
+                        title=None, 
+                        tickfont=dict(size=12, family='Arial', color='black', weight='bold')
+                    ),
+                    showlegend=False,
+                    plot_bgcolor='white',
+                    paper_bgcolor='white',
+                    margin=dict(t=40, b=40, l=40, r=40)
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_vente")
             else:
                 st.info("Les données de ventes ne contiennent pas de 'Total_Sale'.")
-        
         
         
         
