@@ -58,7 +58,6 @@ def agent_dashboard():
 
 
 
-
    
 
     # Menu dans la sidebar
@@ -90,6 +89,30 @@ def agent_dashboard():
         login_Logs()
     else:
         return
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 def login_Logs():
     """Affiche la page des logs avec les champs d'entrée."""
     col1, col2, col3 = st.columns([1, 1, 1])
@@ -188,6 +211,8 @@ def kpi_card_html(column, title, value_html, color, icon_name):
     """, unsafe_allow_html=True)
 
 
+
+
 # New helper function for agent info card
 def agent_info_card_html(column, title, content_html):
     """Generates HTML for a custom-styled agent info card."""
@@ -275,8 +300,8 @@ def display_recolt_graphs(df):
     avg_rating = df["Rating"].mean() # Assuming Rating is relevant for Recolt as well
 
     col1, col2, col3 = st.columns(3)
-    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f}€", "#28a745", "leaf") # Green for harvest
-    kpi_card_html(col2, "Moyenne/récolte", f"{avg_recolt:,.2f}€", "#17a2b8", "seedling")
+    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f} €", "#043a64", "leaf") # Green for harvest
+    kpi_card_html(col2, "Moyenne/récolte", f"{avg_recolt:,.2f} €", "#17a2b8", "seedling")
     kpi_card_html(col3, "Satisfaction", f"{avg_rating:.1f}/9", "#ffc107", "smile")
 
 
@@ -534,7 +559,7 @@ def afficher_donnees_recolts(conn, hyp_agent):
         st.subheader("Analyse des Récoltes")
 
         # Première ligne de graphiques
-        colg1, colg2 = st.columns(2)
+        colg1, colg2 ,colg3= st.columns(3)
 
         with colg1:
             # Graphique horizontal des récoltes par ville
@@ -604,77 +629,77 @@ def afficher_donnees_recolts(conn, hyp_agent):
                 showlegend=False
             )
             st.plotly_chart(fig2, use_container_width=True)
+            if 'Banques' in df_recolts.columns:
+                    df_banque = df_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
+                    df_banque = df_banque.sort_values('Total_Recolt', ascending=False)
+                    
+                    fig4 = px.bar(
+                        df_banque,
+                        x='Banques',
+                        y='Total_Recolt',
+                        text='Total_Recolt',
+                        title='🏦 Récoltes par Banque',
+                        color_discrete_sequence=['#007bad']
+                    )
+                    fig4.update_traces(
+                        texttemplate='<b>€%{text:.0f}</b>',
+                        textposition='outside',
+                        textfont_size=14
+                    )
+                    fig4.update_layout(
+                        height=400,
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='white',
+                        font=dict(family="Arial", size=14),
+                        xaxis_title='Banque',
+                        yaxis_title='Montant (€)',
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig4, use_container_width=True)
 
         # Deuxième ligne de graphiques - Évolution temporelle
-        st.markdown("---")
-        colg3, colg4 = st.columns(2)
+        
+        
 
-        with colg3:
+            with colg3:
             # Évolution des récoltes par date
-            try:
-                df_recolts['ORDER_DATE'] = pd.to_datetime(df_recolts['ORDER_DATE'])
-                df_date = df_recolts.groupby(df_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].sum().reset_index()
+                try:
+                    df_recolts['ORDER_DATE'] = pd.to_datetime(df_recolts['ORDER_DATE'])
+                    df_date = df_recolts.groupby(df_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].sum().reset_index()
+                    
+                    fig3 = px.line(
+                        df_date, 
+                        x='ORDER_DATE', 
+                        y='Total_Recolt',
+                        title='📈 Évolution des Récoltes',
+                        labels={'ORDER_DATE': 'Date', 'Total_Recolt': 'Montant (€)'}
+                    )
+                    fig3.update_traces(
+                        mode='lines+markers',
+                        line=dict(color='#28a745', width=3),
+                        marker=dict(size=8, color='#28a745'),
+                        text=df_date['Total_Recolt'].apply(lambda x: f'€{x:,.0f}'),
+                        textposition='top center'
+                    )
+                    fig3.update_layout(
+                        height=400,
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        paper_bgcolor='white',
+                        font=dict(family="Arial", size=14),
+                        showlegend=False
+                    )
+                    st.plotly_chart(fig3, use_container_width=True)
+                except Exception as e:
+                    st.warning(f"Impossible d'afficher l'évolution temporelle: {str(e)}")
+                st.markdown("---")
+                st.subheader("📋 Détail des Récoltes")
+                st.dataframe(df_recolts)
+           
+                # Récoltes par banque (si la colonne existe)
                 
-                fig3 = px.line(
-                    df_date, 
-                    x='ORDER_DATE', 
-                    y='Total_Recolt',
-                    title='📈 Évolution des Récoltes',
-                    labels={'ORDER_DATE': 'Date', 'Total_Recolt': 'Montant (€)'}
-                )
-                fig3.update_traces(
-                    mode='lines+markers',
-                    line=dict(color='#28a745', width=3),
-                    marker=dict(size=8, color='#28a745'),
-                    text=df_date['Total_Recolt'].apply(lambda x: f'€{x:,.0f}'),
-                    textposition='top center'
-                )
-                fig3.update_layout(
-                    height=400,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='white',
-                    font=dict(family="Arial", size=14),
-                    showlegend=False
-                )
-                st.plotly_chart(fig3, use_container_width=True)
-            except Exception as e:
-                st.warning(f"Impossible d'afficher l'évolution temporelle: {str(e)}")
-
-        with colg4:
-            # Récoltes par banque (si la colonne existe)
-            if 'Banques' in df_recolts.columns:
-                df_banque = df_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
-                df_banque = df_banque.sort_values('Total_Recolt', ascending=False)
                 
-                fig4 = px.bar(
-                    df_banque,
-                    x='Banques',
-                    y='Total_Recolt',
-                    text='Total_Recolt',
-                    title='🏦 Récoltes par Banque',
-                    color_discrete_sequence=['#007bad']
-                )
-                fig4.update_traces(
-                    texttemplate='<b>€%{text:.0f}</b>',
-                    textposition='outside',
-                    textfont_size=14
-                )
-                fig4.update_layout(
-                    height=400,
-                    plot_bgcolor='rgba(0,0,0,0)',
-                    paper_bgcolor='white',
-                    font=dict(family="Arial", size=14),
-                    xaxis_title='Banque',
-                    yaxis_title='Montant (€)',
-                    showlegend=False
-                )
-                st.plotly_chart(fig4, use_container_width=True)
-            else:
-                st.warning("La colonne 'Banques' n'est pas disponible dans les données")
 
-        st.markdown("---")
-        st.subheader("📋 Détail des Récoltes")
-        st.dataframe(df_recolts)
+        
 
     else:
         st.info("Aucune donnée de récolte trouvée pour cet agent.")

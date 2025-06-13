@@ -121,7 +121,7 @@ def display_recolt_graphs(df):
     avg_rating = df["Rating"].mean()
 
     col1, col2, col3 = st.columns(3)
-    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f}€", "#28a745", "leaf")  # Green for harvest
+    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f}€", "#043a64", "leaf")  # Green for harvest
     kpi_card_html(col2, "Moyenne/récolte", f"{avg_recolt:,.2f}€", "#17a2b8", "seedling")
     kpi_card_html(col3, "Satisfaction", f"{avg_rating:.1f}/9", "#ffc107", "smile")
 

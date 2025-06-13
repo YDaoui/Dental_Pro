@@ -30,7 +30,7 @@ def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date
 # Fonction principale
 def manager_dashboard():
     
-    add_custom_css()
+    #add_custom_css()
     """Tableau de bord principal."""
     # Chargement des données
     sales_df, recolts_df, staff_df, logs_df = load_data()
@@ -85,10 +85,10 @@ def manager_dashboard():
             icons=icons,
             default_index=0,
             styles={
-                "container": {"background-color": "#05135c"},
+                "container": {"background-color": "#043a64"},
                 "icon": {"color": "#00afe1", "font-size": "18px"},
                 "nav-link": {"color": "#ffffff", "font-size": "16px"},
-                "nav-link-selected": {"background-color": "#007bad"}
+                "nav-link-selected": {"background-color": "#fc9307"}
             }
         )
         

@@ -21,6 +21,7 @@ import io
 
 load_dotenv()
 
+
 def add_custom_css():
     st.markdown("""
         <style>
@@ -35,27 +36,27 @@ def add_custom_css():
                 width: 100%;
             }
             
-            /* General Body Background - BLANC PUR */
+            /* General Body Background */
             body {
-                background-color: #FFFFFF; /* Fond blanc pur */
-                color: #3D3B40; /* Primary Dark Blue for default text on light background */
+                background-color: #FFFFFF;
+                color: #043a64; /* bleu Foncé */
             }
             .stApp {
-                background-color: #FFFFFF; /* Streamlit app background */
+                background-color: #FFFFFF;
             }
 
             /* ==== General Titles ==== */
             h1 {
-                color: #3D3B40; /* Primary Dark Blue */
+                color: #043a64; /* bleu Foncé */
                 margin-bottom: 10px;
                 font-size: 3em;
                 text-align: center;
                 padding-bottom: 6px;
-                border-bottom: 3px solid #525CEB; /* Accent Blue/Purple */
+                border-bottom: 3px solid #2596be; /* Bleu */
                 font-weight: 900;
             }
             h2 {
-                color: #3D3B40; /* Primary Dark Blue */
+                color: #043a64; /* bleu Foncé */
                 margin-top: 8px;
                 margin-bottom: 25px;
                 font-size: 2em;
@@ -63,17 +64,17 @@ def add_custom_css():
                 font-weight: 800;
             }
             h3 {
-                color: #3D3B40; /* Primary Dark Blue */
+                color: #043a64; /* bleu Foncé */
                 margin-top: 35px;
                 margin-bottom: 20px;
-                border-bottom: 2px solid #525CEB; /* Accent Blue/Purple */
+                border-bottom: 2px solid #2596be; /* Bleu */
                 padding-bottom: 6px;
                 font-size: 1.6em;
                 font-weight: 700;
             }
             hr {
                 border: none;
-                border-top: 2px solid #525CEB; /* Accent Blue/Purple */
+                border-top: 2px solid #2596be; /* Bleu */
                 margin: 20px auto 25px auto;
                 width: 85%;
                 border-radius: 5px;
@@ -81,25 +82,25 @@ def add_custom_css():
 
             /* ==== Tabs ==== */
             .stTabs [data-baseweb="tab-list"] button {
-                background-color: #BFCFE7; /* Lighter Accent/Text for tab background */
+                background-color: #e0e8dc; /* back ground */
                 border-radius: 8px 8px 0 0;
                 padding: 10px 16px;
                 margin-right: 8px;
-                border: 1px solid #525CEB; /* Accent Blue/Purple */
+                border: 1px solid #2596be; /* Bleu */
                 border-bottom: none;
-                color: #3D3B40; /* Primary Dark Blue for text */
+                color: #043a64; /* bleu Foncé */
                 font-weight: bold;
                 font-size: 1em;
                 transition: all 0.2s ease-in-out;
             }
             .stTabs [data-baseweb="tab-list"] button:hover {
-                background-color: #525CEB; /* Accent Blue/Purple for hover */
-                color: #FFFFFF; /* Blanc pur pour le texte au survol (contre le bleu) */
+                background-color: #2596be; /* Bleu */
+                color: #FFFFFF;
             }
             .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-                background-color: #3D3B40; /* Primary Dark Blue for selected tab */
-                color: #BFCFE7; /* Lighter Accent/Text for text on selected tab */
-                border-color: #3D3B40; /* Primary Dark Blue */
+                background-color: #043a64; /* bleu Foncé */
+                color: #e0e8dc; /* back ground */
+                border-color: #043a64; /* bleu Foncé */
             }
             .stTabs {
                 margin-top: -10px;
@@ -108,16 +109,16 @@ def add_custom_css():
 
             /* ==== Metric Cards ==== */
             .metric-card {
-                background-color: #BFCFE7; /* Lighter Accent/Text for card background */
-                border: 1px solid #525CEB; /* Accent Blue/Purple */
-                border-left: 6px solid #3D3B40; /* Primary Dark Blue for prominent border */
+                background-color: #e0e8dc; /* back ground */
+                border: 1px solid #2596be; /* Bleu */
+                border-left: 6px solid #043a64; /* bleu Foncé */
                 border-radius: 10px;
                 padding: 12px;
                 margin-bottom: 12px;
                 box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
                 text-align: center;
                 transition: transform 0.2s ease, box-shadow 0.2s ease;
-                color: #3D3B40; /* Primary Dark Blue for text */
+                color: #043a64; /* bleu Foncé */
                 min-height: 80px;
             }
             .metric-card:hover {
@@ -125,7 +126,7 @@ def add_custom_css():
                 box-shadow: 3px 3px 14px rgba(0,0,0,0.5);
             }
             .metric-title {
-                color: #3D3B40; /* Primary Dark Blue */
+                color: #043a64; /* bleu Foncé */
                 font-size: 0.95em;
                 font-weight: 700;
                 margin-bottom: 6px;
@@ -133,123 +134,88 @@ def add_custom_css():
                 letter-spacing: 0.6px;
             }
             .metric-value {
-                color: #3D3B40; /* Primary Dark Blue */
+                color: #043a64; /* bleu Foncé */
                 font-size: 2em;
                 font-weight: 800;
                 line-height: 1;
             }
 
-            /* ==== UPDATED: Team Performance Cards (for Top 3 or all teams) ==== */
+            /* ==== Team Performance Cards ==== */
             .team-performance-card {
-                background-color: #BFCFE7; /* Consistent with metric-card background */
-                border: 1px solid #525CEB; /* Accent Blue/Purple */
-                border-left: 6px solid #3D3B40; /* Primary Dark Blue for prominent border, consistent */
+                background-color: #e0e8dc; /* back ground */
+                border: 1px solid #2596be; /* Bleu */
+                border-left: 6px solid #043a64; /* bleu Foncé */
                 border-radius: 10px;
-                padding: 15px; /* Slightly more padding for multiple stats */
-                margin-bottom: 12px; /* Consistent margin */
+                padding: 15px;
+                margin-bottom: 12px;
                 box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-                text-align: left; /* Align text to left for better readability of multiple stats */
+                text-align: left;
                 transition: transform 0.2s ease, box-shadow 0.2s ease;
-                color: #3D3B40; /* Primary Dark Blue for text */
+                color: #043a64; /* bleu Foncé */
             }
             .team-performance-card:hover {
-                transform: translateY(-4px); /* Hover effect consistent with metric-card */
+                transform: translateY(-4px);
                 box-shadow: 3px 3px 14px rgba(0,0,0,0.5);
             }
             .team-performance-title {
-                font-size: 1.4em; /* PLUS GRAND: Team name */
-                font-weight: 800; /* More bold */
-                color: #3D3B40; /* Primary Dark Blue */
+                font-size: 1.4em;
+                font-weight: 800;
+                color: #043a64; /* bleu Foncé */
                 margin-bottom: 8px;
             }
-            .team-stat-row {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-end; /* Align values at the bottom */
-                margin-bottom: 8px; /* Space between rows */
-            }
-            .team-stat-item {
-                display: flex;
-                flex-direction: column; /* Stack label and value */
-                text-align: center; /* Center align text within each item */
-                flex: 1; /* Distribute space evenly */
-                padding: 0 5px; /* Little padding */
-            }
-            .team-stat-item:first-child { text-align: left; } /* Align first item to left */
-            .team-stat-item:last-child { text-align: right; } /* Align last item to right */
-
             .team-stat-label {
-                font-size: 0.9em; /* Slightly larger label */
-                color: #555; /* Slightly lighter color for labels */
+                font-size: 0.9em;
+                color: #555;
                 margin-bottom: 3px;
                 font-weight: 600;
             }
             .team-stat-value {
-                font-size: 1.6em; /* PLUS GRAND: Value size for sales & transactions */
-                font-weight: 800; /* Bolder */
-                color: #3D3B40; /* Primary Dark Blue */
+                font-size: 1.6em;
+                font-weight: 800;
+                color: #043a64; /* bleu Foncé */
                 line-height: 1;
             }
             .team-conversion-value {
-                font-size: 1.8em; /* PLUS GRAND: Larger for conversion rate */
+                font-size: 1.8em;
                 font-weight: 900;
-                color: #28a745; /* Strong green for conversion */
+                color: #28a745;
             }
             .sms-rate-section {
                 display: flex;
-                justify-content: center; /* Center the combined SMS rates */
+                justify-content: center;
                 margin-top: 10px;
                 padding-top: 8px;
-                border-top: 1px dashed #525CEB; /* Separator for SMS rates */
+                border-top: 1px dashed #2596be; /* Bleu */
             }
-            /* Corrected styling for transaction percentages */
-            .sms-rate-combined {
-                font-size: 1.2em; /* Adjusted size for clarity */
-                font-weight: bolder; /* Made bolder */
-            }
-            .sms-rate-accepted {
-                color: green; /* Green for accepted part */
-            }
-            .sms-rate-refused {
-                color: red; /* Red for refused part */
-            }
-            .sms-rate-error {
-                color: black; /* Black for error part */
-            }
-
 
             /* ==== Selectbox ==== */
             .stSelectbox div[data-baseweb="select"] {
                 border-radius: 8px;
-                border: 2px solid #525CEB; /* Accent Blue/Purple */
+                border: 2px solid #2596be; /* Bleu */
                 padding: 6px;
                 box-shadow: inset 1px 1px 3px rgba(0,0,0,0.2);
             }
             .stSelectbox div[data-baseweb="select"] > div:first-child {
-                background-color: #BFCFE7; /* Lighter Accent/Text for selectbox background */
-                color: #3D3B40; /* Primary Dark Blue for text */
+                background-color: #e0e8dc; /* back ground */
+                color: #043a64; /* bleu Foncé */
                 font-weight: bold;
             }
-            .stSelectbox div[data-baseweb="popover"] div[role="listbox"] {
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            }
             .stSelectbox div[data-baseweb="menu"] {
-                background-color: #3D3B40; /* Primary Dark Blue for dropdown menu background */
+                background-color: #043a64; /* bleu Foncé */
             }
             .stSelectbox div[data-baseweb="menu"] li {
-                color: #FFFFFF; /* Blanc pur for menu items text */
+                color: #FFFFFF;
                 font-size: 1em;
             }
             .stSelectbox div[data-baseweb="menu"] li:hover {
-                background-color: #525CEB; /* Accent Blue/Purple for hover */
-                color: #FFFFFF; /* Blanc pur for text on hover */
+                background-color: #2596be; /* Bleu */
+                color: #FFFFFF;
             }
 
             /* ==== Button Styling ==== */
             .stButton button {
-                background-color: #BFCFE7; /* Lighter Accent/Text for button background */
-                color: #3D3B40; /* Primary Dark Blue for button text */
+                background-color: #e0e8dc; /* back ground */
+                color: #043a64; /* bleu Foncé */
                 border: none;
                 border-radius: 8px;
                 padding: 10px 24px;
@@ -261,125 +227,78 @@ def add_custom_css():
             }
 
             .stButton button:hover {
-                background-color: #525CEB; /* Accent Blue/Purple for hover */
-                color: #FFFFFF; /* Blanc pur pour le texte au survol */
+                background-color: #2596be; /* Bleu */
+                color: #FFFFFF;
                 box-shadow: 3px 3px 12px rgba(0,0,0,0.25);
             }
 
             .stButton button:active,
             .stButton button:focus:not(:active) {
-                background-color: #3D3B40; /* Primary Dark Blue for active/focus */
-                color: #BFCFE7; /* Lighter Accent/Text for text */
+                background-color: #043a64; /* bleu Foncé */
+                color: #e0e8dc; /* back ground */
                 box-shadow: inset 2px 2px 6px rgba(0,0,0,0.2);
             }
 
             /* ==== DataFrame ==== */
-            .stDataFrame {
-                border-radius: 10px;
-                overflow: hidden;
-                box-shadow: 2px 2px 8px rgba(0,0,0,0.2);
-            }
-            .stDataFrame table {
-                border-collapse: collapse;
-                width: 100%;
-            }
             .stDataFrame thead th {
-                background-color: #3D3B40; /* Primary Dark Blue for header */
-                color: #BFCFE7; /* Lighter Accent/Text for header text */
+                background-color: #043a64; /* bleu Foncé */
+                color: #e0e8dc; /* back ground */
                 padding: 12px;
                 text-align: left;
                 font-weight: bold;
             }
-            .stDataFrame tbody tr:nth-child(odd) {
-                background-color: #FFFFFF; /* Blanc pur pour les lignes impaires */
-            }
             .stDataFrame tbody tr:hover {
-                background-color: #525CEB; /* Accent Blue/Purple on hover */
-                color: #FFFFFF; /* Blanc pur pour le texte au survol */
+                background-color: #2596be; /* Bleu */
+                color: #FFFFFF;
             }
             .stDataFrame tbody td {
-                padding: 10px 12px;
-                border-bottom: 1px solid #525CEB; /* Accent Blue/Purple */
-                color: #3D3B40; /* Primary Dark Blue for text */
+                border-bottom: 1px solid #2596be; /* Bleu */
+                color: #043a64; /* bleu Foncé */
             }
 
             /* ==== Sidebar & Menu ==== */
             div[data-testid="stSidebar"] {
-                background-color: #BFCFE7 !important; /* Lighter Accent/Text for sidebar background */
-                color: #3D3B40 !important; /* Primary Dark Blue for sidebar text */
+                background-color: #e0e8dc !important; /* back ground */
+                color: #043a64 !important; /* bleu Foncé */
             }
-            .css-1cypcdb, .css-1lcbmhc { /* Streamlit menu/option container */
-                background-color: #BFCFE7 !important; /* Lighter Accent/Text */
-                border: none;
+            .css-1cypcdb, .css-1lcbmhc {
+                background-color: #e0e8dc !important; /* back ground */
             }
-            .css-1cypcdb button, .css-1lcbmhc button { /* Streamlit menu/option buttons */
-                color: #3D3B40 !important; /* Primary Dark Blue */
-                background-color: transparent !important;
-                font-weight: bold;
-                padding: 10px 16px;
-                margin-right: 8px;
-                border-radius: 6px;
-                transition: all 0.2s ease-in-out;
+            .css-1cypcdb button, .css-1lcbmhc button {
+                color: #043a64 !important; /* bleu Foncé */
             }
             .css-1cypcdb button:hover, .css-1lcbmhc button:hover {
-                background-color: #525CEB !important; /* Accent Blue/Purple */
-                color: #FFFFFF !important; /* Blanc pur - text */
+                background-color: #2596be !important; /* Bleu */
+                color: #FFFFFF !important;
             }
             .css-1cypcdb button[data-selected="true"], .css-1lcbmhc button[data-selected="true"] {
-                background-color: #3D3B40 !important; /* Primary Dark Blue - background */
-                color: #BFCFE7 !important; /* Lighter Accent/Text - text */
+                background-color: #043a64 !important; /* bleu Foncé */
+                color: #e0e8dc !important; /* back ground */
             }
 
-            /* ==== Date Input (Date Picker) ==== */
+            /* ==== Date Input ==== */
             .stDateInput div[data-baseweb="input"] {
-                background-color: #BFCFE7; /* Lighter Accent/Text */
-                color: #3D3B40; /* Primary Dark Blue for text */
-                border: 2px solid #525CEB; /* Accent Blue/Purple */
-                border-radius: 8px;
-                padding: 6px;
+                background-color: #e0e8dc; /* back ground */
+                color: #043a64; /* bleu Foncé */
+                border: 2px solid #2596be; /* Bleu */
             }
             .stDateInput div[data-baseweb="input"] input {
-                background-color: #BFCFE7; /* Lighter Accent/Text */
-                color: #3D3B40; /* Primary Dark Blue for input text */
-                font-weight: bold;
+                background-color: #e0e8dc; /* back ground */
+                color: #043a64; /* bleu Foncé */
             }
-            /* Calendar/Picker styling */
             .stDateInput div[data-baseweb="calendar"] {
-                background-color: #FFFFFF; /* Fond blanc pur pour le calendrier */
-                border: 1px solid #525CEB; /* Accent Blue/Purple border */
-                color: #3D3B40; /* Primary Dark Blue for calendar text */
-                border-radius: 8px;
+                border: 1px solid #2596be; /* Bleu */
+                color: #043a64; /* bleu Foncé */
             }
             .stDateInput div[data-baseweb="calendar"] .DayPicker_weekdays {
-                color: #525CEB; /* Accent Blue/Purple for weekday headers */
-            }
-            .stDateInput div[data-baseweb="calendar"] .DayPicker_day {
-                color: #3D3B40; /* Primary Dark Blue for days */
+                color: #2596be; /* Bleu */
             }
             .stDateInput div[data-baseweb="calendar"] .DayPicker_day--selected {
-                background-color: #3D3B40 !important; /* Primary Dark Blue for selected day */
-                color: #BFCFE7 !important; /* Lighter Accent/Text for selected day text */
+                background-color: #043a64 !important; /* bleu Foncé */
+                color: #e0e8dc !important; /* back ground */
             }
             .stDateInput div[data-baseweb="calendar"] .DayPicker_day--hovered {
-                background-color: #525CEB !important; /* Accent Blue/Purple for hovered day */
-                color: #FFFFFF !important; /* Blanc pur pour le texte au survol */
-            }
-            .stDateInput .flatpickr-calendar { /* Older Streamlit versions might use flatpickr */
-                background-color: #FFFFFF !important;
-                border: 1px solid #525CEB !important;
-            }
-            .stDateInput .flatpickr-day {
-                color: #3D3B40 !important;
-            }
-            .stDateInput .flatpickr-day.selected, .stDateInput .flatpickr-day.startRange, .stDateInput .flatpickr-day.endRange {
-                background-color: #3D3B40 !important;
-                color: #BFCFE7 !important;
-            }
-            .stDateInput .flatpickr-day.today:not(.selected) {
-                border-color: #525CEB !important;
-            }
-            .stDateInput .flatpickr-day.hover {
-                background-color: #525CEB !important;
+                background-color: #2596be !important; /* Bleu */
                 color: #FFFFFF !important;
             }
         </style>
@@ -656,13 +575,13 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
     with st.container(border=True):
         col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
         with col1:
-            country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()), key='recolts_country')
+            country_filter = st.selectbox("Pays", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()), key='recolts_country')
         with col2:
-            team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolts_team')
+            team_filter = st.selectbox("Equipes", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='recolts_team')
         with col3:
-            activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolts_activity')
+            activity_filter = st.selectbox("Activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='recolts_activity')
         with col4:
-            transaction_filter = st.selectbox("Type de transaction", ['Toutes'] + sorted(recolts_df['SHORT_MESSAGE'].dropna().unique()), key='recolts_transaction')
+            transaction_filter = st.selectbox("Transactions", ['Toutes'] + sorted(recolts_df['SHORT_MESSAGE'].dropna().unique()), key='recolts_transaction')
 
     with st.spinner("Application des filtres..."):
         filtered_recolts = filter_data(recolts_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
@@ -713,15 +632,15 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     else:
                          kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt") # Gris si pas de note
                 else:
-                    kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt")
+                    kpi_card_html(col2, "Note Moyenne", "N/A", "#fc9307", "star-half-alt")
 
             with col3:
                 total_transactions = len(filtered_recolts)
-                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#20c997", "exchange-alt") # Vert-bleu pour les transactions
+                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#043a64", "exchange-alt") # Vert-bleu pour les transactions
 
             with col4:
                 unique_employees = filtered_recolts['Hyp'].nunique() if 'Hyp' in filtered_recolts.columns else 0
-                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#6f42c1", "users") # Violet pour les employés
+                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#fc9307", "users") # Violet pour les employés
 
             # --- Carte et Top Équipes ---
             
@@ -843,28 +762,28 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 
                         for index, row in team_stats.iterrows():
                             st.markdown(f"""
-                                <div class="team-performance-card">
-                                    <div class="team-performance-title">{row['Team']}</div>
-                                    <div class="team-stat-row">
-                                        <div>
-                                            <div class="team-stat-label">Récoltes Totales:</div>
-                                            <div class="team-stat-value">{row['Total_Recolt']:,.0f}€</div>
+                                    <div class="team-performance-card" style="padding: 10px;">
+                                        <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
+                                        <div class="team-stat-row" style="display: flex; justify-content: space-between; align-items: center;">
+                                            <div style="flex: 1; text-align: left;">
+                                                <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">RÉCOLTES TOTALES:</div>
+                                                <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Recolt']:,.0f}€</div>
+                                            </div>
+                                            <div style="flex: 1; text-align: center;">
+                                                <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">TAUX CONVERSION:</div>
+                                                <div class="team-conversion-value" style="font-size: 38px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
+                                            </div>
+                                            <div style="flex: 1; text-align: right;">
+                                                <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">TRANSACTIONS:</div>
+                                                <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                            </div>
                                         </div>
-                                        <div style="text-align: center;">
-                                            <div class="team-stat-label">Taux Conversion:</div>
-                                            <div class="team-conversion-value">{row['Conversion_Rate']:.2f}%</div>
-                                        </div>
-                                        <div style="text-align: right;">
-                                            <div class="team-stat-label">Transactions:</div>
-                                            <div class="team-stat-value">{row['Total_Transactions']:,}</div>
+                                        <div class="team-rates" style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;">
+                                            <span class="accepted" style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                            <span class="refused" style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
+                                            <span class="error" style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
                                         </div>
                                     </div>
-                                    <div class="team-rates">
-                                        <span class="accepted">✓ {row['Acceptance_Rate']:.1f}%</span>
-                                        <span class="refused">✗ {row['Refusal_Rate']:.1f}%</span>
-                                        <span class="error">⚠ {row['Error_Rate']:.1f}%</span>
-                                    </div>
-                                </div>
                                 """.replace(",", " "), unsafe_allow_html=True)
                     else:
                         st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
@@ -1025,13 +944,13 @@ def logs_page(logs_df, staff_df, start_date, end_date):
     with st.container(border=True):
         col1, col2, col3, col4,col5, col6, col7, col8 = st.columns(8)
         with col1:
-            offre_filter = st.selectbox("Filtrer par Offre", ['Tous'] + sorted(logs_df['Offre'].dropna().unique().tolist()) if 'Offre' in logs_df.columns else ['Tous'], key='logs_offre_top')
+            offre_filter = st.selectbox("Offres", ['Tous'] + sorted(logs_df['Offre'].dropna().unique().tolist()) if 'Offre' in logs_df.columns else ['Tous'], key='logs_offre_top')
         with col2:
-            team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique().tolist()), key='logs_team')
+            team_filter = st.selectbox("Equipes", ['Toutes'] + sorted(staff_df['Team'].dropna().unique().tolist()), key='logs_team')
         with col3:
-            activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique().tolist()), key='logs_activity')
+            activity_filter = st.selectbox("Activités", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique().tolist()), key='logs_activity')
         with col4:
-            segment_filter = st.selectbox("Segment", ['Tous'] + sorted(logs_df['Segment'].dropna().unique().tolist()) if 'Segment' in logs_df.columns else ['Tous'], key='segment_filter')
+            segment_filter = st.selectbox("Segments", ['Tous'] + sorted(logs_df['Segment'].dropna().unique().tolist()) if 'Segment' in logs_df.columns else ['Tous'], key='segment_filter')
 
         
         with col5:
@@ -1130,7 +1049,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             kpi_card_html(col1, "Total Logs", f"{total_logs_count:,}", "#007bad", "clipboard-list")
 
         with col2:
-            kpi_card_html(col2, "Offres Uniques", f"{total_unique_offres_count:,}", "#28a745", "tag")
+            kpi_card_html(col2, "Offres Uniques", f"{total_unique_offres_count:,}", "#2596be", "tag")
 
         with col3:
             conversion_display = f"{conversion_rate:.1f}%" if isinstance(conversion_rate, (int, float)) else conversion_rate
@@ -1138,11 +1057,11 @@ def logs_page(logs_df, staff_df, start_date, end_date):
 
         with col4:
             bp_display = f"{bp_rate:.1f}%" if isinstance(bp_rate, (int, float)) else bp_rate
-            kpi_card_html(col4, "Taux Statut BP", bp_display, "#dc3545", "clipboard-check")
+            kpi_card_html(col4, "Taux Statut BP", bp_display, "#fc9307", "clipboard-check")
             
         with col5:
             days_display = f"{days} jours" if days != "N/A" else "N/A"
-            kpi_card_html(col5, "Période Couverte", days_display, "#6f42c1", "calendar-alt")
+            kpi_card_html(col5, "Période Couverte", days_display, "#043a64", "calendar-alt")
 
         #st.markdown("---")
         st.markdown("<h3 style='color: #007bad;'>Analyse des Logs</h3>", unsafe_allow_html=True)
@@ -1277,12 +1196,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                 <span style="color: #ff7f0e; font-weight: bold;">● Suivi FOP</span> | 
                                 <span style="color: #2ca02c; font-weight: bold;">● Demande</span> | 
                                 <span style="color: #d62728; font-weight: bold;">● Transfert</span> | 
+                            </p>
+                            <p>
                                 <span style="color: #FFD700; font-weight: bold;">■ InComming</span> | 
                                 <span style="color: #8A2BE2; font-weight: bold;">■ OutComming</span>
                             </p>
-                            <p style="font-size: 16px; color: #777;">
-                                Les courbes représentent les qualifications (échelle de gauche), les barres représentent les directions (échelle de droite)
-                            </p>
+                            
                         </div>
                         """, unsafe_allow_html=True)
                     else:
@@ -1486,7 +1405,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
 
         display_df = filtered_logs.sort_values('Date_d_création', ascending=False).copy()
 
-        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key', 'Month_Year_Str', 'Month_Year_Dt', 'ORDER_DATE']
+        columns_to_drop = ['Id_Log', 'Day_of_Week', 'Month_Year', 'Sort_Key', 'Month_Year_Str', 'Month_Year_Dt', 'ORDER_DATE','BP_Logs']
         display_df = display_df.drop(columns=[col for col in columns_to_drop if col in display_df.columns], errors='ignore')
 
         column_configs = {
@@ -1510,7 +1429,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             display_df,
             column_config=existing_columns_configs,
             hide_index=True,
-            use_container_width=True,
+            use_container_width=False,
             height=400,
         )
         
@@ -1565,13 +1484,13 @@ def sales_page(sales_df, staff_df, start_date, end_date):
     with st.container(border=True):
         col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
         with col1:
-            country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()), key='sales_country')
+            country_filter = st.selectbox("Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()), key='sales_country')
         with col2:
-            team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='sales_team')
+            team_filter = st.selectbox("Equipes", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='sales_team')
         with col3:
-            activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='sales_activity')
+            activity_filter = st.selectbox("Activités", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='sales_activity')
         with col4:
-            transaction_filter = st.selectbox("Type de transaction", ['Toutes'] + sorted(sales_df['SHORT_MESSAGE'].dropna().unique()), key='sales_transaction')
+            transaction_filter = st.selectbox("Transactions", ['Toutes'] + sorted(sales_df['SHORT_MESSAGE'].dropna().unique()), key='sales_transaction')
 
         filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
 
@@ -1582,21 +1501,21 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            kpi_card_html(col1, "Total Sales", f"{filtered_sales['Total_Sale'].sum():,.0f}€", "#007bad", "chart-line")
+            kpi_card_html(col1, "Total Sales", f"{filtered_sales['Total_Sale'].sum():,.0f}€", "#043a64", "chart-line")
 
         with col2:
-            kpi_card_html(col2, "Average Sale", f"{filtered_sales['Total_Sale'].mean():,.2f}€", "#007bad", "money-bill-wave")
+            kpi_card_html(col2, "Average Sale", f"{filtered_sales['Total_Sale'].mean():,.2f}€", "#fcce22", "money-bill-wave")
 
         with col3:
             if 'Rating' in filtered_sales.columns:
                 avg_rating = filtered_sales['Rating'].mean()
                 rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
-                kpi_card_html(col3, "Average Rating", rating_display, "#007bad", "star")
+                kpi_card_html(col3, "Average Rating", rating_display, "#fc9307", "smile")
             else:
-                kpi_card_html(col3, "Average Rating", "N/A", "#6c757d", "star-half-alt")
+                kpi_card_html(col3, "Average Rating", "N/A", "#fcce22", "star-half-alt")
 
         with col4:
-            kpi_card_html(col4, "Transactions", f"{len(filtered_sales):,}", "#007bad", "exchange-alt")
+            kpi_card_html(col4, "Transactions", f"{len(filtered_sales):,}", "#102831", "exchange-alt")
 
         # The rest of your sales_page function remains the same
         # ... (map, team performance, daily sales, transaction status, hourly sales)
@@ -1760,25 +1679,29 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                         # Affichage des cartes de performance d'équipe
                         for index, row in team_stats.iterrows():
                             st.markdown(f"""
-                                        <div class="team-performance-card" style="padding: 10px;">  <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
-                                            <div class="team-stat-row" style="gap: 10px;">  <div>
-                                                    <div class="team-stat-label" style="font-weight: bold;">Ventes Totales:</div>
-                                                    <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Sale']:,.0f}€</div>
-                                                </div>
-                                                <div style="text-align: center;">
-                                                    <div class="team-stat-label" style="font-weight: bold;">Taux Conversion:</div>
-                                                    <div class="team-conversion-value" style="font-size: 30px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
-                                                </div>
-                                                <div style="text-align: right;">
-                                                    <div class="team-stat-label" style="font-weight: bold;">Transactions:</div> <div class="team-stat-value" style="font-size: 30px; font-weight: bold;">{row['Total_Transactions']:,}</div>
-                                                </div>
-                                            </div>
-                                            <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;"> <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
-                                                <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
-                                                <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
-                                            </div>
+                                <div class="team-performance-card" style="padding: 10px;">
+                                    <div class="team-performance-title" style="font-size: 30px; font-weight: bold;">{row['Team']}</div>
+                                    <div class="team-stat-row" style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div style="flex: 1; text-align: left;">
+                                            <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">VENTES TOTALES:</div>
+                                            <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Sale']:,.0f}€</div>
                                         </div>
-                                        """.replace(",", " "), unsafe_allow_html=True)
+                                        <div style="flex: 1; text-align: center;">
+                                            <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">TAUX CONVERSION:</div>
+                                            <div class="team-conversion-value" style="font-size: 38px; font-weight: bold;">{row['Conversion_Rate']:.2f}%</div>
+                                        </div>
+                                        <div style="flex: 1; text-align: right;">
+                                            <div class="team-stat-label" style="font-weight: bold; color: #fc6c04;">TRANSACTIONS:</div>
+                                            <div class="team-stat-value" style="font-size: 38px; font-weight: bold;">{row['Total_Transactions']:,}</div>
+                                        </div>
+                                    </div>
+                                    <div style="display: flex; justify-content: right; margin-top: 5px; gap: 10px; font-size: 20px; font-weight: bold;">
+                                        <span style="color: green;">✓ {row['Acceptance_Rate']:.1f}%</span>
+                                        <span style="color: red;">✗ {row['Refusal_Rate']:.1f}%</span>
+                                        <span style="color: orange;">⚠ {row['Error_Rate']:.1f}%</span>
+                                    </div>
+                                </div>
+                            """.replace(",", " "), unsafe_allow_html=True)
                     else:
                         st.info("Aucune statistique d'équipe à afficher pour la sélection actuelle.")
                 else:
@@ -2012,7 +1935,17 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         </style>
         """, unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["🧾 Logs Analytics","📈 Sales Analytics", "💰 Recolts Analytics"])
+    st.markdown("""
+    <style>
+        .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
+            font-weight: bold;
+            color: #0a7fac;
+            font-size: 1.9em
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+    tab1, tab2, tab3 = st.tabs(["Logs Analytics", "Sales Analytics", "Recolts Analytics"])
 
 
     
@@ -2039,7 +1972,7 @@ def planning_page(sales_df, staff_df):
         st.warning("Aucune donnée de vente disponible.")
         return
     
-    selected_country = st.selectbox("Sélectionner un pays", sorted(sales_df['Country'].dropna().unique()), key='country_filter')
+    selected_country = st.selectbox("Pays", sorted(sales_df['Country'].dropna().unique()), key='country_filter')
     filtered_sales = sales_df[sales_df['Country'] == selected_country]
 
     col1, col2 = st.columns(2)

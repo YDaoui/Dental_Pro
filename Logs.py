@@ -143,8 +143,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             incomming_percent = (incomming_count / total_logs) * 100
             outcomming_percent = (outcomming_count / total_logs) * 100
 
-        combined_quality_direction_value = f"<span style='color:blue;'>In: {incomming_percent:.2f}%</span> / " \
-                                         f"<span style='color:blue;'>Out: {outcomming_percent:.2f}%</span>"
+        combined_quality_direction_value = f"<span style='color:white;'>In: {incomming_percent:.2f}%</span> / " \
+                                         f"<span style='color:white;'>Out: {outcomming_percent:.2f}%</span>"
 
         def kpi_card_html(column, title, value_html, color, icon_name):
             column.markdown(f"""
@@ -170,10 +170,10 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 </div>
             """, unsafe_allow_html=True)
 
-        kpi_card_html(col1_kpi, "Total Logs", f"{total_logs:,}", "#1a535c", "file-alt")
-        kpi_card_html(col2_kpi, "Clients Uniques", f"{unique_clients:,}", "#4ecdc4", "users")
+        kpi_card_html(col1_kpi, "Total Logs", f"{total_logs:,}", "#043a64", "file-alt")
+        kpi_card_html(col2_kpi, "Clients Uniques", f"{unique_clients:,}", "#2596be", "users")
         kpi_card_html(col3_kpi, "Moyenne Logs/Client", f"{avg_logs_per_client:.2f}", "#fcd25b", "chart-line")
-        kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#ff6b6b", "exchange-alt")
+        kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#fc9307", "exchange-alt")
 
        
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
@@ -435,7 +435,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             else:
                 st.info("La colonne 'Canal' est manquante.")
 
-        """ with col3_b:
+        with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
             if 'Sous_motif' in filtered_logs.columns:
                 sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
@@ -483,7 +483,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     st.info("Impossible d'afficher le graphique des sous-motifs.")
             else:
                 st.info("La colonne 'Sous_motif' est manquante.")
-                """
+            
 
         with col3_b:
             st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
