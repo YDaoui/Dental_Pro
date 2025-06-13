@@ -43,7 +43,7 @@ def manager_dashboard():
     with st.sidebar:
         st.image('Dental_Implant.png', width=350)
         st.markdown(
-        f"<h2 style='color: #007bad;text-align: left;'>Bienvenu : {st.session_state.get('username', 'Agent')}</h2>",
+        f"<h2 style='color: #007bad;text-align: left;'>Créer par: {st.session_state.get('username', 'Agent')}</h2>",
         unsafe_allow_html=True
     )
         st.markdown("<h2 style='font-size: 16px; color: #0E2148;'>Filtres de Dates</h2>", unsafe_allow_html=True)
