@@ -1264,12 +1264,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         values=billing_mode_counts['Count'],
                         hole=.4,
                         pull=[0.05 if i == billing_mode_counts['Count'].argmax() else 0 for i in range(len(billing_mode_counts))],
-                        marker_colors=px.colors.qualitative.Set3,
+                        marker_colors=["#043a64", "#fc9307", "#ffc107"],  # Nouvelles couleurs ici
                         textinfo='percent+label',
-                        texttemplate='%{label}<br>%{percent}<br>%{customdata:,.0f}€',
+                        texttemplate='%{label}<br>%{percent}<br>%{customdata:,.0f} €',
                         customdata=[montants.get(mode, 0) for mode in billing_mode_counts['Mode_facturation']],
-                        insidetextfont=dict(size=16, color='Black', family='Arial', weight='bold'),
-                        outsidetextfont=dict(size=16, color='black', family='Arial', weight='bold'),
+                        insidetextfont=dict(size=16, color='White', family='Arial', weight='bold'),
+                        outsidetextfont=dict(size=16, color='White', family='Arial', weight='bold'),
                         hovertemplate='Mode: %{label}<br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
                     )])
 
@@ -1531,7 +1531,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         col1, col2, col3, col4 = st.columns(4)
 
         with col1:
-            kpi_card_html(col1, "Total Sales", f"{filtered_sales['Total_Sale'].sum():,.0f}€", "#043a64", "chart-line")
+            kpi_card_html(col1, "Total Sales", f"{filtered_sales['Total_Sale'].sum():,.0f} €", "#043a64", "chart-line")
 
         with col2:
             kpi_card_html(col2, "Average Sale", f"{filtered_sales['Total_Sale'].mean():,.2f}€", "#fcce22", "money-bill-wave")
@@ -2160,9 +2160,7 @@ def add_agent_to_db(agent_data):
     finally:
         conn.close()
 
-
 def setting_page():
-    
     col1, col2 = st.columns([2, 2])
 
     with col1:
@@ -2177,13 +2175,12 @@ def setting_page():
             unsafe_allow_html=True
         )
 
- 
     with st.container():
         st.markdown("---")
         st.subheader("Rechercher un utilisateur existant")
         hyp_input = st.text_input("**Entrez l'ID (Hyp) de l'utilisateur**", 
-                                  placeholder="Saisir l'identifiant Hyp...",
-                                  help="Rechercher un utilisateur par son identifiant unique")
+                                placeholder="Saisir l'identifiant Hyp...",
+                                help="Rechercher un utilisateur par son identifiant unique")
     
     if hyp_input:
         user_details = get_user_details(hyp_input) 
@@ -2256,8 +2253,8 @@ def setting_page():
                     
                     if reset_pwd:
                         if st.button("**Confirmer la réinitialisation**", 
-                                     type="primary",
-                                     help="Réinitialise le mot de passe à l'identifiant Hyp par défaut"):
+                                    type="primary",
+                                    help="Réinitialise le mot de passe à l'identifiant Hyp par défaut"):
                             if reset_password(hyp_input):
                                 st.success(f"Mot de passe réinitialisé avec succès à la valeur: `{hyp_input}`")
                             else:
@@ -2267,10 +2264,9 @@ def setting_page():
             
         else:
             st.warning("⚠️ Aucun utilisateur trouvé avec cet ID (Hyp)")
-            
     st.markdown("---")
     st.subheader("Options de gestion")
-    
+
     selected_option = st.selectbox(
         "Sélectionnez une action :",
         ["-- Choisir une option --", "Ajouter un Agent", "Injecter des logs", "Injecter des sales", "Injecter des récoltes"]
@@ -2278,71 +2274,87 @@ def setting_page():
 
     if selected_option == "Ajouter un Agent":
         st.markdown("---")
+        
         st.subheader("Ajouter un nouvel Agent")
-
+        
         next_id = get_last_agent_id() + 1
         st.info(f"Le prochain ID d'Agent sera automatiquement attribué : **{next_id}**")
 
-      
         teams = ["-- Sélectionner --"] + get_unique_values("Team")
         activites = ["-- Sélectionner --"] + get_unique_values("Activité")
         types = ["-- Sélectionner --"] + get_unique_values("Type")
         departements = ["-- Sélectionner --"] + get_unique_values("Departement")
 
-        with st.form("add_agent_form"):
-            col_form1, col_form2 = st.columns(2)
-            with col_form1:
-                hyp = st.text_input("ID (Hyp)", placeholder="Ex: HYP001", help="Identifiant unique de l'agent (Hyp)", key="agent_hyp")
-                id_agtsda = st.text_input("ID_AGTSDA", placeholder="Ex: AGT123", help="Identifiant AGTSDA de l'agent", key="agent_id_agtsda")
-                nom = st.text_input("NOM", placeholder="Ex: DUPONT", help="Nom de l'agent", key="agent_nom")
-                
-                
-                team = st.selectbox("Team", options=teams, help="Équipe de l'agent", key="agent_team_select")
-                activite = st.selectbox("Activité", options=activites, help="Activité principale de l'agent", key="agent_activite_select")
+        col_form1, col_form2 = st.columns(2)
+        with col_form1:
+            hyp = st.text_input("ID (Hyp)", placeholder="Ex: HYP001", help="Identifiant unique de l'agent (Hyp)", key="agent_hyp")
+            id_agtsda = st.text_input("ID_AGTSDA", placeholder="Ex: AGT123", help="Identifiant AGTSDA de l'agent", key="agent_id_agtsda")
+            nom = st.text_input("NOM", placeholder="Ex: DUPONT", help="Nom de l'agent", key="agent_nom")
+            team = st.selectbox("Team", options=teams, help="Équipe de l'agent", key="agent_team_select")
+            activite = st.selectbox("Activité", options=activites, help="Activité principale de l'agent", key="agent_activite_select")
 
-            with col_form2:
-                username = st.text_input("UserName", placeholder="Ex: jean.dupont", help="Nom d'utilisateur pour la connexion", key="agent_username")
-                prenom = st.text_input("PRENOM", placeholder="Ex: Jean", help="Prénom de l'agent", key="agent_prenom")
-                type_agent = st.selectbox("Type", options=types, help="Type de contrat ou statut de l'agent", key="agent_type_select")
-                departement = st.selectbox("Département", options=departements, help="Département de l'agent", key="agent_departement_select")
-                date_in = st.date_input("Date d'entrée", help="Date d'entrée de l'agent", value=datetime.now().date(), key="agent_date_in")
+        with col_form2:
+            username = st.text_input("UserName", placeholder="Ex: jean.dupont", help="Nom d'utilisateur pour la connexion", key="agent_username")
+            prenom = st.text_input("PRENOM", placeholder="Ex: Jean", help="Prénom de l'agent", key="agent_prenom")
+            type_agent = st.selectbox("Type", options=types, help="Type de contrat ou statut de l'agent", key="agent_type_select")
+            departement = st.selectbox("Département", options=departements, help="Département de l'agent", key="agent_departement_select")
+            date_in = st.date_input("Date d'entrée", help="Date d'entrée de l'agent", value=datetime.now().date(), key="agent_date_in")
+        
+     
+        
+        # Style CSS pour les boutons
+        st.markdown("""
+            <style>
+                div.stButton > button:first-child {
+                    width: 100%;
+                    background-color: #fcce22;
+                    color: #333;
+                    border-radius: 5px;
+                    border: none;
+                    padding: 10px;
+                    font-size: 1.1em;
+                    font-weight: bold;
+                }
+                div.stButton > button:first-child:hover {
+                    background-color: #e6b800;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+
+        col_buttons = st.columns(2)
             
-            st.markdown("---")
-            col_buttons = st.columns(2)
-            with col_buttons[0]:
-                submitted = st.form_submit_button("**Enregistrer**", type="primary")
-            with col_buttons[1]:
-                cancelled = st.form_submit_button("**Annuler**")
+        with col_buttons[0]:
+            submitted = st.button("**Enregistrer**")
+        with col_buttons[1]:
+            cancelled = st.button("**Annuler**")
 
-            if submitted:
-                
-                
-                if any(val == "-- Sélectionner --" for val in [team, type_agent, activite, departement]):
-                    st.error("Veuillez sélectionner une option valide pour les champs Team, Type, Activité et Département.")
-                elif not all([hyp, id_agtsda, username, nom, prenom, date_in]):
-                    st.error("Veuillez remplir tous les champs obligatoires (texte).")
+        if submitted:
+            if any(val == "-- Sélectionner --" for val in [team, type_agent, activite, departement]):
+                st.error("Veuillez sélectionner une option valide pour les champs Team, Type, Activité et Département.")
+            elif not all([hyp, id_agtsda, username, nom, prenom, date_in]):
+                st.error("Veuillez remplir tous les champs obligatoires (texte).")
+            else:
+                agent_data = {
+                    "Id_Effectif": next_id,
+                    "Hyp": hyp,
+                    "ID_AGTSDA": id_agtsda,
+                    "UserName": username,
+                    "NOM": nom,
+                    "PRENOM": prenom,
+                    "Team": team,
+                    "Type": type_agent,
+                    "Activité": activite,
+                    "Departement": departement,
+                    "Date_In": date_in.strftime('%Y-%m-%d')
+                }
+                if add_agent_to_db(agent_data):
+                    st.success(f"L'agent **{nom} {prenom}** a été ajouté avec succès avec l'ID **{next_id}** !")
+                    st.experimental_rerun()
                 else:
-                    agent_data = {
-                        "Id_Effectif": next_id,
-                        "Hyp": hyp,
-                        "ID_AGTSDA": id_agtsda,
-                        "UserName": username,
-                        "NOM": nom,
-                        "PRENOM": prenom,
-                        "Team": team,
-                        "Type": type_agent,
-                        "Activité": activite,
-                        "Departement": departement,
-                        "Date_In": date_in.strftime('%Y-%m-%d')
-                    }
-                    if add_agent_to_db(agent_data):
-                        st.success(f"L'agent **{nom} {prenom}** a été ajouté avec succès avec l'ID **{next_id}** !")
-                        st.experimental_rerun()
-                    else:
-                        st.error("Une erreur est survenue lors de l'ajout de l'agent.")
-            elif cancelled:
-                st.info("Ajout de l'agent annulé.")
-                
+                    st.error("Une erreur est survenue lors de l'ajout de l'agent.")
+        elif cancelled:
+            st.info("Ajout de l'agent annulé.")
+            
 
     elif selected_option == "Injecter des logs":
         st.markdown("---")
@@ -2358,8 +2370,6 @@ def setting_page():
         st.markdown("---")
         st.subheader("Injecter des données de Récoltes")
         st.info("Cette section est dédiée à l'injection de données de récoltes. Développez l'interface ici.")
-
-
 def get_unique_values(column_name):
     """
     Récupère toutes les valeurs uniques et non-NULL d'une colonne donnée de la table Effectifs,

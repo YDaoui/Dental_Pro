@@ -232,7 +232,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         <i class="fas fa-{icon_name}" style="font-size: 40px;"></i>
                     </div>
                     <h3 style="color: white; margin: 0 0 10px 0; font-size: 24px; font-weight: 600;">{title}</h3>
-                    <p style="font-size: 40px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
+                    <p style="font-size: 28px; color: white; font-weight: 700; margin: 0;">{value_html}</p>
                 </div>
             """, unsafe_allow_html=True)
 

@@ -22,7 +22,7 @@ def login_page():
                     <style>
                         div.stButton > button {
                             width: 100%;
-                            background-color: #fcce22;
+                            background-color: #fc9307;
                             color: white;
                             border-radius: 5px;
                             border: none;
