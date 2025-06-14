@@ -21,7 +21,6 @@ import io
 
 load_dotenv()
 
-
 def add_custom_css():
     st.markdown("""
         <style>
@@ -258,8 +257,7 @@ def add_custom_css():
 
             /* ==== Sidebar & Menu ==== */
             div[data-testid="stSidebar"] {
-                background-color: #e0e8dc !important; /* back ground */
-                color: #043a64 !important; /* bleu Foncé */
+                background-color: #FFFFFF !important; /* Set sidebar background to white */
             }
             .css-1cypcdb, .css-1lcbmhc {
                 background-color: #e0e8dc !important; /* back ground */
@@ -409,7 +407,39 @@ def login_page():
 
         col1, col2 = st.columns([1, 5])
         with col1:
+            st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                            background-color: #fcce22;
+                            color: white;
+                            border-radius: 5px;
+                            border: none;
+                            padding: 10px;
+                            font-size: 1.1em;
+                        }
+                        div.stButton > button:hover {
+                            background-color: #fcce22;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
             if st.button("**Se connecter**", key="login_button"):
+                st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                            background-color: #fcce22;
+                            color: white;
+                            border-radius: 5px;
+                            border: none;
+                            padding: 10px;
+                            font-size: 1.1em;
+                        }
+                        div.stButton > button:hover {
+                            background-color: #fcce22;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
                 user_data = authenticate(username, password)
                 if user_data:
                     st.session_state.update({
@@ -1856,8 +1886,8 @@ def sales_page(sales_df, staff_df, start_date, end_date):
 
 
 def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date):
-    """Affiche le tableau de bord principal."""
     
+    add_custom_css()
 
     col1, col2 = st.columns([2, 2])
 
@@ -1871,12 +1901,11 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         start_formatted = f"{start_date.day:02d} {mois_fr[start_date.month]} {start_date.year}"
         end_formatted = f"{end_date.day:02d} {mois_fr[end_date.month]} {end_date.year}"
 
-        # Calcul de la durée
+        
         duration = end_date - start_date
         total_days = duration.days
 
-        # Calcul des mois et jours
-        # Une estimation simple des mois (30 jours par mois)
+        
         months = total_days // 30
         remaining_days = total_days % 30
 
@@ -1904,43 +1933,59 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
             "Analyse Commerciale - Sales - Recolts - Logs</h1>",
             unsafe_allow_html=True
         )
-    # Custom CSS for tabs
+    
     st.markdown("""
-        <style>
-        .stTabs [data-baseweb="tab-list"] button {
-            background-color: #f0f2f6; /* Lighter background for tabs */
-            border-radius: 5px 5px 0 0; /* Rounded top corners */
-            padding: 10px 15px; /* Adjust padding to reduce vertical space */
-            margin-right: 5px; /* Space between tabs */
-            border: 1px solid #ddd; /* Light border */
-            border-bottom: none; /* No border at the bottom to blend with content */
-            color: #002a48; /* Darker text color */
-            font-weight: bold; /* Make tab titles bold */
-            transition: all 0.2s ease-in-out; /* Smooth transition on hover/active */
-        }
-        .stTabs [data-baseweb="tab-list"] button:hover {
-            background-color: #e6e8eb; /* Slightly darker on hover */
-        }
-        .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
-            background-color: #00afe1; /* Active tab color */
-            color: white; /* White text for active tab */
-            border-color: #00afe1; /* Active tab border color */
-            border-bottom: none; /* Ensure no bottom border */
-        }
-        /* Reduce vertical space for the overall tab container */
-        .stTabs {
-            margin-top: -10px; /* Adjust as needed to pull tabs up */
-            margin-bottom: 15px; /* Space below tabs */
-        }
-        </style>
-        """, unsafe_allow_html=True)
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Set sidebar background to white */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
     st.markdown("""
     <style>
         .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
             font-weight: bold;
-            color: #0a7fac;
-            font-size: 1.9em
+            color: #00afe1;
+            font-size: 1.5em
         }
     </style>
     """, unsafe_allow_html=True)

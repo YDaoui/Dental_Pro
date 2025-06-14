@@ -18,6 +18,23 @@ st.set_page_config(
 
 def login_page():
     add_custom_css()
+    st.markdown("""
+                    <style>
+                        div.stButton > button {
+                            width: 100%;
+                            background-color: #fcce22;
+                            color: white;
+                            border-radius: 5px;
+                            border: none;
+                            padding: 10px;
+                            font-size: 1.1em;
+                        }
+                        div.stButton > button:hover {
+                            background-color: #fcce22;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
+    
     col1, col2, col3, col4 = st.columns([1,0.8,2,1])
     with col2:
         st.image('Dental_Implant.png', width=340)
@@ -28,6 +45,7 @@ def login_page():
 
         col1, col2 = st.columns([1,1])
         with col1:
+            
             if st.button("**Se connecter**", key="login_button", use_container_width=True):
                 user_data = authenticate(username, password)
                 if user_data:

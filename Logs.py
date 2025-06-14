@@ -4,8 +4,74 @@ import plotly.express as px
 from datetime import datetime
 import numpy as np
 
+# Définition de la palette de couleurs harmonisée (identique à recolts_page1)
+COLOR_PALETTE = {
+    "primary": "#0a7fac",
+    "secondary": "#043a64",
+    "accent1": "#ffc107",
+    "accent2": "#fc9307",
+    "success": "#4CAF50",
+    "light_bg": "#f0fff0"
+}
+
 def logs_page1(logs_df, staff_df, start_date, end_date):
-    # Ensure logs_df and staff_df are not modified outside this function
+
+
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
     logs_df_copy = logs_df.copy()
     staff_df_copy = staff_df.copy()
 
@@ -143,8 +209,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             incomming_percent = (incomming_count / total_logs) * 100
             outcomming_percent = (outcomming_count / total_logs) * 100
 
-        combined_quality_direction_value = f"<span style='color:white;'>In: {incomming_percent:.2f}%</span> / " \
-                                         f"<span style='color:white;'>Out: {outcomming_percent:.2f}%</span>"
+        combined_quality_direction_value = f"<span style='color:Green;'>In: {incomming_percent:.2f}%</span> / " \
+                                         f"<span style='color:Red;'>Out: {outcomming_percent:.2f}%</span>"
 
         def kpi_card_html(column, title, value_html, color, icon_name):
             column.markdown(f"""
@@ -175,18 +241,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         kpi_card_html(col3_kpi, "Moyenne Logs/Client", f"{avg_logs_per_client:.2f}", "#fcd25b", "chart-line")
         kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#fc9307", "exchange-alt")
 
-       
-        st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
-
-        # Common layout configuration - Potential source of error
-        # Ensure all keys and values are valid for plotly.graph_objs.Layout
+        # Common layout configuration with new color scheme
         common_layout = dict(
             plot_bgcolor='white',
             paper_bgcolor='white',
             hovermode='x unified',
             xaxis=dict(
-                title="", # Title can be an empty string, not None
-                tickfont=dict(size=14, family='Arial', color='black'),
+                title="",
+                tickfont=dict(size=14, family='Arial', color='#3D3B40'),
                 titlefont=dict(size=16),
                 showgrid=True,
                 gridcolor='#e0e0e0',
@@ -194,8 +256,8 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linewidth=1
             ),
             yaxis=dict(
-                title="", # Title can be an empty string, not None
-                tickfont=dict(size=14, family='Arial', color='black'),
+                title="",
+                tickfont=dict(size=14, family='Arial', color='#3D3B40'),
                 titlefont=dict(size=16),
                 showgrid=True,
                 gridcolor='#e0e0e0',
@@ -203,19 +265,19 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 linewidth=1
             ),
             uniformtext=dict(
-                minsize=14, # minsize should be int
-                mode='hide' # mode should be 'hide' or 'overlay'
+                minsize=14,
+                mode='hide'
             ),
-            font=dict(size=14, color='#333', family='Arial'),
-            # Adding margin might help with text clipping, adjust as needed
-            margin=dict(l=40, r=40, t=40, b=40) 
+            font=dict(size=14, color='#3D3B40', family='Arial'),
+            margin=dict(l=40, r=40, t=40, b=40)
         )
 
         # First row of charts
+        st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Analyses Principales</h2>", unsafe_allow_html=True)
         col1_g, col2_g, col3_g = st.columns(3)
 
         with col1_g:
-            st.markdown("<h3 style='color: #007bad;'>Volume de Logs par Mois</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Logs par Mois</h3>", unsafe_allow_html=True)
             if 'Date_d_création' in filtered_logs.columns:
                 logs_per_period = filtered_logs.copy()
                 logs_per_period['Mois'] = logs_per_period['Date_d_création'].dt.to_period('M')
@@ -229,42 +291,32 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     .replace('December', 'Décembre'))
 
                 fig_month = px.line(monthly_data, x='Mois_Nom', y='Count',
-                                    color_discrete_sequence=['#4ecdc4'],
+                                    color_discrete_sequence=[COLOR_PALETTE["primary"]],
                                     markers=True,
                                     line_shape='spline',
                                     text='Count')
                 fig_month.update_traces(
                     mode='lines+markers+text',
-                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
+                    marker=dict(size=10, color=COLOR_PALETTE["accent1"], line=dict(width=1, color='#FFFFFF')),
                     hovertemplate='<b>Mois:</b> %{x}<br><b>Logs:</b> %{y:,}<extra></extra>',
                     textposition="top center",
-                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                    textfont=dict(size=14, color=COLOR_PALETTE["secondary"], family='Arial', weight='bold'),
                     fill='tozeroy',
-                    fillcolor='rgba(78, 205, 196, 0.2)'
+                    fillcolor=f'rgba({int(COLOR_PALETTE["primary"][1:3], 16)}, {int(COLOR_PALETTE["primary"][3:5], 16)}, {int(COLOR_PALETTE["primary"][5:7], 16)}, 0.2)'
                 )
                 try:
-                    # Apply common layout
                     fig_month.update_layout(common_layout)
-                    # Specific updates for this chart
-                    #fig_month.update_xaxes(title="Mois", automargin=True)
-                    #fig_month.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_month, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique mensuel : {e}")
-                    st.info("Impossible d'afficher le graphique mensuel.")
-            else:
-                st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
         with col2_g:
-            st.markdown("<h3 style='color: #007bad;'>Distribution Horaire des Logs (8H à 23H)</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Logs par Horaires</h3>", unsafe_allow_html=True)
             if 'Heure_création' in filtered_logs.columns:
                 try:
-                    # Convertir l'heure en format datetime, puis extraire l'heure
-                    # Prioritize exact format, then more flexible parsing
                     filtered_logs['Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S.%f', errors='coerce').dt.hour
                     filtered_logs.loc[filtered_logs['Heure'].isnull(), 'Heure'] = pd.to_datetime(filtered_logs['Heure_création'], format='%H:%M:%S', errors='coerce').dt.hour
                 except Exception as e:
-                    st.warning(f"Erreur de conversion de l'heure : {str(e)}. Essai d'utiliser 'Date_d_création'.")
                     if 'Date_d_création' in filtered_logs.columns:
                         filtered_logs['Heure'] = filtered_logs['Date_d_création'].dt.hour
                     else:
@@ -284,32 +336,27 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 hourly_data = pd.merge(all_hours, hourly_data, on='Heure', how='left').fillna(0)
 
                 fig_hour = px.line(hourly_data, x='Heure', y='Count',
-                                    color_discrete_sequence=['#fcd25b'],
+                                    color_discrete_sequence=[COLOR_PALETTE["accent1"]],
                                     markers=True,
                                     line_shape='spline',
                                     text='Count')
                 fig_hour.update_traces(
                     mode='lines+markers+text',
-                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
+                    marker=dict(size=10, color=COLOR_PALETTE["accent2"], line=dict(width=1, color='#FFFFFF')),
                     hovertemplate='<b>Heure:</b> %{x}H<br><b>Logs:</b> %{y:,}<extra></extra>',
                     textposition="top center",
-                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                    textfont=dict(size=14, color=COLOR_PALETTE["secondary"], family='Arial', weight='bold'),
                     fill='tozeroy',
-                    fillcolor='rgba(252, 210, 91, 0.2)'
+                    fillcolor=f'rgba({int(COLOR_PALETTE["accent1"][1:3], 16)}, {int(COLOR_PALETTE["accent1"][3:5], 16)}, {int(COLOR_PALETTE["accent1"][5:7], 16)}, 0.2)'
                 )
                 try:
                     fig_hour.update_layout(common_layout)
-                    #fig_hour.update_xaxes(title="Heure (H)", tickvals=list(range(8, 24, 1)), automargin=True)
-                    #fig_hour.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_hour, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique horaire : {e}")
-                    st.info("Impossible d'afficher le graphique horaire.")
-            else:
-                st.info("Données horaires non disponibles.")
 
         with col3_g:
-            st.markdown("<h3 style='color: #007bad;'>Volume de Logs par Jour</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Logs par Jours</h3>", unsafe_allow_html=True)
             if 'Date_d_création' in filtered_logs.columns:
                 jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi',
                                 3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
@@ -323,50 +370,46 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 weekday_data = weekday_data.sort_values('Jour')
 
                 fig_day = px.line(weekday_data, x='Jour', y='Count',
-                                    color_discrete_sequence=['#ff6b6b'],
+                                    color_discrete_sequence=[COLOR_PALETTE["accent2"]],
                                     markers=True,
                                     line_shape='spline',
                                     text='Count')
                 fig_day.update_traces(
                     mode='lines+markers+text',
-                    marker=dict(size=10, symbol='circle', line=dict(width=2, color='DarkSlateGrey')),
+                    marker=dict(size=10, color=COLOR_PALETTE["primary"], line=dict(width=1, color='#FFFFFF')),
                     hovertemplate='<b>Jour:</b> %{x}<br><b>Logs:</b> %{y:,}<extra></extra>',
                     textposition="top center",
-                    textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                    textfont=dict(size=14, color=COLOR_PALETTE["secondary"], family='Arial', weight='bold'),
                     fill='tozeroy',
-                    fillcolor='rgba(255, 107, 107, 0.2)'
+                    fillcolor=f'rgba({int(COLOR_PALETTE["accent2"][1:3], 16)}, {int(COLOR_PALETTE["accent2"][3:5], 16)}, {int(COLOR_PALETTE["accent2"][5:7], 16)}, 0.2)'
                 )
                 try:
                     fig_day.update_layout(common_layout)
-                    #fig_day.update_xaxes(title="Jour", automargin=True)
-                    #fig_day.update_yaxes(title="Nombre de Logs", automargin=True)
                     st.plotly_chart(fig_day, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique par jour : {e}")
-                    st.info("Impossible d'afficher le graphique par jour.")
-            else:
-                st.info("La colonne 'Date_d_création' n'est pas disponible.")
 
-      
+        # Second row of charts (bar charts)
+        st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Répartitions</h2>", unsafe_allow_html=True)
         col1_b, col2_b, col3_b = st.columns(3)
 
         # Bar chart for segments
         with col1_b:
-    
-            st.markdown("<h3 style='color: #007bad;'>Répartition par Segment</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Répartition par Segment</h3>", unsafe_allow_html=True)
             if 'Segment' in filtered_logs.columns:
                 segment_data = filtered_logs.groupby('Segment').size().reset_index(name='Count')
                 total = segment_data['Count'].sum()
                 segment_data['Percentage'] = (segment_data['Count'] / total * 100).round(1)
+                
                 fig_segment = px.bar(segment_data, x='Count', y='Segment',
-                                        orientation='h',
-                                        color='Count',
-                                        color_continuous_scale='Blues',
-                                        text=[f'{count:,}<br>({perc}%)' for count, perc in zip(segment_data['Count'], segment_data['Percentage'])])
+                                    orientation='h',
+                                    color='Count',
+                                    color_continuous_scale=[COLOR_PALETTE['accent1'], COLOR_PALETTE['accent2']],
+                                    text=[f'{count:,}<br>({perc}%)' for count, perc in zip(segment_data['Count'], segment_data['Percentage'])])
                 fig_segment.update_traces(
                     texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=18, family='Arial', color='black')
+                    textfont=dict(size=18, family='Arial', color='black', weight='bold')
                 )
                 updated_layout = {
                     **common_layout,
@@ -374,28 +417,22 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         **common_layout['yaxis'],
                         'categoryorder': 'total ascending',
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': { # Added to hide x-axis
+                    'xaxis': {
                         'visible': False,
                         'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
-                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'},
-                    'margin': {'r': 50 }
-                    }
+                }
                 try:
                     fig_segment.update_layout(updated_layout)
                     st.plotly_chart(fig_segment, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique par segment : {e}")
-                    st.info("Impossible d'afficher le graphique par segment.")
-            else:
-                st.info("La colonne 'Segment' est manquante.")
 
         with col2_b:
-            st.markdown("<h3 style='color: #007bad;'>Logs par Canal</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Logs par Canal</h3>", unsafe_allow_html=True)
             if 'Canal' in filtered_logs.columns:
                 canal_data = filtered_logs.groupby('Canal').size().reset_index(name='Count')
                 total = canal_data['Count'].sum()
@@ -403,12 +440,12 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 fig_canal = px.bar(canal_data, x='Count', y='Canal',
                                 orientation='h',
                                 color='Count',
-                                color_continuous_scale='Blues',
+                                color_continuous_scale=[COLOR_PALETTE['accent1'], COLOR_PALETTE['accent2']],
                                 text=[f'{count:,}<br>({perc}%)' for count, perc in zip(canal_data['Count'], canal_data['Percentage'])])
                 fig_canal.update_traces(
                     texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=18, family='Arial', color='black')
+                    textfont=dict(size=18, family='Arial', color='black', weight='bold')
                 )
                 updated_layout = {
                     **common_layout,
@@ -416,90 +453,35 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         **common_layout['yaxis'],
                         'categoryorder': 'total ascending',
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': { # Added to hide x-axis
+                    'xaxis': {
                         'visible': False,
                         'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
-                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_canal.update_layout(updated_layout)
                     st.plotly_chart(fig_canal, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique par canal : {e}")
-                    st.info("Impossible d'afficher le graphique par canal.")
-            else:
-                st.info("La colonne 'Canal' est manquante.")
 
         with col3_b:
-            st.markdown("<h3 style='color: #007bad;'>Top 10 Sous-motifs</h3>", unsafe_allow_html=True)
-            if 'Sous_motif' in filtered_logs.columns:
-                sous_motif_data = filtered_logs.groupby('Sous_motif').size().reset_index(name='Count')
-                total = sous_motif_data['Count'].sum()
-                top_motifs = sous_motif_data.sort_values('Count', ascending=True).tail(10)
-                top_motifs['Percentage'] = (top_motifs['Count'] / total * 100).round(1)
-
-                max_count_motif = top_motifs['Count'].max()
-                # Crucially, ensure enough space on the x-axis for text
-                x_axis_range_motif = [0, max_count_motif * 1.2] # Increased buffer for more space
-
-                fig_motif = px.bar(top_motifs, x='Count', y='Sous_motif',
-                                    orientation='h',
-                                    color='Count',
-                                    color_continuous_scale='Blues',
-                                    text=[f'{count:,}<br>({perc}%)' for count, perc in zip(top_motifs['Count'], top_motifs['Percentage'])])
-                fig_motif.update_traces(
-                    texttemplate='%{text}',
-                    textposition='outside', # Set to 'outside' for persistent visibility
-                    textfont=dict(size=18, family='Arial', color='black'),
-                    cliponaxis=True # Added this to prevent clipping if labels extend beyond plot area
-                )
-                updated_layout_motif = { # Renamed to avoid clash
-                    **common_layout,
-                    'yaxis': {
-                        **common_layout['yaxis'],
-                        'categoryorder': 'total ascending',
-                        'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
-                    },
-                    'xaxis': { # Hide x-axis and set range
-                        'visible': False,
-                        'showticklabels': False,
-                        'range': x_axis_range_motif
-                    },
-                    'showlegend': False,
-                    'coloraxis_showscale': False,
-                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
-                }
-                try:
-                    fig_motif.update_layout(updated_layout_motif)
-                    st.plotly_chart(fig_motif, use_container_width=True)
-                except Exception as e:
-                    st.error(f"Erreur lors de la création du graphique des sous-motifs : {e}")
-                    st.info("Impossible d'afficher le graphique des sous-motifs.")
-            else:
-                st.info("La colonne 'Sous_motif' est manquante.")
-            
-
-        with col3_b:
-            st.markdown("<h3 style='color: #007bad;'>Mode de Facturation</h3>", unsafe_allow_html=True)
+            st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Mode de Facturation</h3>", unsafe_allow_html=True)
             if 'Mode_facturation' in filtered_logs.columns:
                 facturation_data = filtered_logs.groupby('Mode_facturation').size().reset_index(name='Count')
                 total = facturation_data['Count'].sum()
                 facturation_data['Percentage'] = (facturation_data['Count'] / total * 100).round(1)
                 fig_facturation = px.bar(facturation_data, x='Count', y='Mode_facturation',
-                                            orientation='h',
-                                            color='Count',
-                                            color_continuous_scale='Blues',
-                                            text=[f'{count:,}<br>({perc}%)' for count, perc in zip(facturation_data['Count'], facturation_data['Percentage'])])
+                                        orientation='h',
+                                        color='Count',
+                                        color_continuous_scale=[COLOR_PALETTE['accent1'], COLOR_PALETTE['accent2']],
+                                        text=[f'{count:,}<br>({perc}%)' for count, perc in zip(facturation_data['Count'], facturation_data['Percentage'])])
                 fig_facturation.update_traces(
                     texttemplate='%{text}',
                     textposition='outside',
-                    textfont=dict(size=20, family='Arial', color='black')
+                    textfont=dict(size=14, family='Arial', color='black', weight='bold')
                 )
                 updated_layout = {
                     **common_layout,
@@ -507,28 +489,26 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                         **common_layout['yaxis'],
                         'categoryorder': 'total ascending',
                         'tickfont': {'size': 14, 'weight': 'bold', 'family': 'Arial'},
-                        'title_font': {'size': 16, 'weight': 'bold', 'family': 'Arial'}
                     },
-                    'xaxis': { # Added to hide x-axis
+                    'xaxis': {
                         'visible': False,
                         'showticklabels': False
                     },
                     'showlegend': False,
                     'coloraxis_showscale': False,
-                    'font': {'family': 'Arial', 'size': 14, 'weight': 'bold'}
                 }
                 try:
                     fig_facturation.update_layout(updated_layout)
                     st.plotly_chart(fig_facturation, use_container_width=True)
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique de mode de facturation : {e}")
-                    st.info("Impossible d'afficher le graphique de mode de facturation.")
-            else:
-                st.info("La colonne 'Mode_facturation' est manquante.")
 
-        st.markdown("<h2 style='text-align: center; color: #002a48; font-weight: bold;'>Détails des Logs</h2>", unsafe_allow_html=True)
+        # Third row of charts
+        
 
-        # Display columns
+        # Display detailed logs
+        st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Détails des Logs</h2>", unsafe_allow_html=True)
+
         display_cols = [
             'Date_d_création', 'Heure_création', 'Segment', 'Canal',
             'Sous_motif', 'Statut_BP', 'Offre', 'Mode_facturation',
@@ -545,7 +525,6 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             if 'Team' in staff_df_copy.columns:
                 staff_cols_to_merge.append('Team')
 
-            # Ensure 'Hyp' column from staff_df_copy is unique before merging to avoid duplicates
             display_df = display_df.merge(staff_df_copy[staff_cols_to_merge].drop_duplicates(subset=['Hyp']), on='Hyp', how='left')
             if 'Nom Prénom' in display_df.columns:
                 display_df.rename(columns={'Nom Prénom': 'Nom Prénom Agent'}, inplace=True)
@@ -565,37 +544,36 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         if 'Date_d_création' in display_df.columns and pd.api.types.is_datetime64_any_dtype(display_df['Date_d_création']):
             display_df['Date_d_création'] = display_df['Date_d_création'].dt.strftime('%Y-%m-%d %H:%M:%S')
         
-        # Format Heure_création for display if it exists and is not a datetime object
         if 'Heure_création' in display_df.columns and not pd.api.types.is_datetime64_any_dtype(display_df['Heure_création']):
-            display_df['Heure_création'] = display_df['Heure_création'].astype(str) # Ensure it's string for display if not parsed as datetime
+            display_df['Heure_création'] = display_df['Heure_création'].astype(str)
         
         # Display column counts
-        st.markdown("<h3 style='color: #002a48;'>Nombre de valeurs par colonne:</h3>", unsafe_allow_html=True)
-        # Use a more flexible column layout for counts
+        st.markdown(f"<h3 style='color: {COLOR_PALETTE['secondary']};'>Nombre de valeurs par colonne:</h3>", unsafe_allow_html=True)
         num_cols = len(display_df.columns)
-        num_cols_per_row = min(num_cols, 6) # Max 6 columns per row for display
+        num_cols_per_row = min(num_cols, 6)
         cols_for_counts = st.columns(num_cols_per_row)
         for i, col_name in enumerate(display_df.columns):
             with cols_for_counts[i % num_cols_per_row]:
                 count = display_df[col_name].count()
                 st.markdown(
-                    f"<div style='text-align: center; font-weight: bold; font-size: 14px; color: #007bad;'>"
+                    f"<div style='text-align: center; font-weight: bold; font-size: 14px; color: {COLOR_PALETTE['primary']};'>"
                     f"{col_name}<br>({count})</div>",
                     unsafe_allow_html=True
                 )
         
-
-        # Display dataframe
+        # Display dataframe with styling
         st.markdown(
-            """
+            f"""
             <style>
-            .dataframe {
+            .dataframe {{
                 font-weight: bold;
                 font-size: 16px;
-            }
-            .dataframe th {
+            }}
+            .dataframe th {{
                 font-size: 18px;
-            }
+                background-color: {COLOR_PALETTE['primary']};
+                color: white;
+            }}
             </style>
             """,
             unsafe_allow_html=True

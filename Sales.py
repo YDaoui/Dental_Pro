@@ -117,11 +117,66 @@ def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label=
     return fig
 
 
-# Affichage de la page Ventes
 def sales_page1(sales_df, staff_df, start_date, end_date):
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+    
     """Affiche la page des ventes."""
 
-    # Convert ORDER_DATE to datetime at the beginning of the function for consistency
+    
     if 'ORDER_DATE' in sales_df.columns:
         sales_df['ORDER_DATE'] = pd.to_datetime(sales_df['ORDER_DATE'])
 
@@ -143,16 +198,17 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
             "<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Analyse des Ventes</h1>", 
             unsafe_allow_html=True
         )
+        
 
     # Filters
     col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
     with col1:
         country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()), key='sales_country')
     with col2:
-        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='sales_team')
-    with col3:
         activity_filter = st.selectbox("Sélectionner activité", ['Toutes'] + sorted(staff_df['Activité'].dropna().unique()), key='sales_activity')
-    
+    with col3:
+        
+        team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='sales_team')
     with col4:
         # Dynamically populate agent filter based on selected team
         agents_in_team = ['Tous']
@@ -362,7 +418,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         ## Principaux Graphiques
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
         
-        col_main1, col_main2= st.columns([2, 1])
+        col_main1, col_main2= st.columns([3, 2])
         with col_main1:
             st.markdown("<h3 style='color: #007bad;'>Ventes par Ville</h3>", unsafe_allow_html=True)
             ventes_ville = filtered_sales.groupby('City')['Total_Sale'].sum().reset_index()

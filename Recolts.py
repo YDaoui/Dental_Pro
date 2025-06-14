@@ -135,7 +135,61 @@ def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label=
     return fig
 
 def recolts_page1(recolts_df, staff_df, start_date, end_date):
-    """Affiche la page des récoltes avec la palette de couleurs harmonisée."""
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
     if 'NOM' in staff_df.columns and 'PRENOM' in staff_df.columns:
         staff_df['NOM PRENOM'] = staff_df['NOM'] + ' ' + staff_df['PRENOM']
@@ -577,7 +631,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     showlegend=False,
                     coloraxis_showscale=False)
                 fig.update_traces(
-                    text=team_performance['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                    text=team_performance['Total_Recolt'].apply(lambda x: f"{x:,.0f} €".replace(",", " ")), 
                     textposition='inside',
                     textfont=dict(size=18, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="recolts_par_equipe")
@@ -609,7 +663,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     showlegend=False,
                     coloraxis_showscale=False)
                 fig.update_traces(
-                    text=top_recolteurs['Total_Recolt'].apply(lambda x: f"€{x:,.0f}".replace(",", " ")), 
+                    text=top_recolteurs['Total_Recolt'].apply(lambda x: f"{x:,.0f} €".replace(",", " ")), 
                     textposition='inside',
                     textfont=dict(size=16, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="top_recolteurs")

@@ -141,7 +141,7 @@ def display_recolt_graphs(df):
         
         # Personnalisation des étiquettes
         fig_city.update_traces(
-            texttemplate='%{text:,.2f}€',  # Format monétaire
+            texttemplate='%{text:,.2f} €',  # Format monétaire
             textposition='outside',        # Étiquettes à l'extérieur des barres
             textfont_size=12,             # Taille de police
             insidetextanchor='middle'      # Alignement si étiquettes trop longues
@@ -209,9 +209,18 @@ def get_unique_values_from_table(table_name, column_name):
     """Récupère les valeurs uniques d'une colonne spécifique d'une table"""
     conn = get_db_connection()
     try:
-        query = f"SELECT DISTINCT {column_name} FROM {table_name} WHERE {column_name} IS NOT NULL"
+        # Handle cases where column_name contains a WHERE clause
+        if "WHERE" in column_name:
+            # Split the column name and WHERE condition
+            parts = column_name.split("WHERE")
+            column = parts[0].strip()
+            condition = parts[1].strip()
+            query = f"SELECT DISTINCT {column} FROM {table_name} WHERE {condition}"
+        else:
+            query = f"SELECT DISTINCT {column_name} FROM {table_name} WHERE {column_name} IS NOT NULL"
+        
         df = pd.read_sql(query, conn)
-        return df[column_name].tolist()
+        return df[column_name.split("WHERE")[0].strip()].tolist()
     except Exception as e:
         st.error(f"Erreur lors de la récupération des données: {e}")
         return []
@@ -227,6 +236,61 @@ def clear_form():
         del st.session_state[key]
 
 def New_Sale_Agent():
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
     col1, col2 = st.columns([2, 2])
 
     with col1:
@@ -270,7 +334,7 @@ def New_Sale_Agent():
             # Filtrer les villes en fonction du pays sélectionné
             selected_country = st.session_state.get('sale_country', None)
             if selected_country:
-                cities_in_country = get_unique_values_from_table('Sales', f"City WHERE Country = '{selected_country}'")
+                cities_in_country = get_unique_values_from_table('Sales', f"City WHERE Country = '{selected_country}' AND City IS NOT NULL")
                 city = st.selectbox("City", cities_in_country, key="sale_city")
             else:
                 city = st.selectbox("City", cities, key="sale_city")
@@ -342,11 +406,12 @@ def New_Sale_Agent():
                     </style>
                     """, unsafe_allow_html=True)
                 if st.button("**Annuler**", key="cancel_sale", use_container_width=True):
+                    
                     clear_form()
                     st.warning("Opération annulée et champs vidés")
         with col3:
             st.markdown("### Informations sur le Log :")
-        # Afficher les graphiques après le formulaire
+            st.warning("Opération imposible : Aucun Logs n'a été définis")
         display_sales_graphs(agent_sales)
 
     except Exception as e:
@@ -354,71 +419,147 @@ def New_Sale_Agent():
     finally:
         if conn:
             conn.close()
-
 def New_Recolt_Agent():
-    col1, col2 = st.columns([2, 2])
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
 
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+    # Header section
+    col1, col2 = st.columns([2, 2])
     with col1:
         st.markdown(
             "<h1 style='text-align: left; color: #002a48; margin-bottom: 0;'>Récolts</h1>",
             unsafe_allow_html=True
         )
-
     with col2:
         st.markdown(
             "<h1 style='text-align: right; color: #00afe1; margin-bottom: 0;'>Nouvelle Récolts</h1>",
             unsafe_allow_html=True
         )
-    add_custom_css()
+    
+    
     hyp_agent = st.session_state.get("hyp", None)
 
-    # Charger les données existantes
+    # Load existing data
     _, recolts_df, _, _ = load_data()
     agent_recolts = recolts_df[recolts_df['Hyp'] == hyp_agent] if hyp_agent else pd.DataFrame()
-
     conn = get_db_connection()
 
+    # Agent title
     st.markdown(
         f"<h2 style='color: #007bad;text-align: left;'>Nouvelle Récolte au nom de : {st.session_state.get('username', 'Agent')}</h2>",
         unsafe_allow_html=True
     )
 
     try:
-        # Récupérer les valeurs uniques depuis la table Recolt
+        # Get unique values from database
         countries = get_unique_values_from_table('Recolt', 'Country')
         cities = get_unique_values_from_table('Recolt', 'City')
         banks = get_unique_values_from_table('Recolt', 'Banques')
 
-        # Formulaire de récolte
-        col1, col2, col3 = st.columns([1, 2, 2])
-        with col1:
-            st.markdown("### Numéro du BP")
-            order_reference = st.text_input("Order Reference", key="recolt_ref")
-            order_date = st.date_input("Order Date", value=datetime.today(), key="recolt_date")
-            country = st.selectbox("Country", countries, key="recolt_country")
+        # Main form layout
+        form_col1, form_col2, info_col = st.columns([1, 2, 2])
+        
+        # FORM COLUMN 1 - Basic information
+        with form_col1:
+            st.markdown("### Informations de base")
+            order_reference = st.text_input("Référence du BP", key="recolt_ref")
+            order_date = st.date_input("Date", value=datetime.today(), key="recolt_date")
             
-            # Filtrer les villes en fonction du pays sélectionné
+            country = st.selectbox("Pays", countries, key="recolt_country")
+            
+            # Filter cities based on selected country
             selected_country = st.session_state.get('recolt_country', None)
             if selected_country:
-                cities_in_country = get_unique_values_from_table('Recolt', f"City WHERE Country = '{selected_country}'")
-                city = st.selectbox("City", cities_in_country, key="recolt_city")
+                cities_in_country = get_unique_values_from_table('Recolt', 
+                    f"City WHERE Country = '{selected_country}' AND City IS NOT NULL")
+                city = st.selectbox("Ville", cities_in_country, key="recolt_city")
             else:
-                city = st.selectbox("City", cities, key="recolt_city")
+                city = st.selectbox("Ville", cities, key="recolt_city")
+
+        # FORM COLUMN 2 - Transaction details
+        with form_col2:
+            st.markdown("### Détails de la transaction")
+            status_col, bank_col = st.columns(2)
+            with status_col:
+                short_message = st.selectbox("Statut", ["Accepted", "Refused", "Error"], 
+                    key="recolt_status")
+            with bank_col:
+                bank = st.selectbox("Banque", banks, key="recolt_bank")
             
-            bank = st.selectbox("Banque", banks, key="recolt_bank")
+            # Rating
+            rating = st.slider("Évaluation (1-9)", min_value=1, max_value=9, 
+                key="recolt_rating")
+            
+            
+            
+            # Amount section
+            amount_col1, amount_col2 = st.columns([2, 1])
+            with amount_col1:
+                st.markdown("**Montant (€)**")
+                montant_input = st.number_input("Saisir le montant", 
+                    min_value=0.0, step=5.0, format="%.2f", key="recolt_amount",
+                    label_visibility="collapsed")
+            with amount_col2:
+                st.markdown("**Ou utiliser le slider**")
+                montant_slider = st.slider("", min_value=0, max_value=1000, 
+                    step=5, key="recolt_slider", label_visibility="collapsed")
+            
+            # Status and bank
+            
 
-        with col2:
-            st.markdown("### Montant (€)")
-            short_message = st.selectbox("Short Message", ["Accepted", "Refused", "Error"], key="recolt_status")
-
-            montant_col1, montant_col2 = st.columns([2, 1])
-            with montant_col1:
-                montant_input = st.number_input("Saisir le montant", min_value=0.0, step=5.0, format="%.2f", key="recolt_amount")
-            with montant_col2:
-                montant_slider = st.slider("ou avec le slider", min_value=0, max_value=1000, step=5, key="recolt_slider")
-
-            rating = st.slider("Rating", min_value=1, max_value=9, key="recolt_rating")
-
+            # Action buttons
             valider, annuler = st.columns(2)
             with valider:
                 st.markdown("""
@@ -442,22 +583,21 @@ def New_Recolt_Agent():
                     try:
                         cursor = conn.cursor()
                         cursor.execute(
-                            """INSERT INTO Recolt (Hyp, ORDER_REFERENCE, ORDER_DATE, SHORT_MESSAGE, Country, City, Total_Recolt, Rating, Banques)
+                            """INSERT INTO Recolt (Hyp, ORDER_REFERENCE, ORDER_DATE, 
+                            SHORT_MESSAGE, Country, City, Total_Recolt, Rating, Banques)
                             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                            (hyp_agent, order_reference, order_date, short_message, country, city, total_recolt, rating, bank)
+                            (hyp_agent, order_reference, order_date, short_message, 
+                             country, city, total_recolt, rating, bank)
                         )
                         conn.commit()
                         st.success("Récolte enregistrée avec succès!")
-                        # Reload data after successful insertion to update graphs
                         _, recolts_df, _, _ = load_data()
                         agent_recolts = recolts_df[recolts_df['Hyp'] == hyp_agent] if hyp_agent else pd.DataFrame()
-                        st.session_state['agent_recolts_updated'] = True # Use a session state to trigger re-render if needed
+                        st.session_state['agent_recolts_updated'] = True
                         st.rerun()
                     except Exception as e:
                         st.error(f"Erreur: {str(e)}")
-        with col3:
-            st.markdown("### Informations sur le Log :")
-
+            
             with annuler:
                 st.markdown("""
                     <style>
@@ -479,7 +619,11 @@ def New_Recolt_Agent():
                     clear_form()
                     st.warning("Opération annulée et champs vidés")
 
-            # Afficher les graphiques après le formulaire
+        # INFO COLUMN - Log information and graphs
+        with info_col:
+            st.markdown("### Informations sur le Log")
+            st.warning("Opération imposible : Aucun Logs n'a été définis")
+
         display_recolt_graphs(agent_recolts)
 
     except Exception as e:
