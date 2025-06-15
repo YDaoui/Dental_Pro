@@ -173,24 +173,24 @@ def display_logs_with_interaction(df_logs, conn):
             num_bp = selected_row.get('BP_Logs')
             hyp_agent = selected_row.get('Hyp', 'N/A')
             
-            # Afficher directement le bouton de recherche
+           
             if num_bp:
-    # Initialiser l'état si non existant
+   
                 if f'show_info_{num_bp}' not in st.session_state:
                     st.session_state[f'show_info_{num_bp}'] = False
                 
-                # Bouton pour basculer l'affichage
-                if st.button("🔎 Afficher les informations afin de Coacher", 
+               
+                if st.button("Afficher les informations afin de Coacher", 
                             key=f"btn_{num_bp}"):
                     st.session_state[f'show_info_{num_bp}'] = not st.session_state[f'show_info_{num_bp}']
                 
-                # Afficher les informations si l'état est True
+                
                 if st.session_state[f'show_info_{num_bp}']:
                     search_additional_info(conn, num_bp, hyp_agent)
             else:
                 st.warning("Identifiant client non disponible")
     elif isinstance(selected_rows, list) and len(selected_rows) > 0:
-        # Cas où selected_rows est une liste (version précédente)
+        
         selected_row = selected_rows[0]
         if hasattr(selected_row, 'to_dict'):
             selected_row = selected_row.to_dict()
@@ -208,7 +208,7 @@ def display_logs_with_interaction(df_logs, conn):
 
 def display_offer_details(selected_row, conn):
     """Affiche les détails d'une offre sélectionnée"""
-    # Conversion en dict si ce n'est pas déjà le cas
+   
     if not isinstance(selected_row, dict):
         try:
             selected_row = dict(selected_row)
@@ -216,7 +216,7 @@ def display_offer_details(selected_row, conn):
             st.error(f"Erreur de conversion: {str(e)}")
             return
 
-    # Création d'un layout en trois colonnes pour les informations principales
+    
     st.markdown("---")
     st.subheader("Détails de l'offre sélectionnée")
     
@@ -232,7 +232,7 @@ def display_offer_details(selected_row, conn):
         st.markdown(f"**Statut BP:** {selected_row.get('Statut Bp', 'N/A')}")
         st.markdown(f"**Sous motif:** {selected_row.get('Sous motif', 'N/A')}")
 
-    # Extraction du Num_Bp et Hyp
+   
     num_bp = selected_row.get('BP_Logs')
     hyp_agent = selected_row.get('Hyp', 'N/A')
     
@@ -240,9 +240,9 @@ def display_offer_details(selected_row, conn):
         st.markdown(f"**Numéro BP:** {num_bp if num_bp else 'N/A'}")
         st.markdown(f"**Agent (Hyp):** {hyp_agent}")
 
-    # Bouton de recherche
+ 
     if num_bp:
-        if st.button("🔎 Rechercher des informations complémentaires", 
+        if st.button("Rechercher des informations complémentaires", 
                     key=f"btn_{num_bp}"):
             search_additional_info(conn, num_bp, hyp_agent)
     else:
@@ -301,7 +301,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         unsafe_allow_html=True
     )
     
-    # Dictionnaire pour stocker toutes les données fusionnées
+   
     merged_data = {
         "Référence BP": num_bp,
         "Agent (Hyp)": hyp_agent,
@@ -317,7 +317,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         "Statut": "N/A"
     }
 
-    # 1. Recherche dans les tables Sales et Recolts
+    
     for table in ["Sales", "Recolt"]:
         try:
             df = search_in_table(conn, hyp_agent, table)
@@ -336,7 +336,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         except Exception as e:
             st.error(f"Erreur avec {table}: {str(e)}")
 
-    # 2. Recherche dans la table Logs
+  
     try:
         query_logs = """
         SELECT Offre, Sous_motif, Canal, Direction
@@ -356,10 +356,10 @@ def search_additional_info(conn, num_bp, hyp_agent):
     except Exception as e:
         st.error(f"Erreur lors de la recherche dans les Logs: {str(e)}")
 
-    # Création et affichage du tableau fusionné
+ 
     st.markdown("<h3 style='color: #007bad;'> Détails complets</h3>", unsafe_allow_html=True)
   
-    # Organisation des données en colonnes logiques
+   
     col1_data = {
         "Référence": merged_data["Référence"],
         "Date commande": merged_data["Date commande"],

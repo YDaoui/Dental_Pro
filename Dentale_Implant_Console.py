@@ -18,32 +18,69 @@ st.set_page_config(
 
 def login_page():
     add_custom_css()
+
+
+
+
+def add_custom_css():
+    """Adds custom CSS styles to the Streamlit application."""
     st.markdown("""
-                    <style>
-                        div.stButton > button {
-                            width: 100%;
-                            background-color: #fc9307;
-                            color: white;
-                            border-radius: 5px;
-                            border: none;
-                            padding: 10px;
-                            font-size: 1.1em;
-                        }
-                        div.stButton > button:hover {
-                            background-color: #fcce22;
-                        }
-                    </style>
-                    """, unsafe_allow_html=True)
-    
-    col1, col2, col3, col4 = st.columns([1,0.8,2,1])
-    with col2:
+        <style>
+            /* Style for Streamlit buttons */
+            div.stButton > button {
+                width: 100%;
+                background-color: #fc9307; /* Orange */
+                color: white;
+                border-radius: 5px;
+                border: none;
+                padding: 10px;
+                font-size: 1.1em;
+            }
+            div.stButton > button:hover {
+                background-color: #fcce22; /* Lighter orange on hover */
+            }
+            /* Custom styling for text inputs to align labels */
+            .stTextInput label {
+                display: none; /* Hide default Streamlit labels */
+            }
+            .stTextInput div[data-baseweb="input"] {
+                margin-top: -10px; /* Adjust margin to align input with custom label */
+            }
+        </style>
+    """, unsafe_allow_html=True)
+
+
+    col1_main, col2_main, col3_main, col4_main = st.columns([1, 0.8, 2, 1])
+
+    with col2_main:
         st.image('Dental_Implant.png', width=340)
-    with col3:
-        #st.markdown("<h2 style='color:#007bad;'>Connexion</h2>", unsafe_allow_html=True)
-        username = st.text_input("Nom d'utilisateur")
-        password = st.text_input("Mot de passe", type="password")
+
+    with col3_main:
+        
+    
+        st.markdown("<h2 style='color:#fc9307;'>Connexion</h2>", unsafe_allow_html=True)
+        #st.markdown("---")
+        
+        col_label_user, col_input_user = st.columns([1, 3])
+        with col_label_user:
+           
+            st.markdown("<div style='color:#043a64; font-weight:bold; height: 38px; display: flex; align-items: center;'>Nom d'utilisateur :</div>", unsafe_allow_html=True)
+        with col_input_user:
+           
+            username = st.text_input("", key="username_input", label_visibility="collapsed")
+
+        col_label_pass, col_input_pass = st.columns([1, 3])
+        with col_label_pass:
+            
+            st.markdown("<div style='color:#043a64; font-weight:bold; height: 38px; display: flex; align-items: center;'>Mot de passe :</div>", unsafe_allow_html=True)
+            
+        with col_input_pass:
+            password = st.text_input("", type="password", key="password_input", label_visibility="collapsed")
+
+    
 
         col1, col2 = st.columns([1,1])
+       
         with col1:
             
             if st.button("**Se connecter**", key="login_button", use_container_width=True):
