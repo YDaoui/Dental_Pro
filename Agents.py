@@ -125,6 +125,15 @@ def login_Logs():
             """,
             unsafe_allow_html=True
         )
+        st.markdown(
+    """
+    <div style='background-color:#fff3cd; color:#856404; padding:10px 20px; border-left:5px solid #ffeeba; border-radius:5px; margin:10px 0;'>
+        ⚠️ Aucun PABX n'a été détecté. Veuillez vous logger ou contacter l'administrateur !
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
         # Date and time: Light blue, larger, and bold
         st.markdown(
             f"""
@@ -140,7 +149,7 @@ def login_Logs():
     with col3:
         st.markdown("<div style='height: 30px;'></div>", unsafe_allow_html=True)
         if st.button("**Se connecter**", key="login_button", use_container_width=True):
-            st.info("Bouton 'Se connecter' cliqué (aucgit statusune logique de connexion active).")
+            st.warning("Aucune logique de connexion active.")
 
         st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 

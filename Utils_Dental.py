@@ -1268,8 +1268,8 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         textinfo='percent+label',
                         texttemplate='%{label}<br>%{percent}<br>%{customdata:,.0f} €',
                         customdata=[montants.get(mode, 0) for mode in billing_mode_counts['Mode_facturation']],
-                        insidetextfont=dict(size=16, color='White', family='Arial', weight='bold'),
-                        outsidetextfont=dict(size=16, color='White', family='Arial', weight='bold'),
+                        insidetextfont=dict(size=14, color='White', family='Arial', weight='bold'),
+                        outsidetextfont=dict(size=14, color='White', family='Arial', weight='bold'),
                         hovertemplate='Mode: %{label}<br>Count: %{value}<br>Percentage: %{percent}<extra></extra>'
                     )])
 
@@ -1298,41 +1298,48 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     total = canal_counts['Count'].sum()
                     canal_counts['Percentage'] = (canal_counts['Count'] / total * 100).round(1)
                     
+                    # Nouveaux paramètres de couleur et style
                     fig1 = px.bar(
                         canal_counts,
                         x='Count',
                         y='Canal',
                         orientation='h',
                         color='Canal',
-                        color_discrete_sequence=px.colors.qualitative.Pastel,
+                        color_discrete_sequence=["#007bad", "#2596be", "#043a64"],  # Couleurs harmonisées
                     )
                     fig1.update_traces(
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
                         customdata=canal_counts[['Percentage']],
-                        textfont=dict(size=16, color='black', family='Arial', weight='bold') # Adjusted font size
-                    )
+                        textfont=dict(size=16, color='black', family='Arial', weight='bold'),
+                        marker=dict(line=dict(width=1, color='#333333'))),  # Contour des barres
                     fig1.update_layout(
                         xaxis_title={
                             'text': "Nombre de Logs",
-                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'} # Adjusted font size
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         yaxis_title={
                             'text': "Canal",
-                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'} # Adjusted font size
+                            'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=14, family='Arial', color='black', weight='bold') # Adjusted font size
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                            gridcolor='#f0f0f0'  # Lignes de grille plus douces
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=14, family='Arial', color='black', weight='bold') # Adjusted font size
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
                         ),
                         margin=dict(l=30, r=20, t=50, b=20),
                         showlegend=False,
                         plot_bgcolor='white',
                         paper_bgcolor='white',
                         font=dict(color='black'),
-                        bargap=0.3
+                        bargap=0.3,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            font_size=14,
+                            font_family="Arial"
+                        )
                     )
                     st.plotly_chart(fig1, use_container_width=True)
                 else:
@@ -1346,14 +1353,19 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     daily_counts.columns = ['Date', 'Count']
                     daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp()
                     
+                    # Nouveaux paramètres de couleur et style
                     fig3 = px.line(
                         daily_counts,
                         x='Date',
                         y='Count',
+                        color_discrete_sequence=["#007bad"]  # Couleur principale
                     )
                     fig3.update_traces(
                         mode='lines+markers',
-                        marker=dict(size=8),
+                        marker=dict(size=8, color='#043a64', line=dict(width=1, color='#333333')),
+                        line=dict(width=3),
+                        fill='tozeroy',  # Remplissage sous la courbe
+                        fillcolor='rgba(0, 123, 173, 0.1)'  # Couleur de remplissage translucide
                     )
                     fig3.update_layout(
                         xaxis_title={
@@ -1366,16 +1378,24 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         },
                         xaxis=dict(
                             tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
-                            tickformat="%b %Y"
+                            tickformat="%b %Y",
+                            gridcolor='#f0f0f0'
                         ),
                         yaxis=dict(
-                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                            gridcolor='#f0f0f0'
                         ),
                         margin=dict(l=20, r=20, t=50, b=20),
                         showlegend=False,
                         plot_bgcolor='white',
                         paper_bgcolor='white',
-                        font=dict(color='black')
+                        font=dict(color='black'),
+                        hovermode="x unified",
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            font_size=14,
+                            font_family="Arial"
+                        )
                     )
                     st.plotly_chart(fig3, use_container_width=True)
                 else:
@@ -1390,19 +1410,21 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     total = offre_counts['Count'].sum()
                     offre_counts['Percentage'] = (offre_counts['Count'] / total * 100).round(1)
                     
+                    # Nouveaux paramètres de couleur et style
                     fig2 = px.bar(
                         offre_counts,
                         x='Count',
                         y='Offre',
                         orientation='h',
                         color='Offre',
-                        color_discrete_sequence=px.colors.qualitative.Set2,
+                        color_discrete_sequence=["#007bad", "#2596be", "#043a64", "#fc9307", "#ffc107"],  # Couleurs harmonisées
                     )
                     fig2.update_traces(
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
                         customdata=offre_counts[['Percentage']],
-                        textfont=dict(size=14, color='black', family='Arial', weight='bold')
+                        textfont=dict(size=14, color='black', family='Arial', weight='bold'),
+                        marker=dict(line=dict(width=1, color='#333333'))  # Contour des barres
                     )
                     fig2.update_layout(
                         xaxis_title={
@@ -1414,7 +1436,8 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             'font': {'size': 16, 'color': 'black', 'family': 'Arial', 'weight': 'bold'}
                         },
                         xaxis=dict(
-                            tickfont=dict(size=14, family='Arial', color='black', weight='bold')
+                            tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
+                            gridcolor='#f0f0f0'
                         ),
                         yaxis=dict(
                             tickfont=dict(size=14, family='Arial', color='black', weight='bold')
@@ -1424,7 +1447,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         plot_bgcolor='white',
                         paper_bgcolor='white',
                         font=dict(color='black'),
-                        bargap=0.3
+                        bargap=0.3,
+                        hoverlabel=dict(
+                            bgcolor="white",
+                            font_size=14,
+                            font_family="Arial"
+                        )
                     )
                     st.plotly_chart(fig2, use_container_width=True)
                 else:
@@ -1985,7 +2013,7 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         .stTabs [data-baseweb="tab-list"] button [data-testid="stMarkdownContainer"] p {
             font-weight: bold;
             color: #00afe1;
-            font-size: 1.5em
+            font-size: 1.2em
         }
     </style>
     """, unsafe_allow_html=True)
