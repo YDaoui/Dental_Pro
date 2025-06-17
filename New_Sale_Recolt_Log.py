@@ -71,7 +71,7 @@ def display_sales_graphs(df):
         fig_city.update_traces(
             texttemplate='%{text:,.2f} €',  # Format monétaire
             textposition='outside',        # Position extérieure
-            textfont_size=16              # Taille de police
+            textfont_size=20              # Taille de police
         )
         
         # Ajustement du layout
@@ -236,6 +236,62 @@ def clear_form():
         del st.session_state[key]
 
 def New_Sale_Agent():
+    st.markdown("""
+    <style>
+    /* Onglets inactifs - maintenant en bleu */
+    .stTabs [data-baseweb="tab-list"] button {
+        background-color: #00afe1;  /* Fond bleu */
+        color: white;              /* Texte blanc */
+        border-radius: 5px 5px 0 0;
+        padding: 10px 15px;
+        margin-right: 5px;
+        border: 1px solid #00afe1;
+        border-bottom: none;
+        font-weight: bold;
+        transition: all 0.2s ease-in-out;
+    }
+    
+    /* Effet de survol - bleu légèrement plus foncé */
+    .stTabs [data-baseweb="tab-list"] button:hover {
+        background-color: #00afe1;
+    }
+    
+    /* Onglet actif - maintenant en blanc */
+    .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
+        background-color: white;    /* Fond blanc */
+        color: #00afe1;            /* Texte bleu */
+        border-color: #00afe1;
+        border-bottom: 1px solid white; /* Cache la bordure du bas */
+    }
+    
+    /* Style du conteneur principal */
+    .stTabs {
+        margin-top: -10px;
+        margin-bottom: 15px;
+    }
+    
+    /* Ligne sous les onglets */
+    .stTabs [data-baseweb="tab-list"] {
+        border-bottom: 1px solid #00afe1;
+    }
+
+    /* Définir l'arrière-plan de la barre latérale en blanc */
+    section[data-testid="stSidebar"] {
+        background-color: white !important;
+    }
+
+    /* Style pour le compteur dans la barre latérale */
+    div[data-testid="stSidebar"] .stNumberInput > div > div > input {
+        color: #007bad !important; /* Couleur du texte du compteur */
+        font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
+    }
+    div[data-testid="stSidebar"] .stSlider > div > div > div > div {
+        color: #007bad !important; /* Couleur du texte du slider si utilisé comme compteur */
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
+     
     col1, col2 = st.columns([2, 2])
 
     with col1:

@@ -1,10 +1,9 @@
 import streamlit as st
+import os
 from Utils_Dental import *
 from Managers import manager_dashboard
 from Supports import support_dashboard
 from Agents import agent_dashboard
-
-
 
 # Configuration de la page
 st.set_page_config(
@@ -14,13 +13,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-
+def get_image_path(filename):
+    """Retourne le chemin absolu de l'image avec gestion des erreurs"""
+    try:
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(base_dir, filename)
+    except Exception as e:
+        st.error(f"Erreur de chemin: {str(e)}")
+        return filename  # Retourne le nom simple en cas d'erreur
 
 def login_page():
     add_custom_css()
-
-
-
 
 def add_custom_css():
     """Adds custom CSS styles to the Streamlit application."""
@@ -49,40 +52,33 @@ def add_custom_css():
         </style>
     """, unsafe_allow_html=True)
 
-
     col1_main, col2_main, col3_main, col4_main = st.columns([1, 0.8, 2, 1])
 
     with col2_main:
-        st.image('Dental_Implant.png', width=340)
+        try:
+            img_path = get_image_path('Dental_Implant.png')
+            st.image(img_path, width=340)
+        except Exception as e:
+            st.error(f"Impossible de charger l'image: {str(e)}")
+            st.warning("Image Dental_Implant.png non trouvée")
 
     with col3_main:
-        
-    
         st.markdown("<h2 style='color:#fc9307;'>Connexion</h2>", unsafe_allow_html=True)
-        #st.markdown("---")
         
         col_label_user, col_input_user = st.columns([1, 3])
         with col_label_user:
-           
             st.markdown("<div style='color:#043a64; font-weight:bold; height: 38px; display: flex; align-items: center;'>Nom d'utilisateur :</div>", unsafe_allow_html=True)
         with col_input_user:
-           
             username = st.text_input("", key="username_input", label_visibility="collapsed")
 
         col_label_pass, col_input_pass = st.columns([1, 3])
         with col_label_pass:
-            
             st.markdown("<div style='color:#043a64; font-weight:bold; height: 38px; display: flex; align-items: center;'>Mot de passe :</div>", unsafe_allow_html=True)
-            
         with col_input_pass:
             password = st.text_input("", type="password", key="password_input", label_visibility="collapsed")
 
-    
-
         col1, col2 = st.columns([1,1])
-       
         with col1:
-            
             if st.button("**Se connecter**", key="login_button", use_container_width=True):
                 user_data = authenticate(username, password)
                 if user_data:

@@ -395,7 +395,7 @@ def afficher_donnees_sales(conn, hyp_agent):
         kpi_card_html(col2, "Vente Moyenne", f"{moyenne_vente:,.2f} €", "#00afe1", "chart-line")
         kpi_card_html(col3, "Note Moyenne", f"{moyenne_rating:.1f}/5", "#ffc107", "star")
 
-        st.markdown("## 🎯 Analyse des Ventes")
+        st.markdown("## Analyse des Ventes")
         st.markdown("---")
 
         # Première ligne de graphiques

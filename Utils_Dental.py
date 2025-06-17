@@ -732,11 +732,11 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         fig_map.update_traces(
                             textfont=dict(family="Arial", size=12, color="white"),
                             textposition="middle center",
-                            hovertemplate="<b>%{hover_name}</b><br>" +
-                                          "Récoltes: %{customdata[0]}<br>" +
-                                          "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
-                                          "Transactions Erreur: %{customdata[2]:.2f}%" +
-                                          "<extra></extra>",
+                            hovertemplate="<b>%{customdata[3]}</b><br>" +  # Utilisez directement le nom de la ville depuis customdata
+                                "Ventes: %{customdata[0]}<br>" +
+                                "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
+                                "Transactions Erreur: %{customdata[2]:.2f}%" +
+                                "<extra></extra>",
                             customdata=city_recolts_map[['Formatted_Recolt', 'Refused_SMS_Percentage', 'Error_SMS_Percentage', 'City']]
                         )
 
@@ -1642,11 +1642,11 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                             color="white"
                         ),
                         textposition="middle center",
-                        hovertemplate="<b>%{hover_name}</b><br>" + # Use hover_name directly
-                                      "Ventes: %{customdata[0]}<br>" +
-                                      "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
-                                      "Transactions Erreur: %{customdata[2]:.2f}%" + # Added to hover template
-                                      "<extra></extra>",
+                        hovertemplate="<b>%{customdata[3]}</b><br>" +  # Utilisez directement le nom de la ville depuis customdata
+              "Ventes: %{customdata[0]}<br>" +
+              "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
+              "Transactions Erreur: %{customdata[2]:.2f}%" +
+              "<extra></extra>",
                         customdata=city_sales_map[['Formatted_Sale', 'Refused_SMS_Percentage', 'Error_SMS_Percentage', 'City']]
                     )
 

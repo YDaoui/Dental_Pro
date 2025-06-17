@@ -111,7 +111,7 @@ def support_dashboard():
     """Fonction principale pour afficher le tableau de bord Support"""
     col1, col2 = st.columns([1, 5])
     with col1:
-        st.image('Dental_Implant2.png', width=150)
+        st.image('Dental_Implant1.png', width=150)
     with col2:
         st.markdown("<h1 style='color: #002a48; margin-bottom: 0;'>Dashboard Supports</h1>", unsafe_allow_html=True)
         st.markdown("<h2 style='color: #007bad; margin-top: 0;'>Coachings Agents</h2>", unsafe_allow_html=True)
