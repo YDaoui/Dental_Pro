@@ -2018,7 +2018,7 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
     </style>
     """, unsafe_allow_html=True)
 
-    tab1, tab2, tab3 = st.tabs(["Logs Analytics", "Sales Analytics", "Recolts Analytics"])
+    tab1, tab2, tab3 = st.tabs(["Ventes Analyses","Logs Analyses","Recolts Analyses"])
 
 
     
