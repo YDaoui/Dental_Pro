@@ -2023,11 +2023,12 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
 
     
     with tab1:
-        logs_page(logs_df, staff_df, start_date, end_date)
         
+        sales_page(sales_df, staff_df, start_date, end_date)
     
     with tab2:
-        sales_page(sales_df, staff_df, start_date, end_date)
+        logs_page(logs_df, staff_df, start_date, end_date)
+        
     with tab3:
         recolts_page(recolts_df, staff_df, start_date, end_date)
 
