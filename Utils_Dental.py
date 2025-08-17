@@ -733,7 +733,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                             textfont=dict(family="Arial", size=12, color="white"),
                             textposition="middle center",
                             hovertemplate="<b>%{customdata[3]}</b><br>" +  # Utilisez directement le nom de la ville depuis customdata
-                                "Ventes: %{customdata[0]}<br>" +
+                                "Récolts: %{customdata[0]}<br>" +
                                 "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
                                 "Transactions Erreur: %{customdata[2]:.2f}%" +
                                 "<extra></extra>",
