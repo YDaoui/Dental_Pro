@@ -13,7 +13,7 @@ def get_db_connection():
     try:
         conn = sqlite3.connect(DB_PATH)
         
-        if DB_PASSWORD: # Vérifie si un mot de passe est fourni pour le PRAGMA key
+        if DB_PASSWORD: 
             print(f"DEBUG: Tentative d'application du PRAGMA key avec un mot de passe.")
             conn.execute(f"PRAGMA key='{DB_PASSWORD}'")
         
@@ -21,10 +21,10 @@ def get_db_connection():
         print("DEBUG: Connexion à la base de données réussie.")
         return conn
     except sqlite3.OperationalError as e:
-        # Erreur spécifique si la base de données est chiffrée et que la clé est incorrecte, ou si le fichier n'est pas trouvé
+        
         print(f"ERREUR SQLITE: Erreur opérationnelle lors de la connexion à la base de données. "
-              f"Vérifiez le chemin ('{DB_PATH}') et le mot de passe SQLCipher si la BDD est chiffrée. Détails: {e}")
-        if conn: conn.close() # Assurez-vous de fermer la connexion même en cas d'erreur
+              
+        if conn: conn.close() 
         return None
     except sqlite3.Error as e:
         print(f"ERREUR SQLITE: Erreur lors de la connexion à la base de données : {e}")
