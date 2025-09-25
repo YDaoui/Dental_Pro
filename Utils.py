@@ -2,11 +2,10 @@ import sqlite3
 import pandas as pd
 from contextlib import closing
 
-# --- Configuration de la base de données ---
-# En production, utilisez des variables d'environnement ou un fichier de configuration sécurisé.
-DB_PATH = 'Dentale_BD_Sqlite.db'  # <--- REMPLACEZ PAR LE CHEMIN RÉEL DE VOTRE BASE DE DONNÉES SQLITE
-DB_PASSWORD = 'YDaoui2303' # <--- REMPLACEZ PAR VOTRE MOT DE PASSE RÉEL (si vous utilisez SQLCipher)
 
+# path for db ;
+DB_PATH = 'Dentale_BD_Sqlite.db'  
+DB_PASSWORD = '********' 
 def get_db_connection():
     """Tente d'établir une connexion à la base de données SQLite."""
     print(f"DEBUG: Tentative de connexion à la base de données: {DB_PATH}")
