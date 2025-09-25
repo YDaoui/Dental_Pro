@@ -7,14 +7,12 @@ from contextlib import closing
 DB_PATH = 'Dentale_BD_Sqlite.db'  
 DB_PASSWORD = '********' 
 def get_db_connection():
-    """Tente d'établir une connexion à la base de données SQLite."""
+    
     print(f"DEBUG: Tentative de connexion à la base de données: {DB_PATH}")
     conn = None
     try:
         conn = sqlite3.connect(DB_PATH)
-        # ATTENTION: Cette ligne est pour SQLCipher (base de données chiffrée).
-        # Si votre base de données 'Dentale_BD_Sqlite.db' n'est PAS chiffrée,
-        # cette ligne DOIT être commentée ou supprimée.
+        
         if DB_PASSWORD: # Vérifie si un mot de passe est fourni pour le PRAGMA key
             print(f"DEBUG: Tentative d'application du PRAGMA key avec un mot de passe.")
             conn.execute(f"PRAGMA key='{DB_PASSWORD}'")
