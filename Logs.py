@@ -387,9 +387,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     fig_day.update_layout(common_layout)
                     st.plotly_chart(fig_day, use_container_width=True)
                 except Exception as e:
-                    st.error(f"Erreur lors de la création du graphique par jour : {e}")
-
-        # Second row of charts (bar charts)
+                    st.error(f"Erreur lors 
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Répartitions</h2>", unsafe_allow_html=True)
         col1_b, col2_b, col3_b = st.columns(3)
 
