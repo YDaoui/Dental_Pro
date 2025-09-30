@@ -5,7 +5,7 @@ from Managers import manager_dashboard
 from Supports import support_dashboard
 from Agents import agent_dashboard
 
-# Configuration de la page
+ 
 st.set_page_config(
     layout="wide",
     page_title="Global Sales Dashboard",
@@ -20,7 +20,7 @@ def get_image_path(filename):
         return os.path.join(base_dir, filename)
     except Exception as e:
         st.error(f"Erreur de chemin: {str(e)}")
-        return filename  # Retourne le nom simple en cas d'erreur
+        return filename  
 
 def login_page():
     add_custom_css()
