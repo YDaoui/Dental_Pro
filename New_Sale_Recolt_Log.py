@@ -5,7 +5,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from Utils_Dental import add_custom_css, get_db_connection, load_data
 
-# Helper function for KPI card HTML
+
 def kpi_card_html(column, title, value_html, color, icon_name):
     """Generates HTML for a custom-styled KPI card."""
     column.markdown(f"""
@@ -42,7 +42,7 @@ def display_sales_graphs(df):
         unsafe_allow_html=True
     )
 
-    # KPI Cards
+   
     total_sales = df["Total_Sale"].sum()
     avg_sale = df["Total_Sale"].mean()
     avg_rating = df["Rating"].mean()
@@ -52,7 +52,7 @@ def display_sales_graphs(df):
     kpi_card_html(col2, "Moyenne/vente", f"{avg_sale:,.2f}€", "#00afe1", "chart-line")
     kpi_card_html(col3, "Note moyenne", f"{avg_rating:.1f}/9", "#ffc107", "smile")
 
-    # Graphs
+
     st.markdown("---")
     col1, col2 = st.columns(2)
 
@@ -64,24 +64,24 @@ def display_sales_graphs(df):
                         y='City', 
                         orientation='h', 
                         color='City',
-                        text='Total_Sale'  # Étiquettes de données
+                        text='Total_Sale' 
                         )
         
-        # Formatage des étiquettes
+     
         fig_city.update_traces(
-            texttemplate='%{text:,.2f} €',  # Format monétaire
-            textposition='outside',        # Position extérieure
-            textfont_size=20              # Taille de police
+            texttemplate='%{text:,.2f} €',  
+            textposition='outside',        
+            textfont_size=20              
         )
         
-        # Ajustement du layout
+       
         fig_city.update_layout(
             uniformtext_minsize=8,
             uniformtext_mode='hide',
             yaxis={'categoryorder': 'total ascending'},
             showlegend=False,
-            margin=dict(l=20, r=20, t=40, b=20),  # Ajuster les marges si nécessaire
-            height=500                           # Hauteur fixe pour mieux voir
+            margin=dict(l=20, r=20, t=40, b=20),  
+            height=500                           
         )
         
         st.plotly_chart(fig_city, use_container_width=True)
@@ -95,9 +95,9 @@ def display_sales_graphs(df):
                               )
             fig_date.update_xaxes(title_text='Date')
             fig_date.update_yaxes(title_text='Total Ventes (€)')
-            # Add data labels for line chart
+          
             fig_date.update_traces(mode='lines+markers+text', text=df_date['Total_Sale'].apply(lambda x: f'{x:,.2f}€'), textposition='top center')
-            fig_date.update_layout(showlegend=False)  # Removed legend
+            fig_date.update_layout(showlegend=False)  
             st.plotly_chart(fig_date, use_container_width=True)
         except Exception:
             st.warning("Données de date indisponibles pour l'évolution des ventes.")
@@ -113,7 +113,7 @@ def display_recolt_graphs(df):
         unsafe_allow_html=True
     )
 
-    # KPI Cards
+   
     total_recolt = df["Total_Recolt"].sum()
     avg_recolt = df["Total_Recolt"].mean()
     avg_rating = df["Rating"].mean()
@@ -123,7 +123,7 @@ def display_recolt_graphs(df):
     kpi_card_html(col2, "Moyenne/récolte", f"{avg_recolt:,.2f}€", "#17a2b8", "seedling")
     kpi_card_html(col3, "Satisfaction", f"{avg_rating:.1f}/9", "#ffc107", "smile")
 
-    # Graphs
+  
     st.markdown("---")
     col1, col2 = st.columns(2)
 
@@ -136,45 +136,45 @@ def display_recolt_graphs(df):
             y='City',
             orientation='h',
             color='City',
-            text='Total_Recolt'  # Étiquettes de données
+            text='Total_Recolt'  
         )
         
-        # Personnalisation des étiquettes
+        
         fig_city.update_traces(
-            texttemplate='%{text:,.2f} €',  # Format monétaire
-            textposition='outside',        # Étiquettes à l'extérieur des barres
-            textfont_size=12,             # Taille de police
-            insidetextanchor='middle'      # Alignement si étiquettes trop longues
+            texttemplate='%{text:,.2f} €',  
+            textposition='outside',       
+            textfont_size=12,            
+            insidetextanchor='middle'      
         )
         
-        # Optimisation du layout
+       
         fig_city.update_layout(
             uniformtext_minsize=8,
             uniformtext_mode='hide',
-            yaxis={'categoryorder': 'total ascending'},  # Tri des villes par récolte
-            showlegend=False,                            # Pas de légende
-            margin=dict(l=20, r=20, t=40, b=20),        # Marges ajustées
-            height=500,                                 # Hauteur fixe
-            xaxis_title="Montant des récoltes (€)",    # Titre axe X
-            yaxis_title="Ville"                         # Titre axe Y
+            yaxis={'categoryorder': 'total ascending'},  
+            showlegend=False,                            
+            margin=dict(l=20, r=20, t=40, b=20),        
+            height=500,                                 
+            xaxis_title="Montant des récoltes (€)",    
+            yaxis_title="Ville"                        
         )
         
         st.plotly_chart(fig_city, use_container_width=True)
 
     with col2:
         st.markdown("**Récoltes par Banque**")
-        # Ensure 'Banques' column exists before trying to group
+      
         if 'Banques' in df.columns:
             df_bank = df.groupby('Banques')['Total_Recolt'].sum().reset_index()
             fig_bank = px.bar(df_bank, x='Total_Recolt', y='Banques', orientation='h', color='Banques',
-                              text='Total_Recolt'  # Add text labels
+                              text='Total_Recolt'  
                               )
             fig_bank.update_traces(texttemplate='%{text:,.2f}€', textposition='outside')
             fig_bank.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis={'categoryorder': 'total ascending'}, showlegend=False)  # Removed legend
             st.plotly_chart(fig_bank, use_container_width=True)
         else:
             st.warning("La colonne 'Banques' n'est pas disponible pour afficher les récoltes par banque. Assurez-vous qu'elle est présente dans vos données de récolte.")
-            # Fallback to Evolution des récoltes if Bank column is not found
+           
             st.markdown("**Évolution des récoltes (Fallback)**")
             try:
                 df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'])
@@ -184,12 +184,12 @@ def display_recolt_graphs(df):
                 fig_date.update_xaxes(title_text='Date')
                 fig_date.update_yaxes(title_text='Total Récoltes (€)')
                 fig_date.update_traces(mode='lines+markers+text', text=df_date['Total_Recolt'].apply(lambda x: f'{x:,.2f}€'), textposition='top center')
-                fig_date.update_layout(showlegend=False)  # Removed legend
+                fig_date.update_layout(showlegend=False) 
                 st.plotly_chart(fig_date, use_container_width=True)
             except Exception:
                 st.warning("Données de date indisponibles pour l'évolution des récoltes.")
 
-    # New: Evolution des récoltes as a separate full-width graph at the bottom
+   
     st.markdown("---")
     st.markdown("### Évolution Générale des Récoltes")
     try:
@@ -200,7 +200,7 @@ def display_recolt_graphs(df):
         fig_recolt_line_overall.update_xaxes(title_text='Date')
         fig_recolt_line_overall.update_yaxes(title_text='Total Récoltes (€)')
         fig_recolt_line_overall.update_traces(mode='lines+markers+text', text=df_date_overall['Total_Recolt'].apply(lambda x: f'{x:,.2f}€'), textposition='top center')
-        fig_recolt_line_overall.update_layout(showlegend=False)  # Removed legend
+        fig_recolt_line_overall.update_layout(showlegend=False)  
         st.plotly_chart(fig_recolt_line_overall, use_container_width=True)
     except Exception:
         st.warning("Données de date indisponibles pour l'évolution générale des récoltes.")
@@ -209,9 +209,9 @@ def get_unique_values_from_table(table_name, column_name):
     """Récupère les valeurs uniques d'une colonne spécifique d'une table"""
     conn = get_db_connection()
     try:
-        # Handle cases where column_name contains a WHERE clause
+       
         if "WHERE" in column_name:
-            # Split the column name and WHERE condition
+           
             parts = column_name.split("WHERE")
             column = parts[0].strip()
             condition = parts[1].strip()
@@ -308,7 +308,7 @@ def New_Sale_Agent():
 
     hyp_agent = st.session_state.get("hyp", None)
 
-    # Charger les données existantes
+  
     sales_df, _, _, _ = load_data()
     agent_sales = sales_df[sales_df['Hyp'] == hyp_agent] if hyp_agent else pd.DataFrame()
 
@@ -320,11 +320,11 @@ def New_Sale_Agent():
     )
 
     try:
-        # Récupérer les valeurs uniques depuis la table Sales
+       
         countries = get_unique_values_from_table('Sales', 'Country')
         cities = get_unique_values_from_table('Sales', 'City')
 
-        # Formulaire de vente
+       
         col1, col2, col3 = st.columns([1, 2, 2])
         with col1:
             st.markdown("### Numéro du BP")
@@ -332,7 +332,7 @@ def New_Sale_Agent():
             order_date = st.date_input("Order Date", value=datetime.today(), key="sale_date")
             country = st.selectbox("Country", countries, key="sale_country")
             
-            # Filtrer les villes en fonction du pays sélectionné
+            
             selected_country = st.session_state.get('sale_country', None)
             if selected_country:
                 cities_in_country = get_unique_values_from_table('Sales', f"City WHERE Country = '{selected_country}' AND City IS NOT NULL")
@@ -381,7 +381,7 @@ def New_Sale_Agent():
                         )
                         conn.commit()
                         st.success("Vente enregistrée avec succès!")
-                        # Reload data after successful insertion to update graphs
+                      
                         sales_df, _, _, _ = load_data()
                         agent_sales = sales_df[sales_df['Hyp'] == hyp_agent] if hyp_agent else pd.DataFrame()
                         st.session_state['agent_sales_updated'] = True # Use a session state to trigger re-render if needed
@@ -476,7 +476,7 @@ def New_Recolt_Agent():
     }
     </style>
 """, unsafe_allow_html=True)
-    # Header section
+   
     col1, col2 = st.columns([2, 2])
     with col1:
         st.markdown(
@@ -492,27 +492,27 @@ def New_Recolt_Agent():
     
     hyp_agent = st.session_state.get("hyp", None)
 
-    # Load existing data
+  
     _, recolts_df, _, _ = load_data()
     agent_recolts = recolts_df[recolts_df['Hyp'] == hyp_agent] if hyp_agent else pd.DataFrame()
     conn = get_db_connection()
 
-    # Agent title
+  
     st.markdown(
         f"<h2 style='color: #007bad;text-align: left;'>Nouvelle Récolte au nom de : {st.session_state.get('username', 'Agent')}</h2>",
         unsafe_allow_html=True
     )
 
     try:
-        # Get unique values from database
+        
         countries = get_unique_values_from_table('Recolt', 'Country')
         cities = get_unique_values_from_table('Recolt', 'City')
         banks = get_unique_values_from_table('Recolt', 'Banques')
 
-        # Main form layout
+      
         form_col1, form_col2, info_col = st.columns([1, 2, 2])
         
-        # FORM COLUMN 1 - Basic information
+       
         with form_col1:
             st.markdown("### Informations de base")
             order_reference = st.text_input("Référence du BP", key="recolt_ref")
@@ -529,7 +529,7 @@ def New_Recolt_Agent():
             else:
                 city = st.selectbox("Ville", cities, key="recolt_city")
 
-        # FORM COLUMN 2 - Transaction details
+      
         with form_col2:
             st.markdown("### Détails de la transaction")
             status_col, bank_col = st.columns(2)
@@ -539,13 +539,13 @@ def New_Recolt_Agent():
             with bank_col:
                 bank = st.selectbox("Banque", banks, key="recolt_bank")
             
-            # Rating
+           
             rating = st.slider("Évaluation (1-9)", min_value=1, max_value=9, 
                 key="recolt_rating")
             
             
             
-            # Amount section
+          
             amount_col1, amount_col2 = st.columns([2, 1])
             with amount_col1:
                 st.markdown("**Montant (€)**")
@@ -557,10 +557,10 @@ def New_Recolt_Agent():
                 montant_slider = st.slider("", min_value=0, max_value=1000, 
                     step=5, key="recolt_slider", label_visibility="collapsed")
             
-            # Status and bank
+           
             
 
-            # Action buttons
+          
             valider, annuler = st.columns(2)
             with valider:
                 st.markdown("""
@@ -620,7 +620,7 @@ def New_Recolt_Agent():
                     clear_form()
                     st.warning("Opération annulée et champs vidés")
 
-        # INFO COLUMN - Log information and graphs
+       
         with info_col:
             st.markdown("### Informations sur le Log")
             st.warning("Opération imposible : Aucun Logs n'a été définis")
