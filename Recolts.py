@@ -9,7 +9,7 @@ import plotly.express as px
 import folium
 from streamlit_folium import st_folium
 
-# Définition de la palette de couleurs harmonisée
+
 COLOR_PALETTE = {
     "primary": "#0a7fac",
     "secondary": "#043a64",
@@ -213,7 +213,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             unsafe_allow_html=True
         )
 
-    # Filters
+   
     col1, col2, col3, col4, col5 = st.columns([2, 2, 2, 2,2])
     with col1:
         country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(recolts_df['Country'].dropna().unique()), key='recolts_country_filter')
@@ -234,7 +234,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
     with col5:
         bank_filter = st.selectbox("Filtrer par Banque", ['Toutes'] + sorted(recolts_df['Banques'].dropna().unique()), key='recolts_bank_filter')
 
-    # Filter data
+  
     with st.spinner("Application des filtres..."):
         filtered_recolts = filter_recolts_data(recolts_df, country_filter, team_filter, activity_filter, agent_filter, start_date, end_date, staff_df)
         
@@ -245,7 +245,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
         global_start_date_dt = pd.to_datetime(start_date).date()
         global_end_date_dt = pd.to_datetime(end_date).date()
 
-        # Métriques / KPIs
+
         col1_kpi, col2_kpi, col3_kpi = st.columns(3)
 
         with col1_kpi:
@@ -374,7 +374,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                 else:
                     st.info("Pas de données de transactions pour cette période.")
 
-        # Principaux Graphiques
+     
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Analyses Principales</h2>", unsafe_allow_html=True)
         col_main1, col_main2, col_main3 = st.columns([2, 2, 2])
         with col_main1:
@@ -448,7 +448,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             else:
                 st.info("Les données de récoltes ne contiennent pas d'information sur les banques.")
 
-        # Répartition Temporelle Détaillée
+     
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Répartition Temporelle Détaillée des Récoltes</h2>", unsafe_allow_html=True)
         col_temp1, col_temp2, col_temp3 = st.columns(3)
 
@@ -611,7 +611,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
             )
             st.plotly_chart(fig_mois, use_container_width=True, key="recolts_par_mois")
 
-        # Performance et Tendances
+      
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Performance et Tendances</h2>", unsafe_allow_html=True)
 
         col_g1, col_g2, col_g3 = st.columns(3)
@@ -686,7 +686,7 @@ def recolts_page1(recolts_df, staff_df, start_date, end_date):
                     textfont=dict(size=12, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="distribution_valeurs_recolte")
 
-        # Autres Analyses
+     
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Autres Analyses</h2>", unsafe_allow_html=True)
         
         st.markdown(f"<h3 style='text-align: center; color: {COLOR_PALETTE['primary']};'>Détails des Transactions de Récoltes</h3>", unsafe_allow_html=True)
