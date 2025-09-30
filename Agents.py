@@ -26,7 +26,7 @@ def agent_dashboard():
         return
 
     try:
-        # En-tête avec logo et titre
+        
         col1, col2, col3 = st.columns([1, 2, 2])
         with col1:
             st.image('Dental_Implant1.png', width=150)
@@ -45,7 +45,7 @@ def agent_dashboard():
             if not df_agent.empty:
                 agent = df_agent.iloc[0]
                 date_in = pd.to_datetime(agent["Date_In"])
-                anciennete = (pd.Timestamp.now() - date_in).days // 30  # Ancienneté en mois
+                anciennete = (pd.Timestamp.now() - date_in).days // 30  
                 
                 
             else:
@@ -60,7 +60,7 @@ def agent_dashboard():
 
    
 
-    # Menu dans la sidebar
+    
     with st.sidebar:
         
         st.image('Dental_Implant.png', width=350)
@@ -78,7 +78,7 @@ def agent_dashboard():
             }
         )
 
-    # Affichage du contenu selon l'option choisie
+   
     if selected == "Mes Performances":
         afficher_performances_agent()
     if selected == "New Sale":
@@ -97,28 +97,13 @@ def agent_dashboard():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     
 def login_Logs():
     """Affiche la page des logs avec les champs d'entrée."""
     col1, col2, col3 = st.columns([1, 1, 1])
 
     with col1:
-        # "Logs" title: Blue, larger, and bold
+      
         st.markdown(
             """
             <h3 style='color: #002a48; font-size: 40px; font-weight: bold;'>Logs</h3>
@@ -134,7 +119,7 @@ def login_Logs():
     unsafe_allow_html=True
 )
 
-        # Date and time: Light blue, larger, and bold
+       
         st.markdown(
             f"""
             <p style='color: #007bad; font-size: 30px; font-weight: bold;'>Date et heure: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
@@ -170,7 +155,7 @@ def afficher_performances_agent():
     try:
         hyp_agent = st.session_state["hyp"]
         
-        # Récupérer les informations de l'agent
+        # Récup info agent
         df_agent = pd.read_sql(f"SELECT * FROM Effectifs WHERE Hyp = '{hyp_agent}'", conn)
         if not df_agent.empty:
             agent = df_agent.iloc[0]
@@ -181,7 +166,7 @@ def afficher_performances_agent():
             #**Activité :** {agent["Activité"]}  
             #""")
         
-        # Création des onglets
+       
         tab1, tab2 = st.tabs(["📈   Sales", "💰   Recolts"])
         
         with tab1:
@@ -222,7 +207,6 @@ def kpi_card_html(column, title, value_html, color, icon_name):
 
 
 
-# New helper function for agent info card
 def agent_info_card_html(column, title, content_html):
     """Generates HTML for a custom-styled agent info card."""
     column.markdown(f"""
@@ -254,7 +238,7 @@ def display_sales_graphs(df):
     st.markdown("---")
     st.markdown("### 📊 Statistiques de Ventes")
 
-    # KPI Cards using the kpi_card_html function
+    # KPI 
     total_sales = df["Total_Sale"].sum()
     avg_sale = df["Total_Sale"].mean()
     avg_rating = df["Rating"].mean()
@@ -264,7 +248,7 @@ def display_sales_graphs(df):
     kpi_card_html(col2, "Moyenne/vente", f"{avg_sale:,.2f}€", "#00afe1", "chart-line")
     kpi_card_html(col3, "Note moyenne", f"{avg_rating:.1f}/9", "#ffc107", "star")
 
-    # Graphs
+    
     st.markdown("---")
     col1, col2 = st.columns(2)
 
@@ -303,13 +287,13 @@ def display_recolt_graphs(df):
     st.markdown("---")
     st.markdown("### 📊 Statistiques de Récoltes")
 
-    # KPI Cards using the kpi_card_html function
+   
     total_recolt = df["Total_Recolt"].sum()
     avg_recolt = df["Total_Recolt"].mean()
-    avg_rating = df["Rating"].mean() # Assuming Rating is relevant for Recolt as well
+    avg_rating = df["Rating"].mean() 
 
     col1, col2, col3 = st.columns(3)
-    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f} €", "#043a64", "leaf") # Green for harvest
+    kpi_card_html(col1, "Total Récolté", f"{total_recolt:,.2f} €", "#043a64", "leaf")
     kpi_card_html(col2, "Moyenne/récolte", f"{avg_recolt:,.2f} €", "#17a2b8", "seedling")
     kpi_card_html(col3, "Satisfaction", f"{avg_rating:.1f}/9", "#ffc107", "smile")
 
@@ -322,7 +306,7 @@ def display_recolt_graphs(df):
         st.markdown("**Récoltes par Ville**")
         df_city = df.groupby('City')['Total_Recolt'].sum().reset_index()
         fig_city = px.bar(df_city, x='Total_Recolt', y='City', orientation='h', color='City',
-                          text='Total_Recolt', # Add text labels
+                          text='Total_Recolt',
                           title='Récoltes par Ville')
         fig_city.update_traces(texttemplate='%{text:,.2f}€', textposition='inside')
         fig_city.update_layout(uniformtext_minsize=8, uniformtext_mode='hide', yaxis={'categoryorder':'total ascending'}, showlegend=False) # Removed legend
@@ -330,7 +314,7 @@ def display_recolt_graphs(df):
 
     with col2:
         st.markdown("**Récoltes par Banque**")
-        # Ensure 'Banques' column exists before trying to group
+      
         if 'Banques' in df.columns:
             df_bank = df.groupby('Banques')['Total_Recolt'].sum().reset_index()
             fig_bank = px.bar(df_bank, x='Total_Recolt', y='Banques', orientation='h', color='Banques',
@@ -341,7 +325,7 @@ def display_recolt_graphs(df):
             st.plotly_chart(fig_bank, use_container_width=True)
         else:
             st.warning("La colonne 'Banques' n'est pas disponible pour afficher les récoltes par banque. Assurez-vous qu'elle est présente dans vos données de récolte.")
-            # Fallback to Evolution des récoltes if Bank column is not found
+         
             st.markdown("**Évolution des récoltes (Fallback)**")
             try:
                 df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'])
@@ -356,7 +340,6 @@ def display_recolt_graphs(df):
             except Exception:
                 st.warning("Données de date indisponibles pour l'évolution des récoltes.")
 
-    # New: Evolution des récoltes as a separate full-width graph at the bottom
     st.markdown("---")
     st.markdown("### Évolution Générale des Récoltes")
     try:
@@ -385,7 +368,7 @@ def afficher_donnees_sales(conn, hyp_agent):
         df_sales = df_sales.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Sale', 'Rating'])
         df_sales = df_sales[df_sales['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
 
-        # KPIs using the kpi_card_html function
+      
         total_ventes = df_sales["Total_Sale"].sum()
         moyenne_vente = df_sales["Total_Sale"].mean()
         moyenne_rating = df_sales["Rating"].mean()
@@ -398,11 +381,11 @@ def afficher_donnees_sales(conn, hyp_agent):
         st.markdown("## Analyse des Ventes")
         st.markdown("---")
 
-        # Première ligne de graphiques
+        
         col_g1, col_g2 = st.columns(2)
 
         with col_g1:
-            # Graphique horizontal des ventes par ville
+    
             df_grouped = (
                 df_sales.groupby(['City', 'SHORT_MESSAGE'])['Total_Sale']
                 .sum()
@@ -441,7 +424,7 @@ def afficher_donnees_sales(conn, hyp_agent):
             st.plotly_chart(fig1, use_container_width=True)
 
         with col_g2:
-            # Ventes par heure
+           
             df_sales['Heure'] = pd.to_datetime(df_sales['ORDER_DATE']).dt.hour
             ventes_par_heure = df_sales.groupby('Heure')['Total_Sale'].sum().reset_index()
 
@@ -470,12 +453,12 @@ def afficher_donnees_sales(conn, hyp_agent):
             )
             st.plotly_chart(fig2, use_container_width=True)
 
-        # Deuxième ligne de graphiques - Évolution temporelle
+       
         st.markdown("---")
         col_g3, col_g4 = st.columns(2)
 
         with col_g3:
-            # Évolution des ventes par date
+           
             try:
                 df_sales['ORDER_DATE'] = pd.to_datetime(df_sales['ORDER_DATE'])
                 df_date = df_sales.groupby(df_sales['ORDER_DATE'].dt.date)['Total_Sale'].sum().reset_index()
@@ -506,7 +489,7 @@ def afficher_donnees_sales(conn, hyp_agent):
                 st.warning(f"Impossible d'afficher l'évolution temporelle: {str(e)}")
 
         with col_g4:
-            # Notes moyennes par ville
+            
             df_rating = df_sales.groupby('City')['Rating'].mean().reset_index()
             df_rating = df_rating.sort_values('Rating', ascending=False)
             
@@ -530,7 +513,7 @@ def afficher_donnees_sales(conn, hyp_agent):
                 font=dict(family="Arial", size=14),
                 xaxis_title='Ville',
                 yaxis_title='Note moyenne',
-                yaxis_range=[0, 5],  # Si la note est sur 5
+                yaxis_range=[0, 5],  
                 showlegend=False
             )
             st.plotly_chart(fig4, use_container_width=True)
@@ -554,7 +537,7 @@ def afficher_donnees_recolts(conn, hyp_agent):
         df_recolts = df_recolts.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Recolt'])
         df_recolts = df_recolts[df_recolts['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
 
-        # KPIs using the kpi_card_html function
+       
         total_recoltes = df_recolts["Total_Recolt"].sum()
         moyenne_recolte = df_recolts["Total_Recolt"].mean()
         nombre_operations = len(df_recolts)
@@ -567,11 +550,11 @@ def afficher_donnees_recolts(conn, hyp_agent):
         st.markdown("---")
         st.subheader("Analyse des Récoltes")
 
-        # Première ligne de graphiques
+      
         colg1, colg2 ,colg3= st.columns(3)
 
         with colg1:
-            # Graphique horizontal des récoltes par ville
+        
             df_grouped = (
                 df_recolts.groupby(['City', 'SHORT_MESSAGE'])['Total_Recolt']
                 .sum()
@@ -610,7 +593,7 @@ def afficher_donnees_recolts(conn, hyp_agent):
             st.plotly_chart(fig1, use_container_width=True)
 
         with colg2:
-            # Récoltes par heure
+          
             df_recolts['Heure'] = pd.to_datetime(df_recolts['ORDER_DATE']).dt.hour
             recoltes_par_heure = df_recolts.groupby('Heure')['Total_Recolt'].sum().reset_index()
 
@@ -666,12 +649,8 @@ def afficher_donnees_recolts(conn, hyp_agent):
                     )
                     st.plotly_chart(fig4, use_container_width=True)
 
-        # Deuxième ligne de graphiques - Évolution temporelle
-        
-        
-
             with colg3:
-            # Évolution des récoltes par date
+          
                 try:
                     df_recolts['ORDER_DATE'] = pd.to_datetime(df_recolts['ORDER_DATE'])
                     df_date = df_recolts.groupby(df_recolts['ORDER_DATE'].dt.date)['Total_Recolt'].sum().reset_index()
@@ -704,7 +683,7 @@ def afficher_donnees_recolts(conn, hyp_agent):
                 st.subheader("📋 Détail des Récoltes")
                 st.dataframe(df_recolts)
            
-                # Récoltes par banque (si la colonne existe)
+             
                 
                 
 
