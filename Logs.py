@@ -4,7 +4,7 @@ import plotly.express as px
 from datetime import datetime
 import numpy as np
 
-# Définition de la palette de couleurs harmonisée (identique à recolts_page1)
+
 COLOR_PALETTE = {
     "primary": "#0a7fac",
     "secondary": "#043a64",
@@ -75,7 +75,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
     logs_df_copy = logs_df.copy()
     staff_df_copy = staff_df.copy()
 
-    # --- Pre-process staff_df to create 'Nom Prénom' once ---
+  
     if 'NOM' in staff_df_copy.columns and 'PRENOM' in staff_df_copy.columns:
         staff_df_copy['Nom Prénom'] = staff_df_copy['NOM'] + ' ' + staff_df_copy['PRENOM']
     else:
@@ -85,7 +85,6 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         else:
             staff_df_copy['Nom Prénom'] = ""
 
-    # Centered Main Title
     col1, col2 = st.columns([2, 2])
     with col1:
         st.markdown("<h1 style='text-align: left; color: #002a48; margin-bottom: 0;'>Logs Dashboard</h1>", unsafe_allow_html=True)
@@ -95,7 +94,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
   
     #st.markdown("<h2 style='text-align: center; color: #002a48;'>Filtres Avancés</h2>", unsafe_allow_html=True)
 
-    # Filters
+
     col1_f, col2_f, col3_f, col4_f = st.columns(4)
 
     with col1_f:
@@ -138,11 +137,11 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         
         agent_filter = st.selectbox("Agent (Nom et Prénom)", agents_for_dropdown, key='log_agent_filter')
 
-    # --- Apply filters ---
+  
     with st.spinner("Application des filtres..."):
         filtered_logs = logs_df_copy.copy()
 
-        # Date filtering
+   
         if 'Date_d_création' in filtered_logs.columns and pd.api.types.is_datetime64_any_dtype(filtered_logs['Date_d_création']):
             filtered_logs = filtered_logs[
                 (filtered_logs['Date_d_création'].dt.date >= start_date) & 
@@ -152,7 +151,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             st.warning("La colonne 'Date_d_création' n'est pas au format datetime ou est manquante. Le filtrage par date ne sera pas appliqué.")
             filtered_logs = pd.DataFrame(columns=logs_df_copy.columns) # Empty df if date col is problematic
 
-        # Other filters
+     
         if segment_filter != 'Tous' and 'Segment' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Segment'] == segment_filter]
         if sous_motif_filter != 'Tous' and 'Sous_motif' in filtered_logs.columns:
@@ -166,7 +165,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         if mode_facturation_filter != 'Tous' and 'Mode_facturation' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Mode_facturation'] == mode_facturation_filter]
 
-        # Apply Equipe and Agent filters
+        
         if 'Hyp' in filtered_logs.columns and not staff_df_copy.empty and 'Hyp' in staff_df_copy.columns:
             temp_staff_df = staff_df_copy.copy()
             if equipe_filter != 'Tous' and 'Team' in temp_staff_df.columns:
@@ -180,16 +179,16 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             if not temp_staff_df.empty and 'Hyp' in temp_staff_df.columns:
                 filtered_logs = filtered_logs[filtered_logs['Hyp'].isin(temp_staff_df['Hyp'])]
             else:
-                # If agent/team filter leads to no staff, then no logs should be shown
+                
                 filtered_logs = pd.DataFrame(columns=filtered_logs.columns)
         elif agent_filter != 'Tous' or equipe_filter != 'Tous':
              st.warning("La colonne 'Hyp' est manquante dans les logs ou les données du personnel pour appliquer les filtres Agent/Équipe.")
-             filtered_logs = pd.DataFrame(columns=filtered_logs.columns) # No agent/team filtering possible
+             filtered_logs = pd.DataFrame(columns=filtered_logs.columns) 
 
   
 
     if not filtered_logs.empty:
-        # --- KPIs Section ---
+       
         #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés</h2>", unsafe_allow_html=True)
         col1_kpi, col2_kpi, col3_kpi, col4_kpi = st.columns(4)
 
@@ -241,7 +240,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         kpi_card_html(col3_kpi, "Moyenne Logs/Client", f"{avg_logs_per_client:.2f}", "#fcd25b", "chart-line")
         kpi_card_html(col4_kpi, "Qualité de Services", combined_quality_direction_value, "#fc9307", "exchange-alt")
 
-        # Common layout configuration with new color scheme
+    
         common_layout = dict(
             plot_bgcolor='white',
             paper_bgcolor='white',
@@ -272,7 +271,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             margin=dict(l=40, r=40, t=40, b=40)
         )
 
-        # First row of charts
+     
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Analyses Principales</h2>", unsafe_allow_html=True)
         col1_g, col2_g, col3_g = st.columns(3)
 
@@ -391,7 +390,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Répartitions</h2>", unsafe_allow_html=True)
         col1_b, col2_b, col3_b = st.columns(3)
 
-        # Bar chart for segments
+     
         with col1_b:
             st.markdown(f"<h3 style='color: {COLOR_PALETTE['primary']};'>Répartition par Segment</h3>", unsafe_allow_html=True)
             if 'Segment' in filtered_logs.columns:
@@ -501,10 +500,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                 except Exception as e:
                     st.error(f"Erreur lors de la création du graphique de mode de facturation : {e}")
 
-        # Third row of charts
-        
-
-        # Display detailed logs
+       
         st.markdown(f"<h2 style='text-align: center; color: {COLOR_PALETTE['secondary']};'>Détails des Logs</h2>", unsafe_allow_html=True)
 
         display_cols = [
@@ -515,7 +511,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         available_cols = [col for col in display_cols if col in filtered_logs.columns]
         display_df = filtered_logs[available_cols].copy()
 
-        # Merge with staff data
+      
         if 'Hyp' in display_df.columns and not staff_df_copy.empty and 'Hyp' in staff_df_copy.columns:
             staff_cols_to_merge = ['Hyp']
             if 'Nom Prénom' in staff_df_copy.columns:
@@ -538,14 +534,14 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             remaining_cols = [col for col in display_df.columns if col not in cols_to_order and col != 'Hyp']
             display_df = display_df[cols_to_order + remaining_cols]
 
-        # Format datetime
+       
         if 'Date_d_création' in display_df.columns and pd.api.types.is_datetime64_any_dtype(display_df['Date_d_création']):
             display_df['Date_d_création'] = display_df['Date_d_création'].dt.strftime('%Y-%m-%d %H:%M:%S')
         
         if 'Heure_création' in display_df.columns and not pd.api.types.is_datetime64_any_dtype(display_df['Heure_création']):
             display_df['Heure_création'] = display_df['Heure_création'].astype(str)
         
-        # Display column counts
+       
         st.markdown(f"<h3 style='color: {COLOR_PALETTE['secondary']};'>Nombre de valeurs par colonne:</h3>", unsafe_allow_html=True)
         num_cols = len(display_df.columns)
         num_cols_per_row = min(num_cols, 6)
@@ -559,7 +555,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
                     unsafe_allow_html=True
                 )
         
-        # Display dataframe with styling
+      
         st.markdown(
             f"""
             <style>
@@ -584,7 +580,6 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
             height=500
         )
 
-        # Download button
         csv = display_df.to_csv(index=False, sep=';').encode('utf-8')
         st.download_button(
             label="Télécharger les données filtrées",
