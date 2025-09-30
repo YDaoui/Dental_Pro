@@ -17,7 +17,7 @@ def get_db_connection():
             print(f"DEBUG: Tentative d'application du PRAGMA key avec un mot de passe.")
             conn.execute(f"PRAGMA key='{DB_PASSWORD}'")
         
-        conn.row_factory = sqlite3.Row # Permet d'accéder aux colonnes par leur nom
+        conn.row_factory = sqlite3.Row 
         print("DEBUG: Connexion à la base de données réussie.")
         return conn
     except sqlite3.OperationalError as e:
@@ -108,8 +108,8 @@ def load_data():
             print("DEBUG: Connexion à la base de données fermée après load_data.")
 
 def preprocess_data(df):
-    """Prétraite les données."""
-    # Aucun changement, cette fonction n'interagit pas avec la BDD directement
+    
+
     if 'ORDER_DATE' in df.columns:
         df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE'], errors='coerce')
     if 'Total_Sale' in df.columns:
@@ -123,8 +123,8 @@ def preprocess_data(df):
     return df
 
 def filter_data(df, country, team, activity, transaction_filter, start_date, end_date, staff_df):
-    """Filtre les données des DataFrames en fonction des critères."""
-    # Aucun changement, cette fonction n'interagit pas avec la BDD directement
+   
+ 
     filtered_df = df.copy()
 
     date_column = None
