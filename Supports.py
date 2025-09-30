@@ -20,7 +20,7 @@ from Agents import *
 def filter_data(df, country, team, activity, start_date, end_date, staff_df):
     filtered_df = df.copy()
     
-    # Filtrage par date (si la colonne ORDER_DATE ou Date_d_création existe)
+
     date_column = 'ORDER_DATE' if 'ORDER_DATE' in filtered_df.columns else 'Date_d_création'
     
     if date_column in filtered_df.columns:
@@ -56,22 +56,22 @@ def format_dataframe(df, table_type):
     if df is None or df.empty:
         return df
     
-    # Copie du dataframe pour éviter les warnings
+
     df = df.copy()
     
-    # Format ORDER_REFERENCE sans virgule (en entier)
+    
     if 'ORDER_REFERENCE' in df.columns:
         df['ORDER_REFERENCE'] = df['ORDER_REFERENCE'].astype(str).str.replace(',', '').str.replace('.', '')
     
-    # Format date "12 Mars 2018"
+
     if 'ORDER_DATE' in df.columns:
         df['ORDER_DATE'] = pd.to_datetime(df['ORDER_DATE']).dt.strftime('%d %B %Y')
     
-    # Format montant en euros
+ 
     if 'Montant' in df.columns:
         df['Montant'] = df['Montant'].apply(lambda x: f"{float(x):,.2f} €".replace(',', ' ').replace('.', ','))
     
-    # Renommer les colonnes en français
+
     df = df.rename(columns={
         'ORDER_REFERENCE': 'Référence',
         'ORDER_DATE': 'Date commande',
@@ -89,12 +89,12 @@ def display_formatted_data(df, table_type):
         st.info(f"Aucune donnée de {table_type} trouvée")
         return
     
-    # Appliquer le style gradient
+   
     def color_gradient(val):
         color = '#f0f8ff' if val.name % 2 == 0 else '#e6f3ff'
         return [f'background-color: {color}' for _ in val]
     
-    # Afficher avec style
+    
     st.dataframe(
         df.style
         .apply(color_gradient, axis=1)
@@ -143,11 +143,11 @@ def display_logs_with_interaction(df_logs, conn):
         st.warning("Aucune donnée à afficher")
         return
 
-    # S'assurer que la colonne Num_Bp est accessible
+  
     if 'BP_Logs' not in df_logs.columns and len(df_logs.columns) >= 4:
         df_logs = df_logs.rename(columns={df_logs.columns[3]: 'BP_Logs'})
 
-    # Ajouter une colonne de sélection
+   
     df_logs['Sélection'] = False
     edited_df = st.data_editor(
         df_logs,
@@ -163,7 +163,7 @@ def display_logs_with_interaction(df_logs, conn):
         use_container_width=True
     )
 
-    # Vérifier si une ligne a été sélectionnée
+   
     selected_rows = edited_df[edited_df['Sélection']]
     
     if not selected_rows.empty:
@@ -171,12 +171,12 @@ def display_logs_with_interaction(df_logs, conn):
         num_bp = selected_row.get('BP_Logs')
         hyp_agent = selected_row.get('Hyp', 'N/A')
         
-        # Stocker le numéro BP dans session_state pour utilisation ultérieure
+     
         st.session_state.selected_bp = num_bp
         st.session_state.selected_hyp = hyp_agent
         
         if num_bp:
-            # Afficher directement les informations sans bouton supplémentaire
+     
             search_additional_info(conn, num_bp, hyp_agent)
         else:
             st.warning("Identifiant client non disponible")
@@ -268,7 +268,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         st.error(f"Erreur lors de la récupération du nom de l'agent: {str(e)}")
         agent_name = "Inconnu"
 
-    # En-tête avec style
+
     st.markdown(
     f"""
     <div style='background-color:#002a48; padding:15px; border-radius:10px; margin-bottom:20px;'>
@@ -282,7 +282,6 @@ def search_additional_info(conn, num_bp, hyp_agent):
 )
 
     
-    # Initialisation des données fusionnées
     merged_data = {
         "Référence": num_bp,
         "Agent (Hyp)": hyp_agent,
@@ -298,7 +297,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         "Statut": "N/A"
     }
 
-    # Recherche dans les tables Sales et Recolt
+  
     for table in ["Sales", "Recolt"]:
         try:
             query = f"""
@@ -326,7 +325,6 @@ def search_additional_info(conn, num_bp, hyp_agent):
         except Exception as e:
             st.error(f"Erreur avec {table}: {str(e)}")
 
-    # Recherche dans les logs
     try:
         query_logs = """
         SELECT Offre, Sous_motif, Canal, Direction, Date_d_création
@@ -347,7 +345,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
     except Exception as e:
         st.error(f"Erreur lors de la recherche dans les Logs: {str(e)}")
 
-    # Affichage des détails en colonnes
+
     col1, col2 = st.columns(2)
 
     with col1:
@@ -367,7 +365,7 @@ def search_additional_info(conn, num_bp, hyp_agent):
         st.markdown(f"- **Montant:** **{merged_data['Montant (€)']}**")
 
 
-    # Section Évaluation du Coaching
+
     st.markdown("<h3 style='color: #007bad;'> Détails Coaching : </h3>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([2, 2, 2])
@@ -409,21 +407,21 @@ def search_additional_info(conn, num_bp, hyp_agent):
                     </style>
                     """, unsafe_allow_html=True)
 
-# Section Annuler l'évaluation
+
         if st.button("Annuler l'évaluation", 
                     use_container_width=True,
                     type="primary",
                     key="cancel_eval"):
             
-            # Réinitialisation des états (sauf la sélection d'agent)
+          
             for key in list(st.session_state.keys()):
                 if key not in ["coaching_agent_select", "selected_agent"]:
                     del st.session_state[key]
             
             st.success("Annulation enregistrée avec succès!")
-            st.rerun()  # Rafraîchit l'affichage
+            st.rerun()  
 
-        # Section Enregistrement (gardée comme dans votre exemple original)
+        
         if st.button("Enregistrer l'évaluation", 
                     use_container_width=True,
                     type="primary",
@@ -441,16 +439,16 @@ def afficher_donnees_sales(conn, hyp_agent, df_sales=None):
         """, conn)
 
     if not df_sales.empty:
-        # Nettoyage
+   
         df_sales = df_sales.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Sale', 'Rating'])
         df_sales = df_sales[df_sales['SHORT_MESSAGE'].isin(['ACCEPTED', 'REFUSED'])]
 
-        # 📊 Calcul KPI
+ 
         total_ventes = df_sales["Total_Sale"].sum()
         moyenne_vente = df_sales["Total_Sale"].mean()
         moyenne_rating = df_sales["Rating"].mean()
 
-        # 🧾 Affichage KPI avec style harmonisé
+     
         col1, col2, col3 = st.columns(3)
 
         col1.markdown(f"""
@@ -604,7 +602,7 @@ def afficher_donnees_sales(conn, hyp_agent, df_sales=None):
                 st.plotly_chart(fig1, use_container_width=True)
 
             with col_play2:
-                # Ventes par heure (Graphique 2) - Style harmonisé
+              
                 st.markdown("<h4 style='color: #007bad;'>Ventes par Heure</h4>", unsafe_allow_html=True)
                 df_sales['Heure'] = pd.to_datetime(df_sales['ORDER_DATE']).dt.hour
                 ventes_par_heure = df_sales.groupby('Heure')['Total_Sale'].sum().reset_index()
@@ -614,20 +612,20 @@ def afficher_donnees_sales(conn, hyp_agent, df_sales=None):
                     x='Heure',
                     y='Total_Sale',
                     labels={'Heure': 'Heure de la journée', 'Total_Sale': 'Montant (€)'},
-                    color_discrete_sequence=['#525CEB'], # Couleur harmonisée pour les lignes
+                    color_discrete_sequence=['#525CEB'], 
                     height=400
                 )
 
                 fig2.update_traces(
-                    line=dict(width=4, color='#525CEB'), # Couleur de ligne harmonisée
-                    mode='lines+markers+text', # Ajout de texte et marqueurs
-                    marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')), # Marqueurs harmonisés
-                    text=[f"€{y:,.0f}" for y in ventes_par_heure['Total_Sale']], # Affichage des valeurs
+                    line=dict(width=4, color='#525CEB'), 
+                    mode='lines+markers+text', 
+                    marker=dict(size=10, color='#3D3B40', line=dict(width=1, color='#FFFFFF')), 
+                    text=[f"€{y:,.0f}" for y in ventes_par_heure['Total_Sale']], 
                     textposition="top center",
-                    textfont=dict(color="#F70F49", size=14, family='Arial', weight='bold'), # Style de texte harmonisé
-                    hovertemplate='Heure: %{x}<br>Ventes: €%{y:,.2f}<extra></extra>', # Hovertemplate
-                    fill='tozeroy', # Remplissage sous la ligne
-                    fillcolor='rgba(179, 191, 231, 0.4)' # Couleur de remplissage
+                    textfont=dict(color="#F70F49", size=14, family='Arial', weight='bold'), 
+                    hovertemplate='Heure: %{x}<br>Ventes: €%{y:,.2f}<extra></extra>', 
+                    fill='tozeroy', 
+                    fillcolor='rgba(179, 191, 231, 0.4)' 
                 )
 
                 fig2.update_layout(
@@ -641,9 +639,9 @@ def afficher_donnees_sales(conn, hyp_agent, df_sales=None):
                     yaxis=dict(
                         tickfont=dict(size=12, family='Arial', color='black', weight='bold'),
                         gridcolor='#f0f0f0',
-                        range=[0, ventes_par_heure['Total_Sale'].max() * 1.2] # Ajustement de la plage Y
+                        range=[0, ventes_par_heure['Total_Sale'].max() * 1.2] 
                     ),
-                    margin=dict(l=20, r=20, t=50, b=20) # Augmentation du top margin pour le titre du graphique
+                    margin=dict(l=20, r=20, t=50, b=20) 
                 )
                 st.plotly_chart(fig2, use_container_width=True)
 
@@ -663,15 +661,15 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
         """, conn)
 
     if not df_recolts.empty:
-        # Nettoyage
+      
         df_recolts = df_recolts.dropna(subset=['City', 'SHORT_MESSAGE', 'Total_Recolt', 'Banques'])
 
-        # Calcul KPI
+       
         total_recoltes = df_recolts["Total_Recolt"].sum()
         moyenne_recolte = df_recolts["Total_Recolt"].mean()
         nombre_operations = len(df_recolts)
 
-        # Affichage KPI avec style harmonisé
+        
         col1, col2, col3 = st.columns(3)
         col1.markdown(f"""
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
@@ -745,18 +743,18 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
 
         st.markdown("<h3 style='color: #007bad;'>Analyse des Récoltes</h3>", unsafe_allow_html=True)
 
-        # 📊 Organisation des graphiques et du tableau
+       
         col_display1, col_display2 = st.columns([1, 2])
 
         with col_display1:
-            # 📋 Détail des opérations (Tableau)
+         
             st.markdown("<h4 style='color: #007bad;'>Détail des opérations</h4>", unsafe_allow_html=True)
             st.dataframe(df_recolts)
 
         with col_display2:
             col_1, col_2 = st.columns([1.5, 2])
             with col_1:
-                # 📊 Graphique 1 : Récolts par ville selon le statut - Style harmonisé
+             
                 st.markdown("<h4 style='color: #007bad;'>Récoltes par Ville :</h4>", unsafe_allow_html=True)
                 df_grouped = (
                     df_recolts.groupby(['City', 'SHORT_MESSAGE'])['Total_Recolt']
@@ -808,7 +806,7 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
                     paper_bgcolor='white',
                     height=450,
                     margin=dict(l=20, r=20, t=50, b=20),
-                    showlegend=False, # Cache la légende
+                    showlegend=False, 
                     font=dict(family='Arial', size=14, color='black'),
                     xaxis=dict(
                         tickfont=dict(size=12, family='Arial', color='black', weight='bold'),
@@ -817,7 +815,7 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
                     yaxis=dict(
                         tickfont=dict(size=12, family='Arial', color='black', weight='bold')
                     ),
-                    bargap=0.1, # Augmentation de la largeur des barres (moins d'espace entre elles)
+                    bargap=0.1, 
                     hoverlabel=dict(
                         bgcolor="white",
                         font_size=14,
@@ -828,7 +826,7 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
                 st.plotly_chart(fig1, use_container_width=True)
 
             with col_2:
-                # 📊 Graphique 2 : Récolts par banque - Style harmonisé
+             
                 st.markdown("<h4 style='color: #007bad;'>Récoltes par Banque</h4>", unsafe_allow_html=True)
                 df_banques = df_recolts.groupby('Banques')['Total_Recolt'].sum().reset_index()
 
@@ -880,7 +878,7 @@ def afficher_donnees_recolts(conn, hyp_agent, df_recolts=None):
 def afficher_coaching():
     st.markdown("""
     <style>
-    /* Onglets inactifs - maintenant en bleu */
+  
     .stTabs [data-baseweb="tab-list"] button {
         background-color: #00afe1;  /* Fond bleu */
         color: white;              /* Texte blanc */
@@ -893,12 +891,11 @@ def afficher_coaching():
         transition: all 0.2s ease-in-out;
     }
     
-    /* Effet de survol - bleu légèrement plus foncé */
     .stTabs [data-baseweb="tab-list"] button:hover {
         background-color: #00afe1;
     }
     
-    /* Onglet actif - maintenant en blanc */
+  
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
         background-color: white;    /* Fond blanc */
         color: #00afe1;            /* Texte bleu */
@@ -906,23 +903,23 @@ def afficher_coaching():
         border-bottom: 1px solid white; /* Cache la bordure du bas */
     }
     
-    /* Style du conteneur principal */
+   
     .stTabs {
         margin-top: -10px;
         margin-bottom: 15px;
     }
     
-    /* Ligne sous les onglets */
+ 
     .stTabs [data-baseweb="tab-list"] {
         border-bottom: 1px solid #00afe1;
     }
 
-    /* Définir l'arrière-plan de la barre latérale en blanc */
+   
     section[data-testid="stSidebar"] {
         background-color: white !important;
     }
 
-    /* Style pour le compteur dans la barre latérale */
+
     div[data-testid="stSidebar"] .stNumberInput > div > div > input {
         color: #007bad !important; /* Couleur du texte du compteur */
         font-weight: bold; /* Optionnel: pour rendre le texte plus visible */
@@ -955,33 +952,33 @@ def afficher_coaching():
         return
 
     try:
-        # Chargement des données
+       
         df_effectifs = pd.read_sql("SELECT * FROM Effectifs where Type = 'Agent'", conn)
 
         if df_effectifs.empty:
             st.warning("Aucun effectif trouvé dans la base de données")
             return
 
-        # Vérification des colonnes nécessaires
+       
         if "NOM" not in df_effectifs.columns or "PRENOM" not in df_effectifs.columns:
             st.error("Les colonnes 'NOM' ou 'PRENOM' sont absentes dans la table Effectifs.")
             return
 
-        # Création du nom complet
+       
         df_effectifs["NomComplet"] = df_effectifs["NOM"] + " " + df_effectifs["PRENOM"]
 
-        # Selection de l'agent et bouton de recherche côte à côte
+       
         col_select, col_button = st.columns([3, 1])
         with col_select:
             selection = st.selectbox("Sélectionner un agent",
                                      df_effectifs["NomComplet"].unique(),
                                      key="coaching_agent_select")
         with col_button:
-            st.markdown("<br>", unsafe_allow_html=True) # Add some space for alignment
+            st.markdown("<br>", unsafe_allow_html=True) 
             search_button = st.button("**Rechercher les transactions**")
 
         if selection and search_button:
-            # Récupération des informations de l'agent
+           
             nom, prenom = selection.split(" ", 1)
             agent = df_effectifs[(df_effectifs["NOM"] == nom) &
                                  (df_effectifs["PRENOM"] == prenom)]
@@ -993,7 +990,7 @@ def afficher_coaching():
             agent = agent.iloc[0]
             hyp_agent = agent["Hyp"]
 
-            # Création d'onglets pour Sales et Recolts
+        
             tab1, tab2 = st.tabs(["Ventes (Sales)", "Recoltes (Recolt)"])
 
             with tab1:
