@@ -25,25 +25,25 @@ def filter_data(df, country_filter, team_filter, activity_filter, agent_filter, 
     if 'Hyp' in filtered_df.columns and not staff_df.empty:
         staff_filtered = staff_df.copy()
 
-        # Ensure 'NOM PRENOM' column exists for filtering, if 'NOM' and 'PRENOM' are present
+      
         if 'NOM' in staff_filtered.columns and 'PRENOM' in staff_filtered.columns:
             staff_filtered['NOM PRENOM'] = staff_filtered['NOM'] + ' ' + staff_filtered['PRENOM']
         
-        # Apply team filter
+    
         if team_filter != 'Toutes':
             staff_filtered = staff_filtered[staff_filtered['Team'] == team_filter]
         
-        # Apply activity filter
+        
         if activity_filter != 'Toutes':
             staff_filtered = staff_filtered[staff_filtered['Activité'] == activity_filter]
         
-        # Apply agent filter
+      
         if agent_filter != 'Tous':
-            # Check if 'NOM PRENOM' exists before trying to filter by it
+          
             if 'NOM PRENOM' in staff_filtered.columns:
                 staff_filtered = staff_filtered[staff_filtered['NOM PRENOM'] == agent_filter]
             else:
-                # Fallback: if 'NOM PRENOM' isn't available, try to filter by Hyp if the agent filter value is an Hyp
+             
                 st.warning("Could not filter by agent name. Falling back to filtering by 'Hyp' if agent filter matches.")
                 staff_filtered = staff_filtered[staff_filtered['Hyp'] == agent_filter]
 
@@ -70,8 +70,7 @@ def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label=
         plotly.graph_objects.Figure: Le graphique Plotly.
     """
     if df.empty:
-        return None # Return None if no data
-
+        return None 
     fig = px.line(df,
                   x=x_col,
                   y=y_col,
@@ -88,11 +87,11 @@ def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label=
         fillcolor='rgba(179, 191, 231, 0.4)'
     )
 
-    # Set x-axis range based on global filter dates
+  
     x_axis_range = None
     if global_start_date and global_end_date:
-        # Convert to datetime objects for Plotly range
-        x_axis_range = [global_start_date, global_end_date + timedelta(days=1)] # Add one day to end_date to include the full day
+      
+        x_axis_range = [global_start_date, global_end_date + timedelta(days=1)] 
 
     fig.update_layout(
         xaxis_title=None,
@@ -103,11 +102,11 @@ def create_line_chart_for_kpi(df, x_col, y_col, title, value_prefix="", y_label=
         yaxis_gridcolor='#E0E0E0',
         xaxis=dict(
             tickfont=dict(size=12, color='#3D3B40'),
-            tickformat='%Y-%m-%d', # Format for date axis
-            range=x_axis_range # Set x-axis range
+            tickformat='%Y-%m-%d', 
+            range=x_axis_range 
         ),
         yaxis=dict(
-            range=[0, df[y_col].max() * 1.2], # Dynamic range
+            range=[0, df[y_col].max() * 1.2], 
             tickfont=dict(size=12, color='#3D3B40')
         ),
         font=dict(family='Arial', size=12, color='#3D3B40'),
@@ -181,7 +180,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         sales_df['ORDER_DATE'] = pd.to_datetime(sales_df['ORDER_DATE'])
 
 
-    # Pre-process staff_df to create 'NOM PRENOM' once if 'NOM' and 'PRENOM' exist
+  
     if 'NOM' in staff_df.columns and 'PRENOM' in staff_df.columns:
         staff_df['NOM PRENOM'] = staff_df['NOM'] + ' ' + staff_df['PRENOM']
     else:
@@ -200,7 +199,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         )
         
 
-    # Filters
+ 
     col1, col2, col3, col4 = st.columns([2, 2, 2, 2])
     with col1:
         country_filter = st.selectbox("Filtrer par Pays", ['Tous'] + sorted(sales_df['Country'].dropna().unique()), key='sales_country')
@@ -210,27 +209,27 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         
         team_filter = st.selectbox("Sélectionner équipe", ['Toutes'] + sorted(staff_df['Team'].dropna().unique()), key='sales_team')
     with col4:
-        # Dynamically populate agent filter based on selected team
+        
         agents_in_team = ['Tous']
         if team_filter != 'Toutes':
-            # Filter staff_df by selected team for populating the agent dropdown
+            
             filtered_staff_for_dropdown = staff_df[staff_df['Team'] == team_filter]
             if 'NOM PRENOM' in filtered_staff_for_dropdown.columns:
                 agents_in_team += sorted(filtered_staff_for_dropdown['NOM PRENOM'].dropna().unique())
-            else: # Fallback if 'NOM PRENOM' wasn't successfully created
+            else:
                 agents_in_team += sorted(filtered_staff_for_dropdown['Hyp'].dropna().unique())
         
         agent_filter = st.selectbox("Sélectionner Agent", agents_in_team, key='sales_agent')
 
-    # Filtrage
+   
     filtered_sales = filter_data(sales_df, country_filter, team_filter, activity_filter, agent_filter, start_date, end_date, staff_df)
 
     if not filtered_sales.empty:
-        # Métriques / KPIs
+       
         #st.markdown("<h2 style='text-align: center; color: #002a48;'>Indicateurs Clés de Performance</h2>", unsafe_allow_html=True)
         col1_kpi, col2_kpi, col3_kpi, col4_kpi = st.columns(4)
         
-        # Ensure start_date and end_date are datetime objects for consistency
+      
         global_start_date_dt = pd.to_datetime(start_date).date()
         global_end_date_dt = pd.to_datetime(end_date).date()
 
@@ -415,7 +414,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
 
         
 
-        ## Principaux Graphiques
+     
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Analyses Principales</h2>", unsafe_allow_html=True)
         
         col_main1, col_main2= st.columns([3, 2])
@@ -476,27 +475,27 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                 
                 st.plotly_chart(fig, use_container_width=True, key="statut_transactions_pie") # Added key
 
-            with col_main2: # This is now the place for "Statut des Transactions par Pays"
+            with col_main2: 
                 st.markdown("<h3 style='color: #007bad;'>Transactions par Pays</h3>", unsafe_allow_html=True)
                 if 'SHORT_MESSAGE' in filtered_sales.columns and 'Country' in filtered_sales.columns:
-                    # Préparation des données avec calcul des pourcentages
+                   
                     status_by_country = filtered_sales.groupby(['Country', 'SHORT_MESSAGE'])['Total_Sale'].sum().unstack(fill_value=0)
                     total_by_country = status_by_country.sum(axis=1)
                     status_by_country_perc = status_by_country.div(total_by_country, axis=0) * 100
                     
-                    # Création du graphique
+                  
                     fig = px.bar(status_by_country,
                                 y=status_by_country.index, 
                                 x=status_by_country.columns, 
                                 orientation='h',
                                 color_discrete_map={'ACCEPTED': '#007bad', 'REFUSED': '#ff0000'})
                     
-                    # Ajout des étiquettes avec montant et pourcentage
+                   
                     for i, country in enumerate(status_by_country.index):
                         total = total_by_country[country]
                         for j, status in enumerate(status_by_country.columns):
                             value = status_by_country.loc[country, status]
-                            if value > 0:   # Only show label if value exists
+                            if value > 0:  
                                 percentage = status_by_country_perc.loc[country, status]
                                 fig.add_annotation(
                                     x=sum(status_by_country.loc[country, status_by_country.columns[:j]]) + value/2,
@@ -513,7 +512,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                                     yanchor="middle"
                                 )
                     
-                    # Mise en forme du layout
+                    
                     fig.update_layout(
                         xaxis=dict(
                             title=None, 
@@ -531,8 +530,8 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                             categoryorder='total ascending'
                         ),
                         barmode='stack',
-                        showlegend=False, # Changed this to False to remove the legend
-                        legend=dict( # This whole legend block can now be removed if showlegend is False, but keeping it won't cause issues
+                        showlegend=False, 
+                        legend=dict( 
                             orientation="h",
                             yanchor="bottom",
                             y=-0.3,
@@ -554,12 +553,12 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                     st.plotly_chart(fig, use_container_width=True, key="statut_transactions_par_pays_main")
                 else:
                     st.info("Données insuffisantes pour l'analyse du statut des transactions par pays.")
-        ## Répartition Temporelle Détaillée
+       
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Répartition Temporelle Détaillée des Ventes</h2>", unsafe_allow_html=True)
         col_temp1, col_temp2, col_temp3 = st.columns(3)
 
         with col_temp1:
-            # Ventes par Jour de la Semaine
+            
             st.markdown("<h3 style='color: #007bad;'>Ventes par Jour de la Semaine</h3>", unsafe_allow_html=True)
             filtered_sales['Weekday'] = filtered_sales['ORDER_DATE'].dt.weekday
             ventes_jour = filtered_sales.groupby('Weekday')['Total_Sale'].sum().reset_index()
@@ -612,7 +611,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
             st.plotly_chart(fig_jour, use_container_width=True, key="ventes_par_jour") # Added key
             
         with col_temp2:
-            # Ventes par Heure de la Journée
+            
             st.markdown("<h3 style='color: #007bad;'>Ventes par Heure de la Journée</h3>", unsafe_allow_html=True)
             filtered_sales['ORDER_HOUR'] = filtered_sales['ORDER_DATE'].dt.hour
             ventes_heure = filtered_sales[
@@ -664,7 +663,7 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
             st.plotly_chart(fig_heure, use_container_width=True, key="ventes_par_heure") # Added key
 
         with col_temp3:
-            # Ventes par Mois
+            
             st.markdown("<h3 style='color: #007bad;'>Ventes par Mois</h3>", unsafe_allow_html=True)
             filtered_sales['MonthNum'] = filtered_sales['ORDER_DATE'].dt.month
             ventes_mois = filtered_sales.groupby('MonthNum')['Total_Sale'].sum().reset_index()
@@ -722,11 +721,10 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
 
         
         
-        ## Graphiques de Performance et Tendances
+        
         st.markdown("<h2 style='text-align: center; color: #002a48;'>Performance et Tendances</h2>", unsafe_allow_html=True)
 
-        # First row of 3 charts
-        # First row of 3 charts
+        
         col_g1, col_g2, col_g3 = st.columns(3)
 
         with col_g1:
@@ -759,14 +757,14 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                     top_salespeople = top_salespeople.merge(staff_df[['Hyp', 'NOM PRENOM']], on='Hyp', how='left')
                     x_col = 'NOM PRENOM'
                 else:
-                    x_col = 'Hyp' # Fallback to Hyp if NOM PRENOM is not available
+                    x_col = 'Hyp' 
 
                 fig = px.bar(top_salespeople,
                             y=x_col, x='Total_Sale', orientation='h',
-                            color_discrete_sequence=['#007bad']) # Changed color to blue
+                            color_discrete_sequence=['#007bad']) 
                 fig.update_layout(xaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')),
                                 yaxis=dict(title=None, tickfont=dict(size=12, family='Arial', color='black', weight='bold')),
-                                showlegend=False) # Removed legend
+                                showlegend=False) 
                 fig.update_traces(text=top_salespeople['Total_Sale'].apply(lambda x: f"{x:,.0f}€".replace(",", " ")), textposition='inside',
                                 textfont=dict(size=16, family='Arial', color='white', weight='bold'))
                 st.plotly_chart(fig, use_container_width=True, key="top_vendeurs") # Added key
@@ -780,9 +778,9 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                                 labels={'Total_Sale': 'Valeur de Vente (€)'},
                                 color_discrete_sequence=['#007bad'])
                 
-                # Ajout des étiquettes de données en blanc
+               
                 fig.update_traces(
-                    texttemplate='%{y}',  # Affiche le count pour chaque barre
+                    texttemplate='%{y}', 
                     textposition='inside',
                     textfont=dict(
                         size=16,
@@ -816,23 +814,23 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
         
         st.markdown("<h3 style='text-align: center; color: #007bad;'>Détails des Transactions</h3>", unsafe_allow_html=True)
         if not filtered_sales.empty:
-            # Prepare data for the transaction list
+           
             sales_list_df = filtered_sales.copy()
 
-            # Merge with staff_df to get "Nom Prénom"
+           
             if 'NOM' in staff_df.columns and 'PRENOM' in staff_df.columns and 'NOM PRENOM' not in staff_df.columns:
                 staff_df['NOM PRENOM'] = staff_df['NOM'] + ' ' + staff_df['PRENOM']
 
             if 'Hyp' in sales_list_df.columns and 'NOM PRENOM' in staff_df.columns:
                 sales_list_df = sales_list_df.merge(staff_df[['Hyp', 'NOM PRENOM']], on='Hyp', how='left')
             else:
-                sales_list_df['NOM PRENOM'] = 'N/A' # Fallback if agent name isn't available
+                sales_list_df['NOM PRENOM'] = 'N/A' 
 
-            # Create accepted/refused columns
+          
             sales_list_df['Acceptée'] = sales_list_df['SHORT_MESSAGE'] == 'ACCEPTED'
             sales_list_df['Refusée'] = sales_list_df['SHORT_MESSAGE'] == 'REFUSED'
             
-            # Select and rename columns for display
+           
             display_cols = sales_list_df[[
                 'NOM PRENOM', 'City', 'Total_Sale', 'Acceptée', 'Refusée', 'Rating', 'ORDER_DATE'
             ]].rename(columns={
@@ -843,39 +841,39 @@ def sales_page1(sales_df, staff_df, start_date, end_date):
                 'Rating': 'Évaluation'
             })
 
-            # Format 'Montant (€)'
+          
             display_cols['Montant (€)'] = display_cols['Montant (€)'].apply(lambda x: f"{x:,.2f} €".replace(",", " "))
             
-            # Format 'Date Création'
+           
             display_cols['Date Création'] = display_cols['Date Création'].dt.strftime('%Y-%m-%d %H:%M')
 
-            # Define styling functions
+           
             def highlight_accepted(s):
-                return ['background-color: #e6ffe6; color: green; font-weight: bold;' if v else '' for v in s] # Light green for accepted
+                return ['background-color: #e6ffe6; color: green; font-weight: bold;' if v else '' for v in s] 
             
             def highlight_refused(s):
-                return ['background-color: #ffe6e6; color: red; font-weight: bold;' if v else '' for v in s] # Light red for refused
+                return ['background-color: #ffe6e6; color: red; font-weight: bold;' if v else '' for v in s] 
 
             def color_rating(val):
                 color = ''
                 if pd.notna(val):
                     if val >= 4:
-                        color = '#28a745' # Green for good rating
+                        color = '#28a745' 
                     elif val >= 3:
-                        color = '#ffc107' # Yellow/Orange for neutral rating
+                        color = '#ffc107' 
                     else:
-                        color = '#dc3545' # Red for low rating
+                        color = '#dc3545' 
                 return f'color: {color}; font-weight: bold;'
 
-            # --- Apply styling using Styler and set_properties for bold and center ---
+       
             styled_df = display_cols.style \
                 .apply(highlight_accepted, subset=['Acceptée']) \
                 .apply(highlight_refused, subset=['Refusée']) \
                 .map(color_rating, subset=['Évaluation']) \
                 .format({'Évaluation': "{:.2f}"}) \
-                .set_properties(**{'text-align': 'center', 'font-weight': 'bold'}) # Apply bold and center to all cells
+                .set_properties(**{'text-align': 'center', 'font-weight': 'bold'}) 
             
-            # Inject custom CSS for the frame (still good practice)
+           
             st.markdown(
                 """
                 <style>
