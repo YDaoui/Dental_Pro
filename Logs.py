@@ -32,7 +32,7 @@ def logs_page1(logs_df, staff_df, start_date, end_date):
         transition: all 0.2s ease-in-out;
     }
     
-    /* Effet de survol - bleu légèrement plus foncé */
+    /* Effet de suvrol
     .stTabs [data-baseweb="tab-list"] button:hover {
         background-color: #00afe1;
     }
