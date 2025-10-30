@@ -24,18 +24,18 @@ load_dotenv()
 def add_custom_css():
     st.markdown("""
         <style>
-            /* Contenu principal à 70% */
+            
             section.main > div:first-child > div:first-child > div:first-child > div:first-child {
                 width: 70%;
                 margin: 0 auto;
             }
             
-            /* Ajustement pour les éléments full-width comme les headers */
+           
             section.main > div:first-child > div:first-child > div:first-child > div:first-child > div:first-child {
                 width: 100%;
             }
             
-            /* General Body Background */
+           
             body {
                 background-color: #FFFFFF;
                 color: #043a64; /* bleu Foncé */
@@ -44,18 +44,18 @@ def add_custom_css():
                 background-color: #FFFFFF;
             }
 
-            /* ==== General Titles ==== */
+          
             h1 {
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 margin-bottom: 10px;
                 font-size: 3em;
                 text-align: center;
                 padding-bottom: 6px;
-                border-bottom: 3px solid #2596be; /* Bleu */
+                border-bottom: 3px solid #2596be; 
                 font-weight: 900;
             }
             h2 {
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 margin-top: 8px;
                 margin-bottom: 25px;
                 font-size: 2em;
@@ -63,31 +63,31 @@ def add_custom_css():
                 font-weight: 800;
             }
             h3 {
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 margin-top: 35px;
                 margin-bottom: 20px;
-                border-bottom: 2px solid #2596be; /* Bleu */
+                border-bottom: 2px solid #2596be; 
                 padding-bottom: 6px;
                 font-size: 1.6em;
                 font-weight: 700;
             }
             hr {
                 border: none;
-                border-top: 2px solid #2596be; /* Bleu */
+                border-top: 2px solid #2596be;
                 margin: 20px auto 25px auto;
                 width: 85%;
                 border-radius: 5px;
             }
 
-            /* ==== Tabs ==== */
+           
             .stTabs [data-baseweb="tab-list"] button {
-                background-color: #e0e8dc; /* back ground */
+                background-color: #e0e8dc;
                 border-radius: 8px 8px 0 0;
                 padding: 10px 16px;
                 margin-right: 8px;
-                border: 1px solid #2596be; /* Bleu */
+                border: 1px solid #2596be; 
                 border-bottom: none;
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 font-weight: bold;
                 font-size: 1em;
                 transition: all 0.2s ease-in-out;
@@ -106,11 +106,11 @@ def add_custom_css():
                 margin-bottom: 20px;
             }
 
-            /* ==== Metric Cards ==== */
+           
             .metric-card {
-                background-color: #e0e8dc; /* back ground */
-                border: 1px solid #2596be; /* Bleu */
-                border-left: 6px solid #043a64; /* bleu Foncé */
+                background-color: #e0e8dc; 
+                border: 1px solid #2596be; 
+                border-left: 6px solid #043a64; 
                 border-radius: 10px;
                 padding: 12px;
                 margin-bottom: 12px;
@@ -125,7 +125,7 @@ def add_custom_css():
                 box-shadow: 3px 3px 14px rgba(0,0,0,0.5);
             }
             .metric-title {
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 font-size: 0.95em;
                 font-weight: 700;
                 margin-bottom: 6px;
@@ -133,17 +133,17 @@ def add_custom_css():
                 letter-spacing: 0.6px;
             }
             .metric-value {
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 font-size: 2em;
                 font-weight: 800;
                 line-height: 1;
             }
 
-            /* ==== Team Performance Cards ==== */
+           
             .team-performance-card {
-                background-color: #e0e8dc; /* back ground */
-                border: 1px solid #2596be; /* Bleu */
-                border-left: 6px solid #043a64; /* bleu Foncé */
+                background-color: #e0e8dc; 
+                border: 1px solid #2596be; 
+                border-left: 6px solid #043a64; 
                 border-radius: 10px;
                 padding: 15px;
                 margin-bottom: 12px;
@@ -159,7 +159,7 @@ def add_custom_css():
             .team-performance-title {
                 font-size: 1.4em;
                 font-weight: 800;
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 margin-bottom: 8px;
             }
             .team-stat-label {
@@ -171,7 +171,7 @@ def add_custom_css():
             .team-stat-value {
                 font-size: 1.6em;
                 font-weight: 800;
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 line-height: 1;
             }
             .team-conversion-value {
@@ -184,37 +184,37 @@ def add_custom_css():
                 justify-content: center;
                 margin-top: 10px;
                 padding-top: 8px;
-                border-top: 1px dashed #2596be; /* Bleu */
+                border-top: 1px dashed #2596be; 
             }
 
             /* ==== Selectbox ==== */
             .stSelectbox div[data-baseweb="select"] {
                 border-radius: 8px;
-                border: 2px solid #2596be; /* Bleu */
+                border: 2px solid #2596be; 
                 padding: 6px;
                 box-shadow: inset 1px 1px 3px rgba(0,0,0,0.2);
             }
             .stSelectbox div[data-baseweb="select"] > div:first-child {
-                background-color: #e0e8dc; /* back ground */
-                color: #043a64; /* bleu Foncé */
+                background-color: #e0e8dc; 
+                color: #043a64; 
                 font-weight: bold;
             }
             .stSelectbox div[data-baseweb="menu"] {
-                background-color: #043a64; /* bleu Foncé */
+                background-color: #043a64; 
             }
             .stSelectbox div[data-baseweb="menu"] li {
                 color: #FFFFFF;
                 font-size: 1em;
             }
             .stSelectbox div[data-baseweb="menu"] li:hover {
-                background-color: #2596be; /* Bleu */
+                background-color: #2596be; 
                 color: #FFFFFF;
             }
 
-            /* ==== Button Styling ==== */
+            
             .stButton button {
                 background-color: #e0e8dc; /* back ground */
-                color: #043a64; /* bleu Foncé */
+                color: #043a64; 
                 border: none;
                 border-radius: 8px;
                 padding: 10px 24px;
@@ -226,22 +226,22 @@ def add_custom_css():
             }
 
             .stButton button:hover {
-                background-color: #2596be; /* Bleu */
+                background-color: #2596be; 
                 color: #FFFFFF;
                 box-shadow: 3px 3px 12px rgba(0,0,0,0.25);
             }
 
             .stButton button:active,
             .stButton button:focus:not(:active) {
-                background-color: #043a64; /* bleu Foncé */
-                color: #e0e8dc; /* back ground */
+                background-color: #043a64; 
+                color: #e0e8dc; 
                 box-shadow: inset 2px 2px 6px rgba(0,0,0,0.2);
             }
 
-            /* ==== DataFrame ==== */
+          
             .stDataFrame thead th {
-                background-color: #043a64; /* bleu Foncé */
-                color: #e0e8dc; /* back ground */
+                background-color: #043a64; 
+                color: #e0e8dc; 
                 padding: 12px;
                 text-align: left;
                 font-weight: bold;
@@ -255,7 +255,7 @@ def add_custom_css():
                 color: #043a64; /* bleu Foncé */
             }
 
-            /* ==== Sidebar & Menu ==== */
+            
             div[data-testid="stSidebar"] {
                 background-color: #FFFFFF !important; /* Set sidebar background to white */
             }
@@ -274,7 +274,7 @@ def add_custom_css():
                 color: #e0e8dc !important; /* back ground */
             }
 
-            /* ==== Date Input ==== */
+          
             .stDateInput div[data-baseweb="input"] {
                 background-color: #e0e8dc; /* back ground */
                 color: #043a64; /* bleu Foncé */
@@ -304,7 +304,7 @@ def add_custom_css():
 
 
 def get_db_connection():
-    # Accédez aux secrets via st.secrets
+  
     try:
         db_path = st.secrets["database"]["path"]
         password = st.secrets["database"]["password"]
@@ -314,19 +314,18 @@ def get_db_connection():
 
     try:
         conn = sqlite3.connect(db_path)
-        # Si vous utilisez SQLCipher (et non sqlite3 standard), cette ligne est valide.
-        # Sinon, pour sqlite3 standard, elle n'aura aucun effet de chiffrement.
-        if password: # S'assurer que le mot de passe n'est pas vide
+    
+        if password: 
              conn.execute(f"PRAGMA key='{password}'")
         
-        # Exemple de configuration supplémentaire (comme le mode de row_factory)
-        conn.row_factory = sqlite3.Row # Accéder aux colonnes par leur nom
+        
+        conn.row_factory = sqlite3.Row 
         
         return conn
-    except sqlite3.Error as e: # Capturez les erreurs spécifiques à sqlite3
+    except sqlite3.Error as e: 
         st.error(f"Erreur de connexion à la base de données : {e}")
         return None
-    except Exception as e: # Capturez d'autres erreurs inattendues
+    except Exception as e: 
         st.error(f"Une erreur inattendue est survenue lors de la connexion : {e}")
         return None
 
@@ -398,7 +397,7 @@ def login_page():
     col1, col2, col3, col4 = st.columns([1, 1, 2, 1])
     
     with col2:
-        # Centrer l'image avec HTML
+      
         st.image("Dental_Implant.png", use_column_width=True)
 
     with col3:
@@ -460,7 +459,7 @@ def login_page():
 
 
 def load_data():
-    """Chargement des données depuis SQLite."""
+
     try:
         conn = get_db_connection()
         if not conn:
@@ -596,9 +595,9 @@ def filter_data(df, country, team, activity, transaction_filter, start_date, end
     return filtered_df
 
 def recolts_page(recolts_df, staff_df, start_date, end_date):
-    """Affiche la page des récoltes avec le nouveau style, incluant les cartes Top 3 et les graphiques de ligne/transaction."""
+    
 
-    add_custom_css() # Appel de la fonction CSS personnalisée
+    add_custom_css() 
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Récoltes</h3>", unsafe_allow_html=True)
 
@@ -617,26 +616,25 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
         filtered_recolts = filter_data(recolts_df, country_filter, team_filter, activity_filter, transaction_filter, start_date, end_date, staff_df)
 
         if not filtered_recolts.empty:
-            # S'assurer que les dates sont au bon format pour les opérations temporelles
+           
             if 'ORDER_DATE' in filtered_recolts.columns:
                 filtered_recolts['ORDER_DATE'] = pd.to_datetime(filtered_recolts['ORDER_DATE'], errors='coerce')
-                # Supprimer les lignes où la conversion de date a échoué
+              
                 filtered_recolts.dropna(subset=['ORDER_DATE'], inplace=True)
 
-            # Géocoder les données après filtrage
+     
             if 'City' in filtered_recolts.columns and 'Country' in filtered_recolts.columns:
-                # Vérifier si filtered_recolts a déjà Latitude/Longitude ou si staff_df n'est pas nécessaire
+            
                 if 'Latitude' not in filtered_recolts.columns or 'Longitude' not in filtered_recolts.columns:
-                    filtered_recolts = geocode_data(filtered_recolts.copy()) # Utiliser .copy() pour éviter SettingWithCopyWarning
+                    filtered_recolts = geocode_data(filtered_recolts.copy()) 
 
 
-            # Assurez-vous que 'Hyp' (employee ID) est disponible pour les métriques
-            # et pour la jointure avec staff_df pour la colonne 'Team'
+           
             if 'Hyp' not in filtered_recolts.columns and 'Hyp' in recolts_df.columns and 'Hyp' in staff_df.columns:
-                 # Jointure pour ajouter la colonne 'Team' aux récoltes filtrées
+                 
                 initial_recolts_rows = len(filtered_recolts)
                 filtered_recolts = filtered_recolts.merge(
-                    staff_df[['Hyp', 'Team', 'Activité']].drop_duplicates(), # Inclure 'Activité' pour le filtre si non déjà fait
+                    staff_df[['Hyp', 'Team', 'Activité']].drop_duplicates(), 
                     on='Hyp',
                     how='left'
                 )
@@ -645,40 +643,39 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     st.warning("Aucune correspondance 'Hyp' trouvée entre les récoltes filtrées et les données du personnel.")
 
 
-            # --- Métriques Clés (Top Cards) ---
             
             col1, col2, col3, col4 = st.columns(4)
 
             with col1:
                 total_recolts_sum = filtered_recolts['Total_Recolt'].sum() if 'Total_Recolt' in filtered_recolts.columns else 0
-                kpi_card_html(col1, "Total Récoltes", f"{total_recolts_sum:,.0f}€", "#007bad", "seedling") # Icône 'seedling' pour les récoltes
+                kpi_card_html(col1, "Total Récoltes", f"{total_recolts_sum:,.0f}€", "#007bad", "seedling") 
 
             with col2:
                 if 'Rating' in filtered_recolts.columns:
                     avg_rating = filtered_recolts['Rating'].mean()
                     if not pd.isna(avg_rating):
                         rating_display = f"{'★' * int(round(avg_rating))}{'☆' * (7 - int(round(avg_rating)))}"
-                        kpi_card_html(col2, "Note Moyenne", rating_display, "#ffc107", "star") # Jaune pour la note
+                        kpi_card_html(col2, "Note Moyenne", rating_display, "#ffc107", "star") #
                     else:
-                         kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt") # Gris si pas de note
+                         kpi_card_html(col2, "Note Moyenne", "N/A", "#6c757d", "star-half-alt") 
                 else:
                     kpi_card_html(col2, "Note Moyenne", "N/A", "#fc9307", "star-half-alt")
 
             with col3:
                 total_transactions = len(filtered_recolts)
-                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#043a64", "exchange-alt") # Vert-bleu pour les transactions
+                kpi_card_html(col3, "Total Transactions", f"{total_transactions:,}", "#043a64", "exchange-alt") 
 
             with col4:
                 unique_employees = filtered_recolts['Hyp'].nunique() if 'Hyp' in filtered_recolts.columns else 0
-                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#fc9307", "users") # Violet pour les employés
+                kpi_card_html(col4, "Employés Uniques", f"{unique_employees:,}", "#fc9307", "users") 
 
-            # --- Carte et Top Équipes ---
+         
             
             col_map, col_teams = st.columns([2, 1])
 
             with col_map:
                 st.markdown("<h3 style='color: #007bad;'>Récoltes par Ville (Vue Carte)</h3>", unsafe_allow_html=True)
-                # S'assurer que les colonnes Latitude et Longitude existent et ne sont pas toutes NaN
+              
                 if 'Latitude' in filtered_recolts.columns and 'Longitude' in filtered_recolts.columns and not filtered_recolts[['Latitude', 'Longitude']].dropna().empty:
                     city_recolts_map = filtered_recolts.groupby('City').agg(
                         Total_Recolt=('Total_Recolt', 'sum'),
@@ -732,8 +729,8 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         fig_map.update_traces(
                             textfont=dict(family="Arial", size=12, color="white"),
                             textposition="middle center",
-                            hovertemplate="<b>%{customdata[3]}</b><br>" +  # Utilisez directement le nom de la ville depuis customdata
-                                "Ventes: %{customdata[0]}<br>" +
+                            hovertemplate="<b>%{customdata[3]}</b><br>" +  
+                                "Récolts: %{customdata[0]}<br>" +
                                 "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
                                 "Transactions Erreur: %{customdata[2]:.2f}%" +
                                 "<extra></extra>",
@@ -753,8 +750,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
 
             with col_teams:
                 st.markdown("<h3 style='color: #007bad;'>Performance des 3 Top Équipes</h3>", unsafe_allow_html=True)
-                
-                # S'assurer que 'Team' est présent pour le calcul des performances d'équipe
+              
                 if 'Team' not in filtered_recolts.columns or filtered_recolts['Team'].isnull().all():
                     st.warning("La colonne 'Team' est manquante ou vide après filtrage. Assurez-vous que la jointure avec 'staff_df' via 'Hyp' a réussi ou que 'Team' est déjà dans 'recolts_df'.")
                 
@@ -788,7 +784,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                         ).round(2)
 
                         team_stats = team_stats.sort_values(by='Total_Recolt', ascending=False).head(3)
-                        st.write("") # Espace pour alignement visuel
+                        st.write("") 
 
                         for index, row in team_stats.iterrows():
                             st.markdown(f"""
@@ -821,22 +817,21 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     st.warning("Impossible d'afficher les performances des équipes. Vérifiez que la colonne 'Team' est disponible après le filtrage ou que les données 'Hyp' permettent la jointure.")
 
 
-            # --- Graphiques Linéaires et Camembert ---
+         
            
             col_day, col_pie, col_hour = st.columns([1, 1, 1])
 
             with col_day:
                 st.markdown("<h3 style='color: #007bad;'>Récoltes par Jour de la Semaine</h3>", unsafe_allow_html=True)
                 if 'ORDER_DATE' in filtered_recolts.columns and not filtered_recolts['ORDER_DATE'].empty:
-                    filtered_recolts['Weekday'] = filtered_recolts['ORDER_DATE'].dt.dayofweek # Renommé pour plus de clarté (0=Lundi)
+                    filtered_recolts['Weekday'] = filtered_recolts['ORDER_DATE'].dt.dayofweek 
                     recoltes_jour = filtered_recolts.groupby('Weekday')['Total_Recolt'].sum().reset_index()
                     jours = {0: 'Lundi', 1: 'Mardi', 2: 'Mercredi', 3: 'Jeudi', 4: 'Vendredi', 5: 'Samedi', 6: 'Dimanche'}
                     
-                    # Assurer que tous les jours sont présents même s'il n'y a pas de données
                     all_days_df = pd.DataFrame({'Weekday': range(7)})
                     recoltes_jour = pd.merge(all_days_df, recoltes_jour, on='Weekday', how='left').fillna(0)
                     recoltes_jour['Jour'] = recoltes_jour['Weekday'].map(jours)
-                    recoltes_jour = recoltes_jour.sort_values('Weekday') # S'assurer de l'ordre des jours
+                    recoltes_jour = recoltes_jour.sort_values('Weekday') 
 
                     fig_jour = px.line(recoltes_jour,
                                         x='Jour',
@@ -916,7 +911,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
                     ].groupby(filtered_recolts['ORDER_DATE'].dt.hour)['Total_Recolt'].sum().reset_index()
 
                     recoltes_heure = recoltes_heure.rename(columns={'ORDER_DATE': 'Heure'})
-                    all_hours = pd.DataFrame({'Heure': range(9, 21)}) # Inclure toutes les heures même si pas de données
+                    all_hours = pd.DataFrame({'Heure': range(9, 21)}) 
                     recoltes_heure = pd.merge(all_hours, recoltes_heure, on='Heure', how='left').fillna(0)
                     recoltes_heure = recoltes_heure.sort_values('Heure')
 
@@ -962,7 +957,7 @@ def recolts_page(recolts_df, staff_df, start_date, end_date):
         else:
             st.warning("Aucune donnée de récolte ne correspond aux filtres sélectionnés.")
 
-# --- Fonction Principale de la Page des Logs ---
+
 
 def logs_page(logs_df, staff_df, start_date, end_date):
     
@@ -993,26 +988,24 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             qualification_filter = st.selectbox("Qualification", ['Tous'] + sorted(logs_df['Qualification'].dropna().unique().tolist()) if 'Qualification' in logs_df.columns else ['Tous'], key='qualification_filter')
 
     with st.spinner("Application des filtres..."):
-        # Assurez-vous que la colonne 'ORDER_DATE' existe pour filter_data
-        # Pour les logs, la colonne de date peut être 'Date_d_création'
+      
         logs_df_for_filter = logs_df.copy()
         if 'Date_d_création' in logs_df_for_filter.columns and 'ORDER_DATE' not in logs_df_for_filter.columns:
             logs_df_for_filter = logs_df_for_filter.rename(columns={'Date_d_création': 'ORDER_DATE'})
             
         try:
-            # La fonction filter_data est conçue pour les ventes/récoltes avec 'Country' et 'SHORT_MESSAGE'
-            # Adaptons son appel pour les logs
+           
             filtered_logs = filter_data(
-                logs_df_for_filter, # Utilisation de logs_df_for_filter avec 'ORDER_DATE'
-                'Tous', # Pas de filtre 'Country' spécifique pour les logs ici, mais 'filter_data' l'attend
+                logs_df_for_filter, 
+                'Tous', 
                 team_filter, 
                 activity_filter, 
-                'Toutes', # Pas de filtre 'transaction' spécifique pour les logs ici, mais 'filter_data' l'attend
+                'Toutes', 
                 start_date, 
                 end_date, 
                 staff_df
             )
-            # Renommer 'ORDER_DATE' si nécessaire pour les logs si elle a été changée pour 'filter_data'
+           
             if 'Date_d_création' in logs_df.columns and 'ORDER_DATE' in filtered_logs.columns and 'Date_d_création' not in filtered_logs.columns:
                 filtered_logs = filtered_logs.rename(columns={'ORDER_DATE': 'Date_d_création'})
         except NameError:
@@ -1021,10 +1014,10 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 logs_df['Date_d_création'] = pd.to_datetime(logs_df['Date_d_création'], errors='coerce')
                 filtered_logs = logs_df[(logs_df['Date_d_création'] >= start_date) & (logs_df['Date_d_création'] <= end_date)].copy()
             else:
-                filtered_logs = logs_df.copy() # Pas de filtre de date si la colonne est manquante
+                filtered_logs = logs_df.copy() 
 
 
-        # Appliquer les filtres spécifiques aux logs
+      
         if offre_filter != 'Tous' and 'Offre' in filtered_logs.columns:
             filtered_logs = filtered_logs[filtered_logs['Offre'] == offre_filter]
         if segment_filter != 'Tous' and 'Segment' in filtered_logs.columns:
@@ -1044,7 +1037,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         total_logs_count = len(filtered_logs)
         total_unique_offres_count = filtered_logs['Offre'].nunique() if 'Offre' in filtered_logs.columns else 0
 
-        # Calcul du taux de conversion
+        
         if 'Direction' in filtered_logs.columns:
             incoming = len(filtered_logs[filtered_logs['Direction'] == 'InComming'])
             outgoing = len(filtered_logs[filtered_logs['Direction'] == 'OutComming'])
@@ -1052,7 +1045,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             conversion_rate = "N/A"
 
-        # Calcul du taux de Statut BP
+       
         if 'Statut_BP' in filtered_logs.columns:
             actif = len(filtered_logs[filtered_logs['Statut_BP'] == 'actif'])
             resilie = len(filtered_logs[filtered_logs['Statut_BP'] == 'résilié'])
@@ -1064,7 +1057,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             bp_rate = "N/A"
 
-        # Période Couverte
+   
         if 'Date_d_création' in filtered_logs.columns and not filtered_logs['Date_d_création'].empty:
             filtered_logs['Date_d_création'] = pd.to_datetime(filtered_logs['Date_d_création'], errors='coerce')
             min_date = filtered_logs['Date_d_création'].min()
@@ -1073,7 +1066,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         else:
             days = "N/A"
 
-        # Affichage des cartes KPI avec kpi_card_html
+      
         col1, col2, col3, col4, col5 = st.columns(5)
         with col1:
             kpi_card_html(col1, "Total Logs", f"{total_logs_count:,}", "#007bad", "clipboard-list")
@@ -1096,7 +1089,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
         #st.markdown("---")
         st.markdown("<h3 style='color: #007bad;'>Analyse des Logs</h3>", unsafe_allow_html=True)
         with st.container(border=True):
-    # First row of charts (formerly second row): Qualification/Direction (col1), Mode de Facturation (col2)
+  
   
             col1, col2 = st.columns([3, 1.1])
             with col1:
@@ -1106,7 +1099,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     df_combined = filtered_logs.dropna(subset=['Qualification', 'Direction', 'Date_d_création'])
 
                     if not df_combined.empty:
-                        # Filtrer pour garder seulement les 12 derniers mois
+                    
                         df_combined = df_combined[df_combined['Date_d_création'] >= (df_combined['Date_d_création'].max() - pd.DateOffset(months=11))]
                         
                         df_combined['Qualification_Grouped'] = df_combined['Qualification'].apply(
@@ -1189,7 +1182,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                                 secondary_y=True,
                             )
 
-                        # Générer les valeurs des ticks pour chaque mois
+                      
                         month_ticks = pd.date_range(
                             start=df_combined['Month_Year_Dt'].min(), 
                             end=df_combined['Month_Year_Dt'].max(), 
@@ -1199,12 +1192,12 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         fig.update_layout(
                             xaxis=dict(
                                 tickfont=dict(size=16, family='Arial', color='black', weight='bold'),
-                                tickformat="%B",  # Noms complets des mois
-                                tickangle=0,      # Horizontal
-                                tickmode='array', # Mode tableau pour contrôle précis
-                                tickvals=month_ticks,  # Positions des ticks
-                                range=[month_ticks[0] - pd.DateOffset(days=15),  # Marge avant
-                                        month_ticks[-1] + pd.DateOffset(days=15)] # Marge après
+                                tickformat="%B",  
+                                tickangle=0,      
+                                tickmode='array', 
+                                tickvals=month_ticks,  
+                                range=[month_ticks[0] - pd.DateOffset(days=15),  
+                                        month_ticks[-1] + pd.DateOffset(days=15)] 
                             ),
                             margin=dict(l=20, r=20, t=80, b=100),
                             plot_bgcolor='white',
@@ -1215,7 +1208,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                             showlegend=False
                             
                         )
-                        # Ajouter cette partie après st.plotly_chart(fig, use_container_width=True)
+          
 
                         
                         st.plotly_chart(fig, use_container_width=True)
@@ -1249,13 +1242,13 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     billing_mode_counts.columns = ['Mode_facturation', 'Count']
                     total = billing_mode_counts['Count'].sum()
                     
-                    # Calcul des montants en euros
+                
                     montants = {}
                     if 'Montant' in filtered_logs.columns:
                         for mode in billing_mode_counts['Mode_facturation']:
                             montants[mode] = filtered_logs[filtered_logs['Mode_facturation'] == mode]['Montant'].sum()
                     else:
-                        # Valeurs factices si la colonne Montant n'existe pas
+                     
                         for mode in billing_mode_counts['Mode_facturation']:
                             montants[mode] = billing_mode_counts[billing_mode_counts['Mode_facturation'] == mode]['Count'].values[0] * 1000
                     
@@ -1264,7 +1257,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         values=billing_mode_counts['Count'],
                         hole=.4,
                         pull=[0.05 if i == billing_mode_counts['Count'].argmax() else 0 for i in range(len(billing_mode_counts))],
-                        marker_colors=["#043a64", "#fc9307", "#ffc107"],  # Nouvelles couleurs ici
+                        marker_colors=["#043a64", "#fc9307", "#ffc107"],  
                         textinfo='percent+label',
                         texttemplate='%{label}<br>%{percent}<br>%{customdata:,.0f} €',
                         customdata=[montants.get(mode, 0) for mode in billing_mode_counts['Mode_facturation']],
@@ -1298,21 +1291,21 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     total = canal_counts['Count'].sum()
                     canal_counts['Percentage'] = (canal_counts['Count'] / total * 100).round(1)
                     
-                    # Nouveaux paramètres de couleur et style
+                   
                     fig1 = px.bar(
                         canal_counts,
                         x='Count',
                         y='Canal',
                         orientation='h',
                         color='Canal',
-                        color_discrete_sequence=["#007bad", "#2596be", "#043a64"],  # Couleurs harmonisées
+                        color_discrete_sequence=["#007bad", "#2596be", "#043a64"],  
                     )
                     fig1.update_traces(
                         texttemplate='%{x} (%{customdata[0]}%)',
                         textposition='outside',
                         customdata=canal_counts[['Percentage']],
                         textfont=dict(size=16, color='black', family='Arial', weight='bold'),
-                        marker=dict(line=dict(width=1, color='#333333'))),  # Contour des barres
+                        marker=dict(line=dict(width=1, color='#333333'))), 
                     fig1.update_layout(
                         xaxis_title={
                             'text': "Nombre de Logs",
@@ -1324,7 +1317,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                         },
                         xaxis=dict(
                             tickfont=dict(size=14, family='Arial', color='black', weight='bold'),
-                            gridcolor='#f0f0f0'  # Lignes de grille plus douces
+                            gridcolor='#f0f0f0'  
                         ),
                         yaxis=dict(
                             tickfont=dict(size=14, family='Arial', color='black', weight='bold')
@@ -1345,7 +1338,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Données non disponibles pour ce graphique (Canal)")
 
-            # Chart 3: Logs Over Time (Line Chart) - now in col2 (bottom center)
+           
             with col2:
                 st.markdown("<h4 style='color: #007bad;'>Volume de Logs au Fil du Temps</h4>", unsafe_allow_html=True)
                 if 'Date_d_création' in filtered_logs.columns and not filtered_logs['Date_d_création'].empty:
@@ -1353,19 +1346,19 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     daily_counts.columns = ['Date', 'Count']
                     daily_counts['Date'] = daily_counts['Date'].dt.to_timestamp()
                     
-                    # Nouveaux paramètres de couleur et style
+                
                     fig3 = px.line(
                         daily_counts,
                         x='Date',
                         y='Count',
-                        color_discrete_sequence=["#007bad"]  # Couleur principale
+                        color_discrete_sequence=["#007bad"] 
                     )
                     fig3.update_traces(
                         mode='lines+markers',
                         marker=dict(size=8, color='#043a64', line=dict(width=1, color='#333333')),
                         line=dict(width=3),
-                        fill='tozeroy',  # Remplissage sous la courbe
-                        fillcolor='rgba(0, 123, 173, 0.1)'  # Couleur de remplissage translucide
+                        fill='tozeroy',  
+                        fillcolor='rgba(0, 123, 173, 0.1)'  
                     )
                     fig3.update_layout(
                         xaxis_title={
@@ -1401,7 +1394,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                 else:
                     st.warning("Données non disponibles pour ce graphique (Date de création)")
 
-            # Chart 2: Logs by Offer (Horizontal Bar Chart) - now in col3 (bottom right)
+        
             with col3:
                 st.markdown("<h4 style='color: #007bad;'>Répartition par Offre</h4>", unsafe_allow_html=True)
                 if 'Offre' in filtered_logs.columns and not filtered_logs['Offre'].empty:
@@ -1410,7 +1403,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
                     total = offre_counts['Count'].sum()
                     offre_counts['Percentage'] = (offre_counts['Count'] / total * 100).round(1)
                     
-                    # Nouveaux paramètres de couleur et style
+                   
                     fig2 = px.bar(
                         offre_counts,
                         x='Count',
@@ -1491,7 +1484,7 @@ def logs_page(logs_df, staff_df, start_date, end_date):
             height=400,
         )
         
-        # Add download button for Excel
+       
         excel_buffer = io.BytesIO()
         with pd.ExcelWriter(excel_buffer, engine='xlsxwriter') as writer:
             filtered_logs.to_excel(writer, index=False, sheet_name='Logs Data')
@@ -1535,7 +1528,7 @@ def kpi_card_html(column, title, value_html, color, icon_name):
 def sales_page(sales_df, staff_df, start_date, end_date):
     
 
-    add_custom_css()  # Appel de la fonction CSS personnalisée
+    add_custom_css()  
 
     st.markdown("<h3 style='color: #007bad;'>Filtrage des Ventes</h3>", unsafe_allow_html=True)
 
@@ -1575,8 +1568,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
         with col4:
             kpi_card_html(col4, "Transactions", f"{len(filtered_sales):,}", "#102831", "exchange-alt")
 
-        # The rest of your sales_page function remains the same
-        # ... (map, team performance, daily sales, transaction status, hourly sales)
+      
         col1, col2 = st.columns([2, 1])
 
         with col1:
@@ -1597,14 +1589,13 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                     city_sales_map['Formatted_Sale'] = city_sales_map['Total_Sale'].apply(lambda x: f"{x:,.0f}€")
                     city_sales_map['Short_Sale'] = city_sales_map['Total_Sale'].apply(lambda x: f"{x/1000:.0f}k" if x >= 1000 else f"{x:.0f}")
 
-                    # Adjusted for combined total for percentage calculation
                     city_sales_map['Total_SMS'] = city_sales_map['Accepted_SMS'] + city_sales_map['Refused_SMS'] + city_sales_map['Error_SMS']
 
                     city_sales_map['Refused_SMS_Percentage'] = city_sales_map.apply(
                         lambda row: (row['Refused_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0,
                         axis=1
                     ).round(2)
-                    # New: Error SMS Percentage
+                
                     city_sales_map['Error_SMS_Percentage'] = city_sales_map.apply(
                         lambda row: (row['Error_SMS'] / row['Total_SMS']) * 100 if row['Total_SMS'] > 0 else 0,
                         axis=1
@@ -1615,7 +1606,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                         lat="Latitude",
                         lon="Longitude",
                         size="Total_Sale",
-                        text="Short_Sale",  # Ajout du texte à afficher sur les cercles
+                        text="Short_Sale",  
                         color_discrete_sequence=['blue'] * len(city_sales_map),
                         hover_name="City",
                         hover_data={
@@ -1623,12 +1614,12 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                             "Latitude": False,
                             "Longitude": False,
                             "Refused_SMS_Percentage": ":.2f",
-                            "Error_SMS_Percentage": ":.2f", # Added for hover data
+                            "Error_SMS_Percentage": ":.2f", 
                             "Total_Sale": False,
                             "Accepted_SMS": False,
                             "Refused_SMS": False,
-                            "Error_SMS": False, # Exclude raw count from hover
-                            "Short_Sale": False # Ne pas afficher dans le tooltip
+                            "Error_SMS": False, 
+                            "Short_Sale": False 
                         },
                         size_max=35,
                         zoom=5,
@@ -1642,7 +1633,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                             color="white"
                         ),
                         textposition="middle center",
-                        hovertemplate="<b>%{customdata[3]}</b><br>" +  # Utilisez directement le nom de la ville depuis customdata
+                        hovertemplate="<b>%{customdata[3]}</b><br>" +  
               "Ventes: %{customdata[0]}<br>" +
               "Transactions Refusées: %{customdata[1]:.2f}%<br>" +
               "Transactions Erreur: %{customdata[2]:.2f}%" +
@@ -1698,14 +1689,14 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                 if 'Team' in filtered_sales.columns and not filtered_sales['Team'].dropna().empty:
                     team_stats = filtered_sales.groupby('Team').agg(
                         Total_Sale=('Total_Sale', 'sum'),
-                        Total_Transactions=('Total_Sale', 'count'), # Nombre de transactions
+                        Total_Transactions=('Total_Sale', 'count'), 
                         Accepted_SMS=('SHORT_MESSAGE', lambda x: (x == 'ACCEPTED').sum()),
                         Refused_SMS=('SHORT_MESSAGE', lambda x: (x == 'REFUSED').sum()),
-                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum()) # Added for ERROR count
+                        Error_SMS=('SHORT_MESSAGE', lambda x: (x == 'ERROR').sum()) 
                     ).reset_index()
 
                     if not team_stats.empty:
-                        # Calcul des taux d'acceptation, refus et erreur des SMS
+                      
                         team_stats['Total_SMS_Transactions'] = team_stats['Accepted_SMS'] + team_stats['Refused_SMS'] + team_stats['Error_SMS']
 
                         team_stats['Acceptance_Rate'] = team_stats.apply(
@@ -1726,7 +1717,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                             axis=1
                         ).round(2)
 
-                        # Calcul du taux de conversion (Total Sale de l'équipe / Total Sale global filtré)
+                      
                         total_sales_global = filtered_sales['Total_Sale'].sum()
                         team_stats['Conversion_Rate'] = team_stats['Total_Sale'].apply(
                             lambda x: (x / total_sales_global) * 100 if total_sales_global > 0 else 0
@@ -1734,7 +1725,7 @@ def sales_page(sales_df, staff_df, start_date, end_date):
 
                         team_stats = team_stats.sort_values(by='Total_Sale', ascending=False)
 
-                        # Affichage des cartes de performance d'équipe
+                      
                         for index, row in team_stats.iterrows():
                             st.markdown(f"""
                                 <div class="team-performance-card" style="padding: 10px;">
@@ -1849,9 +1840,9 @@ def sales_page(sales_df, staff_df, start_date, end_date):
                 textinfo='value+percent',
                 textposition='outside',
                 textfont_size=18,
-                textfont_color=['#007bad', '#ff0000', '#ffa500'], # Mettre à jour pour ERROR
+                textfont_color=['#007bad', '#ff0000', '#ffa500'], 
                 marker=dict(line=dict(color='white', width=2)),
-                pull=[0.05, 0, 0], # Ajuster si vous voulez tirer d'autres parts
+                pull=[0.05, 0, 0], 
                 rotation=-90
             )
 
@@ -1977,12 +1968,12 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         transition: all 0.2s ease-in-out;
     }
     
-    /* Effet de survol - bleu légèrement plus foncé */
+
     .stTabs [data-baseweb="tab-list"] button:hover {
         background-color: #00afe1;
     }
     
-    /* Onglet actif - maintenant en blanc */
+ 
     .stTabs [data-baseweb="tab-list"] button[aria-selected="true"] {
         background-color: white;    /* Fond blanc */
         color: #00afe1;            /* Texte bleu */
@@ -1990,18 +1981,17 @@ def dashboard_page(logs_df, sales_df, recolts_df, staff_df, start_date, end_date
         border-bottom: 1px solid white; /* Cache la bordure du bas */
     }
     
-    /* Style du conteneur principal */
+
     .stTabs {
         margin-top: -10px;
         margin-bottom: 15px;
     }
     
-    /* Ligne sous les onglets */
+   
     .stTabs [data-baseweb="tab-list"] {
         border-bottom: 1px solid #00afe1;
     }
 
-    /* Set sidebar background to white */
     section[data-testid="stSidebar"] {
         background-color: white !important;
     }
@@ -2087,19 +2077,19 @@ def get_last_agent_id():
     """
     conn = get_db_connection()
     if not conn:
-        return 0 # Return 0 or handle error appropriately
+        return 0 
     
     try:
         with closing(conn.cursor()) as cursor:
-            # This query assumes ID is always a number and gets the max
+          
             cursor.execute("SELECT MAX(ID) FROM Effectifs")
             last_id = cursor.fetchone()[0]
-            # Convert to integer, as some drivers might return it as a string
+          
             return int(last_id) if last_id is not None else 0
     except sqlite3.Error as e:
         st.error(f"Erreur lors de la récupération du dernier ID d'agent : {e}")
         return 0
-    # The ValueError handling for 'invalid literal for int()' would become unnecessary if data is clean
+   
     except ValueError as e: 
         st.error(f"Erreur de conversion de l'ID en entier (cette erreur ne devrait plus apparaître après nettoyage DB) : {e}")
         return 0
@@ -2117,31 +2107,30 @@ def get_last_agent_id():
         with closing(conn.cursor()) as cursor:
             
             cursor.execute("SELECT Id_Effectif FROM Effectifs")
-            all_ids = cursor.fetchall() # Récupère tous les résultats
+            all_ids = cursor.fetchall() 
 
             for row in all_ids:
-                current_id = row[0] # L'ID est le premier élément de chaque ligne
+                current_id = row[0] 
                 
                 if current_id is None:
-                    continue # Ignore les valeurs NULL
+                    continue 
 
                 try:
-                    # Tente de convertir l'ID actuel en entier
+                   
                     numeric_id = int(current_id)
-                    # Si la conversion réussit, compare-le avec le maximum trouvé jusqu'à présent
+                   
                     if numeric_id > max_id_trouve:
                         max_id_trouve = numeric_id
                 except ValueError:
-                    # Cette erreur se produit si current_id n'est pas un nombre (ex: 'SRP_098')
-                    # Nous l'ignorons silencieusement car nous voulons seulement les IDs numériques
+                  
                     st.warning(f"ID non numérique ignoré lors de la recherche du dernier ID : '{current_id}'")
                     pass
                 except TypeError:
-                    # Gère les cas où current_id n'est ni un str ni un int (ex: un objet non convertible)
+                   
                     st.warning(f"Type d'ID inattendu ignoré : '{current_id}' ({type(current_id)})")
                     pass
             
-            return max_id_trouve # Retourne le plus grand ID numérique trouvé
+            return max_id_trouve 
 
     except sqlite3.Error as e:
         st.error(f"Erreur SQLite lors de la récupération des IDs d'agent : {e}")
@@ -2163,7 +2152,7 @@ def add_agent_to_db(agent_data):
     
     try:
         with closing(conn.cursor()) as cursor:
-            # Insert into Effectifs table
+         
             cursor.execute(
                 """INSERT INTO Effectifs (Id_Effectif, Hyp, ID_AGTSDA, NOM, PRENOM, Team, Type, Activité, Departement, Date_In)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
@@ -2172,13 +2161,12 @@ def add_agent_to_db(agent_data):
                  agent_data["Activité"], agent_data["Departement"], agent_data["Date_In"])
             )
             
-            # Insert into Users table (assuming UserName and Hyp are also in Users table)
-            # You might need to adjust this based on your Users table schema, especially for 'Cnx' and 'PassWord'
+           
             cursor.execute(
                 """INSERT INTO Users (Hyp, UserName, PassWord, Type_User, Cnx)
                    VALUES (?, ?, ?, ?, ?)""",
-                (agent_data["Hyp"], agent_data["UserName"], agent_data["Hyp"], # Default password is Hyp
-                 agent_data["Type"], None) # Assuming Type from Effectifs and Cnx is null or needs a default
+                (agent_data["Hyp"], agent_data["UserName"], agent_data["Hyp"], 
+                 agent_data["Type"], None) 
             )
             
             conn.commit()
@@ -2331,7 +2319,7 @@ def setting_page():
         
      
         
-        # Style CSS pour les boutons
+     
         st.markdown("""
             <style>
                 div.stButton > button:first-child {
@@ -2427,12 +2415,12 @@ def main():
     """Fonction principale de l'application."""
     add_custom_css()
     
-    # Vérification de l'authentification
+
     if "authenticated" not in st.session_state or not st.session_state.authenticated:
         login_page()
         return
     
-    # Chargement des données
+  
     with st.spinner('Chargement des données...'):
         sales_df, recolts_df, staff_df, logs_df = load_data()
         logs_df = preprocess_data(logs_df)
@@ -2440,11 +2428,11 @@ def main():
         recolts_df = preprocess_data(recolts_df)
         staff_df = preprocess_data(staff_df)
     
-    # Navigation
+  
     st.sidebar.title("Navigation")
     st.sidebar.markdown(f"**Connecté en tant que:** {st.session_state.username}")
     
-    # Ajoutez les sélecteurs de date dans la sidebar
+ 
     st.sidebar.markdown("### Période d'analyse")
     start_date = st.sidebar.date_input("Date de début", 
                                       pd.to_datetime("2023-01-01").date(),
@@ -2453,7 +2441,7 @@ def main():
                                     pd.to_datetime("2023-12-31").date(),
                                     key="end_date")
     
-    # Vérification que la date de fin est après la date de début
+ 
     if start_date > end_date:
         st.sidebar.error("La date de fin doit être postérieure à la date de début")
         end_date = start_date

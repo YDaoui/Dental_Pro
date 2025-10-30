@@ -143,18 +143,18 @@ def display_recolt_graphs(df):
         fig_city.update_traces(
             texttemplate='%{text:,.2f} €',  # Format monétaire
             textposition='outside',        # Étiquettes à l'extérieur des barres
-            textfont_size=12,             # Taille de police
+            textfont_size=16,             # Taille de police
             insidetextanchor='middle'      # Alignement si étiquettes trop longues
         )
         
         # Optimisation du layout
         fig_city.update_layout(
-            uniformtext_minsize=8,
+            uniformtext_minsize=16,
             uniformtext_mode='hide',
             yaxis={'categoryorder': 'total ascending'},  # Tri des villes par récolte
             showlegend=False,                            # Pas de légende
             margin=dict(l=20, r=20, t=40, b=20),        # Marges ajustées
-            height=500,                                 # Hauteur fixe
+            height=800,                                 # Hauteur fixe
             xaxis_title="Montant des récoltes (€)",    # Titre axe X
             yaxis_title="Ville"                         # Titre axe Y
         )

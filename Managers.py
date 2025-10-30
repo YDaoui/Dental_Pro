@@ -5,13 +5,14 @@ import plotly.express as px
 from datetime import datetime
 from streamlit_option_menu import option_menu
 from Utils_Dental import *
+from Utils import *
 from Supports import *
 from Sales import *
 from Recolts import *
 from Logs import *
 from Agents import *
 from New_Sale_Recolt_Log import *
-from Model_Planif import simulation_planning
+from Model_Planif import *
 
 # Fonctions de chargement et prétraitement des données
 
@@ -21,12 +22,12 @@ def main_dashboard(logs_df ,sales_df, recolts_df, staff_df, start_date, end_date
     tab1, tab2,tab3 = st.tabs(["📊 Ventes", "💰 Récompences","🧾 Logs "])
 
     with tab1:
-        sales_page(sales_df, staff_df, start_date, end_date)
+        sales_page1(sales_df, staff_df, start_date, end_date)
 
     with tab2:
-        recolts_page(recolts_df, staff_df, start_date, end_date)
+        recolts_page1(recolts_df, staff_df, start_date, end_date)
     with tab3:
-        logs_page(logs_df, staff_df, start_date, end_date)
+        logs_page1(logs_df, staff_df, start_date, end_date)
 # Fonction principale
 def manager_dashboard():
     
